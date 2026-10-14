@@ -1,0 +1,118 @@
+Description: Read the partition to replace before reverting the device
+ In "Replace a partition", ChoicePage::doReplaceSelectedPartition() hands the
+ preview view's QModelIndex to a worker thread, which first reverts the device
+ when an earlier choice changed it (revertDevice) and only then reads the
+ partition through the index: its path, or, for free space, the Partition*
+ behind PartitionPtrRole and that partition's sectors and parent. Reverting the
+ device makes the page rebuild its preview views, whose model owns the index, so
+ the worker read a dangling index. Confirming the encryption passphrase after a
+ partition had been selected runs exactly that path (onEncryptWidgetStateChanged
+ calls doReplaceSelectedPartition with the current index of a page whose device
+ the selection had changed), and Calamares crashed; selecting encryption first
+ did not, because nothing had changed the device yet. Seen installing Oaxaca on
+ a Lenovo Legion Pro 7 on 2026-10-12, with free space selected. The same family
+ as Calamares issue 2535 ("Segfault in QStandardItemModel::flags() when
+ changing selection in Replace a partition mode", open).
+ .
+ The patch reads the path, the free-space flag, the first and last sector and
+ the extended parent's path from the index on the GUI thread, before the worker
+ starts, and the worker uses only those values.
+Author: santisbon <santisbon@users.noreply.github.com>
+Origin: vendor
+Bug: https://codeberg.org/Calamares/calamares/issues/2535
+Forwarded: no
+Last-Update: 2026-10-12
+---
+--- a/src/modules/partition/gui/ChoicePage.cpp
++++ b/src/modules/partition/gui/ChoicePage.cpp
+@@ -821,12 +821,43 @@
+         return;
+     }
+ 
++    // Read everything the worker needs from the index here, on the GUI thread, before the worker
++    // runs: the worker reverts the device first, which makes the page rebuild its preview views,
++    // and the index (and the Partition* behind its PartitionPtrRole) belongs to the old preview
++    // model. Read afterwards, from the worker, it dangled, and Calamares crashed when the
++    // encryption passphrase was confirmed after a partition had been selected.
++    const QString selectedPath = current.data( PartitionModel::PartitionPathRole ).toString();
++    Partition* indexedPartition
++        = static_cast< Partition* >( current.data( PartitionModel::PartitionPtrRole ).value< void* >() );
++    const bool selectedIsFreeSpace = isPartitionFreeSpace( indexedPartition );
++    const qint64 selectedFirstSector = indexedPartition ? indexedPartition->firstSector() : -1;
++    const qint64 selectedLastSector = indexedPartition ? indexedPartition->lastSector() : -1;
++    QString extendedParentPath;
++    if ( indexedPartition && indexedPartition->parent() )
++    {
++        Partition* parent = dynamic_cast< Partition* >( indexedPartition->parent() );
++        if ( parent && parent->roles().has( PartitionRole::Extended ) )
++        {
++            extendedParentPath = parent->partitionPath();
++        }
++    }
++    if ( selectedIsFreeSpace && ( selectedFirstSector < 0 || selectedLastSector < 0 ) )
++    {
++        return;
++    }
++
+     // This will be deleted by the second lambda, below.
+     QString* homePartitionPath = new QString();
+ 
+     ScanningDialog::run(
+         QtConcurrent::run(
+-            [ this, current, homePartitionPath ]( bool doReuseHomePartition )
++            [ this,
++              selectedPath,
++              selectedIsFreeSpace,
++              selectedFirstSector,
++              selectedLastSector,
++              extendedParentPath,
++              homePartitionPath ]( bool doReuseHomePartition )
+             {
+                 QMutexLocker locker( &m_coreMutex );
+ 
+@@ -837,9 +868,8 @@
+ 
+                 // if the partition is unallocated(free space), we don't replace it but create new one
+                 // with the same first and last sector
+-                Partition* selectedPartition
+-                    = static_cast< Partition* >( current.data( PartitionModel::PartitionPtrRole ).value< void* >() );
+-                if ( isPartitionFreeSpace( selectedPartition ) )
++                Partition* selectedPartition = nullptr;
++                if ( selectedIsFreeSpace )
+                 {
+                     //NOTE: if the selected partition is free space, we don't deal with
+                     //      a separate /home partition at all because there's no existing
+@@ -847,19 +877,15 @@
+                     PartitionRole newRoles = PartitionRole( PartitionRole::Primary );
+                     PartitionNode* newParent = selectedDevice()->partitionTable();
+ 
+-                    if ( selectedPartition->parent() )
++                    if ( !extendedParentPath.isEmpty() )
+                     {
+-                        Partition* parent = dynamic_cast< Partition* >( selectedPartition->parent() );
+-                        if ( parent && parent->roles().has( PartitionRole::Extended ) )
+-                        {
+-                            newRoles = PartitionRole( PartitionRole::Logical );
+-                            newParent = findPartitionByPath( { selectedDevice() }, parent->partitionPath() );
+-                        }
++                        newRoles = PartitionRole( PartitionRole::Logical );
++                        newParent = findPartitionByPath( { selectedDevice() }, extendedParentPath );
+                     }
+ 
+                     m_core->layoutApply( selectedDevice(),
+-                                         selectedPartition->firstSector(),
+-                                         selectedPartition->lastSector(),
++                                         selectedFirstSector,
++                                         selectedLastSector,
+                                          m_config->luksFileSystemType(),
+                                          m_encryptWidget->passphrase(),
+                                          newParent,
+@@ -869,7 +895,7 @@
+                 {
+                     // We can't use the PartitionPtrRole because we need to make changes to the
+                     // main DeviceModel, not the immutable copy.
+-                    QString partPath = current.data( PartitionModel::PartitionPathRole ).toString();
++                    QString partPath = selectedPath;
+                     selectedPartition = findPartitionByPath( { selectedDevice() }, partPath );
+                     if ( selectedPartition )
+                     {

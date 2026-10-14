@@ -1,0 +1,22 @@
+calamares (3.3.14-0ubuntu30oaxaca2) stonking; urgency=medium
+
+  * revert-device-on-gui-thread.patch: the partition page reverts the device
+    and, in "Replace a partition", lays out the new partitions on the GUI
+    thread instead of a worker thread, which reset the models the preview
+    views were painting from. Choosing the free space and then confirming the
+    encryption passphrase crashed Calamares with a segfault in
+    PartitionModel::data() (Legion laptop, 2026-10-13; reproduced in QEMU).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Tue, 13 Oct 2026 16:00:00 -0500
+
+calamares (3.3.14-0ubuntu30oaxaca1) stonking; urgency=medium
+
+  * Ubuntu's 3.3.14-0ubuntu30 rebuilt for Oaxaca with one patch,
+    replace-read-selection-before-revert.patch: in "Replace a partition", read
+    the selected partition from the preview's index on the GUI thread before
+    the worker reverts the device, instead of from the worker afterwards, when
+    the index dangles. Calamares crashed when the encryption passphrase was
+    confirmed after a partition had been selected (Legion laptop,
+    2026-10-12). debian/ is otherwise Ubuntu's.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Mon, 12 Oct 2026 23:00:00 -0500

@@ -1,0 +1,9 @@
+#!/bin/sh
+# Undo the preinst's diversion once this package's os-release is gone, so
+# base-files' original comes back as /usr/lib/os-release.
+set -e
+if [ "$1" = remove ] || [ "$1" = abort-install ]; then
+    dpkg-divert --package @DISTRO_ID@-base --rename \
+        --divert /usr/lib/os-release.ubuntu --remove /usr/lib/os-release
+fi
+#DEBHELPER#

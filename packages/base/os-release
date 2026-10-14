@@ -1,0 +1,12 @@
+# Generated from packages/base/os-release.in by scripts/render.py. Edit the .in file, not this one.
+NAME="Oaxaca"
+VERSION="26.10 (stonking)"
+ID=oaxaca
+ID_LIKE="ubuntu debian"
+PRETTY_NAME="Oaxaca 26.10"
+VERSION_ID="26.10"
+VERSION_CODENAME=stonking
+UBUNTU_CODENAME=stonking
+HOME_URL="https://github.com/santisbon/oaxaca"
+BUG_REPORT_URL="https://github.com/santisbon/oaxaca/issues"
+LOGO=oaxaca

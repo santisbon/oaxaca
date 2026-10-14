@@ -1,0 +1,13 @@
+# @DISTRO_ID@-base
+
+The base system metapackage: roadmap step 3. Installing `@DISTRO_ID@-base` on a minbase root filesystem pulls in the kernel, boot chain, init, network, sound and the @DISTRO_NAME@ apt repository. `scripts/rootfs-create.sh` does exactly that to build the root filesystem tarball. See `docs/3 - rootfs.md`.
+
+Files this package installs besides its dependency list:
+
+| Installed path | Purpose |
+|---|---|
+| `/usr/lib/os-release` (base-files' copy diverted to `/usr/lib/os-release.ubuntu`) | the system identifies as @DISTRO_NAME@: `ID=@DISTRO_ID@`, `ID_LIKE="ubuntu debian"` |
+| `/usr/libexec/@DISTRO_ID@/loader-fallback`, dpkg triggers on `/usr/lib/grub/x86_64-efi-signed` and `/usr/lib/shim` | on an EFI System Partition shared with another Ubuntu-family system (named in `/etc/@DISTRO_ID@/previous-loader` by the installer), rewrites the `/EFI/ubuntu/grub.cfg` stub so it tries this system's `/boot` and falls back to the other system's GRUB when this one is gone; re-applied after every GRUB or shim upgrade, which runs `grub-install` (`docs/7 - image-installer.md`, choice 24) |
+| `/etc/apt/apt.conf.d/50@DISTRO_ID@-no-recommends` | apt installs no Recommends |
+| `/etc/netplan/01-@DISTRO_ID@-network-manager.yaml` | netplan hands all interfaces to NetworkManager |
+

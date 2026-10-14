@@ -1,0 +1,51 @@
+#!/bin/bash
+# hardware-install: install the @DISTRO_NAME@ hardware package that matches this machine's model
+# into the target, such as @DISTRO_ID@-hw-legion on a Lenovo Legion Pro 7 16IAX10H (the package's
+# /etc/@DISTRO_ID@/gpu keeps Hyprland on the Intel GPU so the NVIDIA GPU can power down). A machine
+# with no entry in the table below gets nothing, and the step succeeds.
+#
+# Anatomy: Calamares's shellprocess@hardware runs this from the live system (dontChroot), after
+# the drivers step, with the target's root as $1. The model comes from the firmware's DMI strings
+# (/sys/class/dmi/id: sys_vendor, and product_version, where Lenovo puts the model name). apt runs
+# inside the target with chroot. When the installation medium carries its package pool
+# (scripts/driver-pool.sh writes it; /cdrom/pool, bound into the target by the mount step), apt
+# reads only that pool, through an apt configuration of its own (APT_CONFIG, as
+# @DISTRO_ID@-drivers-install does), so the step needs no network and leaves the target's sources
+# and package lists untouched; without the pool apt uses the target's own sources. The decision
+# and apt's output go to /var/log/@DISTRO_ID@/hardware-install.log in the target.
+# Usage: hardware-install <target root>
+set -u
+root=${1:?target root}
+mkdir -p "$root/var/log/@DISTRO_ID@"
+exec > >(tee -a "$root/var/log/@DISTRO_ID@/hardware-install.log") 2>&1
+
+# One line per model: sys_vendor|product_version|package.
+table='LENOVO|Legion Pro 7 16IAX10H|@DISTRO_ID@-hw-legion'
+
+vendor=$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null)
+model=$(cat /sys/class/dmi/id/product_version 2>/dev/null)
+echo "@DISTRO_ID@-hardware-install: machine: $vendor $model"
+package=""
+while IFS='|' read -r v m p; do
+    [ "$v" = "$vendor" ] && [ "$m" = "$model" ] && package=$p
+done <<< "$table"
+if [ -z "$package" ]; then
+    echo "@DISTRO_ID@-hardware-install: no hardware package for this model"
+    exit 0
+fi
+
+pool=/cdrom/pool
+state=/run/@DISTRO_ID@-hardware-pool
+apt_env=(DEBIAN_FRONTEND=noninteractive)
+if [ -f "$root$pool/Packages" ]; then
+    mkdir -p "$root$state/lists/partial"
+    printf 'Types: deb\nURIs: file:%s\nSuites: ./\nTrusted: yes\n' "$pool" > "$root$state/pool.sources"
+    printf 'Dir::Etc::SourceList "%s/pool.sources";\nDir::Etc::SourceParts "%s/no-parts";\nDir::State::Lists "%s/lists";\n' \
+        "$state" "$state" "$state" > "$root$state/apt.conf"
+    apt_env+=(APT_CONFIG=$state/apt.conf)
+    echo "@DISTRO_ID@-hardware-install: package: $package; pool: $pool"
+else
+    echo "@DISTRO_ID@-hardware-install: package: $package; pool: none (the target's apt sources)"
+fi
+chroot "$root" env "${apt_env[@]}" apt-get -q update || exit 1
+chroot "$root" env "${apt_env[@]}" apt-get -q -y --no-install-recommends install "$package"

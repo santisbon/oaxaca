@@ -1,0 +1,64 @@
+Source: @DISTRO_ID@-base
+Section: metapackages
+Priority: optional
+Maintainer: @MAINTAINER@
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: @DISTRO_HOME_URL@
+Rules-Requires-Root: no
+
+Package: @DISTRO_ID@-base
+Architecture: all
+Depends: ${misc:Depends},
+ @DISTRO_ID@-archive-keyring,
+ @DISTRO_ID@-apt-source,
+ linux-generic,
+ initramfs-tools,
+ grub-efi-amd64-signed,
+ shim-signed,
+ secureboot-db,
+ efibootmgr,
+ fwupd,
+ fwupd-signed,
+ cryptsetup-initramfs,
+ systemd-sysv,
+ udev,
+ kmod,
+ dbus-broker,
+ dbus-user-session,
+ libpam-systemd,
+ polkitd,
+ systemd-resolved,
+ systemd-timesyncd,
+ network-manager,
+ wpasupplicant,
+ wireless-regdb,
+ netbase,
+ iproute2,
+ iputils-ping,
+ ca-certificates,
+ pipewire-audio,
+ alsa-ucm-conf,
+ alsa-topology-conf,
+ firmware-sof-signed,
+ apparmor,
+ sudo,
+ locales,
+ tzdata,
+ kbd,
+ console-setup,
+ less,
+ e2fsprogs,
+ dosfstools
+Description: @DISTRO_NAME@ base system (metapackage)
+ Everything a @DISTRO_NAME@ system needs to boot, reach the network and play
+ sound, before any desktop: Ubuntu's signed kernel, shim and GRUB, systemd,
+ AppArmor, NetworkManager with wpa_supplicant, PipeWire with WirePlumber,
+ cryptsetup for an encrypted root, fwupd for firmware updates (with
+ fwupd-signed, the Canonical-signed EFI program that applies UEFI capsule
+ updates), and the @DISTRO_NAME@ apt repository.
+ .
+ This package also sets the system's identity and apt behaviour: it diverts
+ /usr/lib/os-release so the system identifies as @DISTRO_NAME@, turns apt's
+ Install-Recommends off, and hands every network interface to NetworkManager
+ through netplan.

@@ -1,0 +1,11 @@
+# Generated from packages/live/live-boot-test.timer.in by scripts/render.py. Edit the .in file, not this one.
+[Unit]
+Description=Oaxaca live image boot test trigger
+ConditionKernelCommandLine=oaxaca.boottest
+
+[Timer]
+OnBootSec=1s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

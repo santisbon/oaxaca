@@ -1,0 +1,39 @@
+oaxaca-nvidia (0.1.3) stonking; urgency=medium
+
+  * Depend on oaxaca-hybrid-backlight, which hides the NVIDIA driver's
+    phantom backlight device on every hybrid laptop, not only the Legion.
+  * oaxaca-drivers-install also installs nvidia-vaapi-driver after an
+    NVIDIA driver, from the same source, and logs it (docs/7 choice 44).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Tue, 13 Oct 2026 21:00:00 -0500
+
+oaxaca-nvidia (0.1.2) stonking; urgency=medium
+
+  * The initramfs hook adds the NVIDIA modules only when an NVIDIA GPU drives
+    the firmware's display (boot_vga). On hybrid graphics, nvidia_drm with
+    modeset=1 in the initramfs took the boot splash and the disk passphrase
+    prompt to the NVIDIA GPU, which drives no screen, and the Legion laptop
+    booted to a black screen (2026-10-13, docs/7 choice 39).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Tue, 13 Oct 2026 12:00:00 -0500
+
+oaxaca-nvidia (0.1.1) stonking; urgency=medium
+
+  * oaxaca-drivers-install installs from the installation medium's package
+    pool (/cdrom/pool, written by scripts/driver-pool.sh) when the pool is
+    there, through an apt configuration of its own (APT_CONFIG) that names
+    the pool as the only source, so the installer's drivers step works
+    without a network; without a pool it uses the system's apt sources as
+    before (docs/7, choice 20, 2026-10-11).
+  * Log the chosen driver to /var/log/oaxaca/drivers-install.log.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sun, 11 Oct 2026 21:00:00 -0500
+
+oaxaca-nvidia (0.1.0) stonking; urgency=medium
+
+  * Initial release: oaxaca-drivers-install, which runs ubuntu-drivers
+    install with the newest NVIDIA open branch that has prebuilt modules,
+    and an initramfs hook for the prebuilt NVIDIA modules.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 08 Oct 2026 12:00:00 -0500
+

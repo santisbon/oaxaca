@@ -1,0 +1,5 @@
+Types: deb
+URIs: @APT_URL@
+Suites: @BASE_SERIES@
+Components: @APT_COMPONENT@
+Signed-By: /etc/apt/keyrings/@DISTRO_ID@-archive-keyring.gpg

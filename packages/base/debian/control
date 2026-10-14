@@ -1,0 +1,65 @@
+# Generated from packages/base/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: oaxaca-base
+Section: metapackages
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://github.com/santisbon/oaxaca
+Rules-Requires-Root: no
+
+Package: oaxaca-base
+Architecture: all
+Depends: ${misc:Depends},
+ oaxaca-archive-keyring,
+ oaxaca-apt-source,
+ linux-generic,
+ initramfs-tools,
+ grub-efi-amd64-signed,
+ shim-signed,
+ secureboot-db,
+ efibootmgr,
+ fwupd,
+ fwupd-signed,
+ cryptsetup-initramfs,
+ systemd-sysv,
+ udev,
+ kmod,
+ dbus-broker,
+ dbus-user-session,
+ libpam-systemd,
+ polkitd,
+ systemd-resolved,
+ systemd-timesyncd,
+ network-manager,
+ wpasupplicant,
+ wireless-regdb,
+ netbase,
+ iproute2,
+ iputils-ping,
+ ca-certificates,
+ pipewire-audio,
+ alsa-ucm-conf,
+ alsa-topology-conf,
+ firmware-sof-signed,
+ apparmor,
+ sudo,
+ locales,
+ tzdata,
+ kbd,
+ console-setup,
+ less,
+ e2fsprogs,
+ dosfstools
+Description: Oaxaca base system (metapackage)
+ Everything a Oaxaca system needs to boot, reach the network and play
+ sound, before any desktop: Ubuntu's signed kernel, shim and GRUB, systemd,
+ AppArmor, NetworkManager with wpa_supplicant, PipeWire with WirePlumber,
+ cryptsetup for an encrypted root, fwupd for firmware updates (with
+ fwupd-signed, the Canonical-signed EFI program that applies UEFI capsule
+ updates), and the Oaxaca apt repository.
+ .
+ This package also sets the system's identity and apt behaviour: it diverts
+ /usr/lib/os-release so the system identifies as Oaxaca, turns apt's
+ Install-Recommends off, and hands every network interface to NetworkManager
+ through netplan.

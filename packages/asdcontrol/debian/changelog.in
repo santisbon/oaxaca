@@ -1,0 +1,19 @@
+asdcontrol (0.6.0-0oaxaca1) @BASE_SERIES@; urgency=medium
+
+  * Initial @DISTRO_NAME@ package of asdcontrol 0.6.0 (roadmap step 6).
+    Omarchy @OMARCHY_TAG@ installs asdcontrol, and the desktop's
+    oaxaca-brightness-display-apple script (Omarchy's
+    omarchy-brightness-display-apple, renamed) runs "sudo asdcontrol" to read
+    and set the brightness of an Apple Studio Display or Pro Display XDR over
+    USB HID. Ubuntu's archive has no asdcontrol.
+  * The upstream tarball is the GitHub release tag; see the "upstream" file
+    next to debian/.
+  * d/asdcontrol.sudoers, installed as /etc/sudoers.d/50-asdcontrol (mode
+    0440): Omarchy's rule (omacom/omarchy-pkgs, pkgbuilds/asdcontrol/
+    asdcontrol.sudoers) with %sudo in place of %wheel, Ubuntu's admin group.
+    The rule lets members of the sudo group run only the three asdcontrol
+    invocations the brightness script uses, without a password.
+  * d/rules: the upstream Makefile links without LDFLAGS, so the rules file
+    passes dpkg's CPPFLAGS and LDFLAGS through CXXFLAGS for hardening.
+
+ -- @MAINTAINER@  Sat, 10 Oct 2026 12:00:00 -0500

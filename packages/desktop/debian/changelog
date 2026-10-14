@@ -1,0 +1,39 @@
+oaxaca-desktop (4.0.4+git20261013-0oaxaca1) stonking; urgency=medium
+
+  * Version scheme: the upstream version is the Omarchy tag plus the date of
+    the fork commit the packages are built from (+git<YYYYMMDD>), so every
+    change to the fork has its own orig tarball; under the tag alone two
+    revisions shared one orig tarball name with different contents.
+  * New oaxaca-launch-dgpu: runs a command on the discrete GPU of a
+    hybrid-graphics machine, through oaxaca-launch-nvidia on NVIDIA and
+    with DRI_PRIME set to the AMD GPU's PCI address on AMD. The menu's
+    launcher (oaxaca-launch-desktop) uses it for entries that ask for the
+    discrete GPU and for applications listed in ~/.config/oaxaca/dgpu-apps
+    (nvidia-apps, the list's first name, is still read), on NVIDIA and AMD
+    machines alike. oaxaca-debug-launch shows the offload variables
+    (docs/7 choice 43).
+  * The port changes made since the first build, from the fork's branch
+    (2026-10-10 to 2026-10-13): the Plymouth theme and its passphrase hint,
+    the migrations runner, packages added to the base list (plymouth-label,
+    pulseaudio-utils, gawk, libgtk-3-bin, thermald, intel-lpmd,
+    lsp-plugins-lv2), the login screen's user fallback, mise for the
+    commands that need it, the balanced default power profile, the
+    installer's window rule, oaxaca-debug-launch, applications on the
+    display GPU's Mesa driver on hybrid graphics with
+    oaxaca-launch-nvidia, and the menu's discrete-GPU choice.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Tue, 13 Oct 2026 18:00:00 -0500
+
+oaxaca-desktop (4.0.4-0oaxaca1) stonking; urgency=medium
+
+  * Initial release: Omarchy v4.0.4 ported from Arch Linux to Ubuntu
+    (roadmap step 6). One source, five binary packages: oaxaca-desktop
+    (metapackage, dependency list from the ported package list),
+    oaxaca-tools (the commands and install scripts), oaxaca-shell
+    (the Quickshell shell and icon font), oaxaca-themes (theme bundles
+    and templates) and oaxaca-config (Hyprland defaults, /etc/skel seeds,
+    session variables, units, drop-ins, SDDM theme, session file, Plymouth
+    theme files, launchers and branding placeholders). Built from the port
+    branch of the fork named in distro.conf, renamed at build time.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sat, 10 Oct 2026 12:00:00 -0500

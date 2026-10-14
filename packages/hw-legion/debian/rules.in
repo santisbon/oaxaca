@@ -1,0 +1,9 @@
+#!/usr/bin/make -f
+ID = @DISTRO_ID@
+dest = debian/$(ID)-hw-legion
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	install -D -m 0644 gpu $(dest)/etc/$(ID)/gpu

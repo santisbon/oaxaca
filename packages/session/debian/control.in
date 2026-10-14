@@ -1,0 +1,51 @@
+Source: @DISTRO_ID@-session
+Section: metapackages
+Priority: optional
+Maintainer: @MAINTAINER@
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: @DISTRO_HOME_URL@
+Rules-Requires-Root: no
+
+Package: @DISTRO_ID@-session
+Architecture: all
+Depends: ${misc:Depends},
+ @DISTRO_ID@-base,
+ @DISTRO_ID@-nvidia,
+ libgl1-mesa-dri,
+ libegl-mesa0,
+ libgl1,
+ mesa-vulkan-drivers,
+ mesa-va-drivers,
+ intel-media-va-driver-non-free,
+ usbmuxd,
+ hyprland,
+ xwayland,
+ uwsm,
+ sddm,
+ qt6-wayland,
+ xdg-desktop-portal,
+ xdg-desktop-portal-hyprland,
+ xdg-desktop-portal-gtk,
+ gnome-keyring,
+ libpam-gnome-keyring,
+ libsecret-1-0,
+ quickshell (>= 0.3.2)
+Description: @DISTRO_NAME@ graphics and session layer (metapackage)
+ Everything between the base system and the desktop: Mesa (OpenGL, EGL,
+ Vulkan and VA-API drivers for Intel, AMD and virtual GPUs), the Hyprland
+ compositor with Xwayland for X11 applications, uwsm to run the compositor
+ as a systemd user session, the SDDM display manager with Qt's Wayland
+ platform plugin for its greeter, and the desktop portals (the Hyprland
+ backend for screen sharing and screenshots, the GTK backend for file
+ dialogs), Quickshell 0.3.2 or newer (the Qt/QML toolkit the desktop
+ shell runs on; the archive's 0.3.0 predates fixes to the session lock),
+ and GNOME Keyring as the secret store (the Secret Service
+ that browsers and other desktop applications keep credentials in),
+ with its PAM module so that the login password unlocks the keyring and
+ a password change follows. The NVIDIA install path comes through
+ @DISTRO_ID@-nvidia.
+ .
+ This package also configures SDDM: its greeter runs on Wayland under a
+ Hyprland instance with a minimal configuration, so no X server and no
+ second compositor are needed for the login screen.

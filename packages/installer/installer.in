@@ -1,0 +1,9 @@
+#!/bin/bash
+# Starts the installer (Ubuntu's calamares, configured by this package) from the live
+# session. Calamares needs root for partitioning and must reach the session's Wayland
+# display; casper gives the live user passwordless sudo (its 25adduser writes
+# /etc/sudoers.d/casper), and -E keeps the session's environment, which an ALL rule permits
+# (sudoers(5): a command matching ALL implies SETENV). -D8 is Calamares's full debug log,
+# the level Lubuntu's launcher uses, kept in the journal for the ISO boot test and bug reports.
+export QT_QPA_PLATFORM=wayland
+exec sudo -E calamares -D8

@@ -1,0 +1,37 @@
+Source: nwg-displays
+Section: x11
+Maintainer: @MAINTAINER@
+XSBC-Original-Maintainer: Debian Python Team <team+python@tracker.debian.org>
+Uploaders: Maytham Alsudany <maytham@debian.org>
+Rules-Requires-Root: no
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-sequence-python3,
+ gir1.2-gtk-3.0,
+ gir1.2-gtklayershell-0.1,
+ python3,
+ python3-gi,
+ python3-i3ipc,
+ python3-setuptools,
+Standards-Version: 4.7.4
+Homepage: https://github.com/nwg-piotr/nwg-displays
+
+Package: nwg-displays
+Architecture: all
+Depends:
+ gir1.2-gtk-3.0,
+ gir1.2-gtklayershell-0.1,
+ python3-gi,
+ python3-i3ipc,
+ ${misc:Depends},
+ ${python3:Depends},
+Description: output management utility for Wayland compositors like Sway
+ nwg-displays is an output management utility for sway and Hyprland Wayland
+ compositors, inspired by wdisplays and wlay. The program is expected to:
+  - provide an intuitive GUI to manage multiple displays;
+  - apply settings;
+  - save outputs configuration to a text file;
+  - save workspace -> output assignments to a text file;
+  - support sway and Hyprland only.
+ .
+ This application is a part of the nwg-shell project.

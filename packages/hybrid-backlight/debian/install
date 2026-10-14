@@ -1,0 +1,2 @@
+# Generated from packages/hybrid-backlight/debian/install.in by scripts/render.py. Edit the .in file, not this one.
+hide-phantom-backlight usr/libexec/oaxaca/

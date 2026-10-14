@@ -1,0 +1,6 @@
+# The port of Omarchy: a git tree, not a tarball (see scripts/build.sh). UPSTREAM_DIR=<checkout>
+# in the environment builds from a local working tree instead, uncommitted changes included.
+GIT=@OMARCHY_FORK@
+REF=@OMARCHY_PORT_REF@
+# The commit's date (UTC, YYYYMMDD), the +git part of the upstream version; build.sh checks it.
+DATE=@OMARCHY_PORT_DATE@

@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+ID = @DISTRO_ID@
+dest = debian/$(ID)-live
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	install -D -m 0755 casper-bottom/16_autologin $(dest)/usr/share/initramfs-tools/scripts/casper-bottom/16$(ID)_autologin
+	install -D -m 0755 casper-bottom/26_liveuser $(dest)/usr/share/initramfs-tools/scripts/casper-bottom/26$(ID)_liveuser
+	install -D -m 0755 live-boot-test $(dest)/usr/libexec/$(ID)/live-boot-test
+	install -D -m 0644 live-boot-test.service $(dest)/usr/lib/systemd/system/$(ID)-live-boot-test.service
+	install -D -m 0644 live-boot-test.timer $(dest)/usr/lib/systemd/system/$(ID)-live-boot-test.timer

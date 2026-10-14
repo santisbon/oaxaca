@@ -1,0 +1,8 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format. DSC= names Ubuntu's own source
+# package for kpmcore in stonking (26.08.1-0ubuntu1, universe, published 2026-09-21), which
+# build.sh downloads into build/dsc/kpmcore/ together with the orig and debian tarballs the
+# .dsc lists, unpacks with dpkg-source -x, and lays this directory's debian/ over: one patch,
+# its series line and one changelog entry. The SHA-256 is of the .dsc file and came out of
+# sha256sum on the download on 2026-10-11; the .dsc's own checksums cover the tarballs.
+DSC=https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/kpmcore/26.08.1-0ubuntu1/kpmcore_26.08.1-0ubuntu1.dsc
+SHA256=706a35f32847d30332f660e975a046df9db7e58c203f638ae31d4921819ad6ac

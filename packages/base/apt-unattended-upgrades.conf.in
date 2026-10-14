@@ -1,0 +1,21 @@
+// Installed by @DISTRO_ID@-base as /etc/apt/apt.conf.d/51@DISTRO_ID@-unattended-upgrades.
+//
+// Ubuntu's 50unattended-upgrades (a conffile of the unattended-upgrades package, left as
+// shipped) lists the origins it may upgrade from as "${distro_id}:${distro_codename}-security"
+// and friends. unattended-upgrade fills ${distro_id} from "lsb_release -i -s", and on
+// @BASE_SERIES@ lsb_release is a shell script that reads /etc/os-release, which this package
+// diverts to say ID=@DISTRO_ID@. So those entries resolve to "@DISTRO_NAME@:@BASE_SERIES@-security",
+// an origin nothing publishes, and no Ubuntu security update would ever be installed
+// unattended (found 2026-10-11, roadmap step 8). Ubuntu's archive keeps "Origin: Ubuntu".
+//
+// #clear is the only way to replace an apt list (apt.conf(5)); a later file can only append.
+// The list below is Ubuntu's own with the literal name, and nothing more: the distro's own
+// archive ("Origin: @APT_ORIGIN@", suite @BASE_SERIES@) is left out on purpose, so the desktop's
+// packages move only through "@DISTRO_ID@-update", which runs their migrations afterwards.
+#clear Unattended-Upgrade::Allowed-Origins;
+Unattended-Upgrade::Allowed-Origins {
+	"Ubuntu:@BASE_SERIES@";
+	"Ubuntu:@BASE_SERIES@-security";
+	"UbuntuESMApps:@BASE_SERIES@-apps-security";
+	"UbuntuESM:@BASE_SERIES@-infra-security";
+};

@@ -1,0 +1,64 @@
+#!/bin/sh
+# Generated from packages/base/loader-fallback.in by scripts/render.py. Edit the .in file, not this one.
+# loader-fallback: keep the previous system bootable from a shared EFI System Partition even
+# after Oaxaca's /boot is gone.
+#
+# Anatomy: Ubuntu's signed GRUB (/EFI/ubuntu/grubx64.efi on the EFI System Partition) reads one
+# stub, /EFI/ubuntu/grub.cfg, which grub-install writes as "search.fs_uuid <uuid of /boot> root",
+# a prefix and "configfile". When Oaxaca shares the partition with another Ubuntu-family
+# system, Oaxaca's installer and every later grub-install here (the maintainer scripts of
+# grub-efi-amd64-signed and shim-signed run it on upgrades) point the stub at Oaxaca's
+# /boot only; deleting Oaxaca's partitions then leaves the machine at a GRUB prompt (Legion
+# laptop, 2026-10-12). This script rewrites the stub so it tries Oaxaca's /boot and, when
+# that filesystem is not found, loads the previous system's own grub.cfg. The previous system is
+# named in /etc/oaxaca/previous-loader (UUID= and PREFIX= lines), which the installer writes
+# (keep-previous-loader) when it finds another system's stub; without that file the script does
+# nothing. It also does nothing when the stub is not Oaxaca's (the other system ran its own
+# grub-install since and owns the stub again), so it never takes the stub over.
+#
+# Runs from: the installer, right after its bootloader step, with the target's root as $1; and
+# dpkg triggers on /usr/lib/grub/x86_64-efi-signed and /usr/lib/shim (this package's
+# debian/triggers), which fire after those packages' maintainer scripts have run grub-install.
+# The signed image carries search, test and configfile (grub2's debian/build-efi-images).
+# Usage: loader-fallback [root]     LOADER_FALLBACK_OWN_UUID overrides the /boot lookup (tests).
+set -eu
+root=${1:-}
+root=${root%/}
+id=oaxaca
+conf="$root/etc/$id/previous-loader"
+stub="$root/boot/efi/EFI/ubuntu/grub.cfg"
+[ -f "$conf" ] || exit 0
+[ -f "$stub" ] || { echo "$id-loader-fallback: no stub at $stub"; exit 0; }
+prev_uuid=$(sed -n 's/^UUID=//p' "$conf" | head -1)
+prev_prefix=$(sed -n 's/^PREFIX=//p' "$conf" | head -1)
+[ -n "$prev_uuid" ] && [ -n "$prev_prefix" ] || { echo "$id-loader-fallback: $conf names no UUID and PREFIX"; exit 0; }
+# This system's /boot: a separate filesystem (prefix /grub) or the root's /boot (/boot/grub).
+own_uuid=${LOADER_FALLBACK_OWN_UUID:-}
+own_prefix=/grub
+if [ -z "$own_uuid" ]; then
+    own_uuid=$(findmnt -no UUID "$root/boot" 2>/dev/null || true)
+    if [ -z "$own_uuid" ]; then own_uuid=$(findmnt -no UUID "${root:-/}" 2>/dev/null || true); own_prefix=/boot/grub; fi
+fi
+[ -n "$own_uuid" ] || { echo "$id-loader-fallback: cannot find this system's /boot"; exit 0; }
+[ "$own_uuid" != "$prev_uuid" ] || exit 0
+# Whose stub is it? grub-install's form names one UUID on its first search line; ours names ours
+# first. Anything that does not lead with ours belongs to the other system: leave it alone.
+first=$(grep -o -m1 '[0-9A-Fa-f]\{8\}-[0-9A-Fa-f-]\{27\}' "$stub" || true)
+if [ "$first" != "$own_uuid" ]; then
+    echo "$id-loader-fallback: the stub names $first, not this system's /boot $own_uuid; left as it is"
+    exit 0
+fi
+tmp="$stub.$id-new"
+cat > "$tmp" <<STUB
+# Written by $id-loader-fallback: $(. "$root/usr/lib/os-release" 2>/dev/null; echo "${NAME:-$id}")'s /boot first, and, when that
+# filesystem is not on this machine, the previous system's own GRUB configuration.
+if search --no-floppy --fs-uuid --set=root $own_uuid; then
+    set prefix=(\$root)'$own_prefix'
+    configfile \$prefix/grub.cfg
+fi
+search --no-floppy --fs-uuid --set=root $prev_uuid
+set prefix=(\$root)'$prev_prefix'
+configfile \$prefix/grub.cfg
+STUB
+mv "$tmp" "$stub"
+echo "$id-loader-fallback: the stub tries $own_uuid, then the previous system on $prev_uuid"

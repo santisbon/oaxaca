@@ -1,0 +1,5 @@
+# lintian sees libyaml's strings in the binary and reports the C library as embedded.
+# The strings come from the unsafe-libyaml crate (a line-by-line Rust translation of
+# libyaml, which the serde_yaml crate depends on), linked statically like every other
+# Rust crate; the binary does not contain the C libyaml.
+hyprland-preview-share-picker: embedded-library libyaml [usr/bin/hyprland-preview-share-picker]

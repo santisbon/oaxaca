@@ -1,0 +1,32 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/buildflags.mk
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh $@
+
+# The upstream Makefile compiles and links in one step with CXXFLAGS only, so dpkg's
+# CPPFLAGS and LDFLAGS (hardening) ride along in CXXFLAGS.
+override_dh_auto_build:
+	dh_auto_build -- CXXFLAGS="$(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS)"
+
+# The sudoers rule matches command arguments with regular expressions (sudo 1.9.10 and
+# later). visudo from the build chroot's sudo package (sudo 1.9.17 in stonking) parses the
+# rule, so a rule that sudo would reject fails the build rather than the installed system.
+override_dh_auto_test:
+	visudo -c -f debian/asdcontrol.sudoers
+
+# The upstream "make install" copies the binary to /usr/local/bin and ignores DESTDIR;
+# debian/install places the binary and the rule below places the sudoers file.
+override_dh_auto_install:
+
+execute_after_dh_install:
+	install -D -m 0440 debian/asdcontrol.sudoers debian/asdcontrol/etc/sudoers.d/50-asdcontrol
+
+# dh_fixperms resets every file under /etc to 0644; sudo refuses a sudoers.d file that
+# is group or world writable, so the mode is set again afterwards.
+override_dh_fixperms:
+	dh_fixperms
+	chmod 0440 debian/asdcontrol/etc/sudoers.d/50-asdcontrol

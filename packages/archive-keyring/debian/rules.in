@@ -1,0 +1,9 @@
+#!/usr/bin/make -f
+ID = @DISTRO_ID@
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	install -D -m 0644 archive-keyring.gpg debian/$(ID)-archive-keyring/etc/apt/keyrings/$(ID)-archive-keyring.gpg
+	install -D -m 0644 archive.sources debian/$(ID)-apt-source/etc/apt/sources.list.d/$(ID).sources

@@ -1,0 +1,20 @@
+# @DISTRO_ID@-volume-monitors.service, installed by @DISTRO_ID@-session: start gvfs's volume monitors
+# in the background right after login, so the first application that needs them (Files) does
+# not wait for them. One of them, the camera monitor (gvfs-gphoto2-volume-monitor), probes every
+# USB device that udev marks as a camera, Apple's iPhones and iPads included, and on the Legion
+# laptop with an iPad connected that took 2 to 4 s, all of which Files' first launch of a session
+# waited for (docs/7, choice 46). "gio mount -l" asks GIO for its volume monitor, which starts
+# every gvfs volume monitor; the monitors then stay up for the session. Nothing is removed: the
+# camera route and the Apple route (gvfs-afc-volume-monitor, through usbmuxd) both stay.
+[Unit]
+Description=Start the gvfs volume monitors in the background
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/gio mount -l
+StandardOutput=null
+
+[Install]
+WantedBy=graphical-session.target

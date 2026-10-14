@@ -1,0 +1,10 @@
+[Unit]
+Description=@DISTRO_NAME@ live image boot test trigger
+ConditionKernelCommandLine=@DISTRO_ID@.boottest
+
+[Timer]
+OnBootSec=1s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

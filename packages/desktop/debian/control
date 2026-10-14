@@ -1,0 +1,111 @@
+# Generated from packages/desktop/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: oaxaca-desktop
+Section: x11
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13), python3-fonttools, imagemagick, fonts-dejavu-core, perl
+Standards-Version: 4.7.2
+Homepage: https://github.com/santisbon/oaxaca
+Rules-Requires-Root: no
+
+Package: oaxaca-desktop
+Architecture: all
+Depends: ${misc:Depends},
+ oaxaca-session,
+ oaxaca-shell (= ${binary:Version}),
+ oaxaca-themes (= ${binary:Version}),
+ oaxaca-config (= ${binary:Version}),
+ oaxaca-tools (= ${binary:Version}),
+ oaxaca-fonts,
+ asdcontrol,
+ hyprland-preview-share-picker,
+ nwg-displays (>= 0.4.3),
+ ${port:Depends}
+Suggests: oaxaca-desktop-apps, oaxaca-hw-legion, nvtop, intel-media-va-driver-non-free
+Description: Oaxaca desktop (metapackage)
+ The whole desktop: the session layer, the shell, the themes, the
+ configuration, the command-line tools and the fonts, plus every
+ application and utility Omarchy's package list names that Ubuntu's
+ archive carries, under the Ubuntu names. The list is read at build time
+ from install/oaxaca-base.packages in the ported Omarchy tree, so the
+ dependency list and the tree stay in step.
+ .
+ No web browser is included: Ubuntu's browser packages are snap
+ placeholders, and the distro keeps snapd out. "oaxaca-install-browser"
+ installs Chrome, Firefox, Brave or Edge from the vendor's own apt source.
+
+Package: oaxaca-tools
+Architecture: all
+Depends: ${misc:Depends},
+ gum, jq, git, perl, python3, fzf, ripgrep, fd-find, bat,
+ hyprland, uwsm, wl-clipboard, grim, slurp, hyprland-guiutils, hyprpicker,
+ hyprsunset, xdg-terminal-exec, xdg-utils, xdg-user-dirs,
+ desktop-file-utils, libglib2.0-bin, imagemagick, playerctl, brightnessctl,
+ pamixer, qrencode, zbar-tools, tesseract-ocr, tesseract-ocr-eng, socat,
+ wtype, udiskie, pciutils, usbutils
+Conflicts: fdclone
+Description: Oaxaca command-line tools
+ The oaxaca-* commands Omarchy's bin/ directory holds, ported from
+ pacman to apt: theme switching, screenshots and recordings, the menu and
+ notification helpers, hardware detection, the update pipeline, the
+ security setup for fingerprint readers and FIDO2 keys, and the "oaxaca"
+ dispatcher that groups them. Also the install-time scripts under
+ /usr/share/oaxaca/install that the installer runs on a new system.
+ .
+ Ubuntu ships fd as fdfind and bat as batcat; this package adds the
+ /usr/bin/fd and /usr/bin/bat names the scripts and the shell aliases use.
+
+Package: oaxaca-shell
+Architecture: all
+Depends: ${misc:Depends},
+ quickshell (>= 0.3.2),
+ qml6-module-qtquick, qml6-module-qtquick-controls, qml6-module-qtquick-layouts,
+ qml6-module-qtquick-shapes, qml6-module-qtquick-effects, qml6-module-qtquick-window,
+ qml6-module-qtqml-models,
+ oaxaca-config (= ${binary:Version}),
+ oaxaca-fonts,
+ libxkbcommon-tools
+Description: Oaxaca desktop shell (Quickshell)
+ The bar, launcher and menu, panels for audio, Bluetooth, network, power
+ and brightness, notifications, the lock screen, the screensaver and the
+ on-screen display: one Quickshell process loading the plugins under
+ /usr/share/oaxaca/shell. The icon font the menu uses for application
+ marks comes with it, and so do the Qt QML modules the shell's files import
+ (QtQuick with Controls, Layouts, Shapes, Effects and Window, QtQml.Models),
+ which Ubuntu's quickshell package only partly depends on.
+
+Package: oaxaca-themes
+Architecture: all
+Depends: ${misc:Depends}
+Description: Oaxaca theme bundles and templates
+ The 22 theme bundles (colour palettes, backgrounds, previews) under
+ /usr/share/oaxaca/themes and the templates under
+ /usr/share/oaxaca/default/themed that "oaxaca-theme-set" renders
+ into the terminal, editor, browser and shell colour files of the active
+ theme.
+
+Package: oaxaca-config
+Architecture: all
+Depends: ${misc:Depends},
+ oaxaca-session,
+ oaxaca-tools (= ${binary:Version}),
+ oaxaca-themes (= ${binary:Version}),
+ hicolor-icon-theme, fontconfig, bluez-tools
+Description: Oaxaca configuration and defaults
+ Everything that has to be on the system for the desktop to come up: the
+ Hyprland configuration and the defaults under /usr/share/oaxaca/default,
+ the per-user defaults seeded through /etc/skel, the uwsm and
+ environment.d session variables, the fontconfig rules, the systemd user
+ units (sleep lock, Bluetooth agent, migration notice, crash watch), the
+ system drop-ins (logind), the SDDM theme and
+ the Wayland session file, the Plymouth theme files, the application
+ launchers and icons, and the branding files.
+
+Package: oaxaca-desktop-apps
+Architecture: all
+Depends: ${misc:Depends}, evince, gnome-disk-utility, ffmpegthumbnailer
+Description: optional applications for the Oaxaca desktop
+ The applications a desktop usually has that nothing in the desktop's own
+ scripts or shell needs: a PDF viewer (Evince, the mimeapps default), GNOME Disks,
+ and video thumbnails in the file manager. Installed on request, not by
+ oaxaca-desktop, which only suggests it.

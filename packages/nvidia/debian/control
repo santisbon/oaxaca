@@ -1,0 +1,38 @@
+# Generated from packages/nvidia/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: oaxaca-nvidia
+Section: admin
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://github.com/santisbon/oaxaca
+Rules-Requires-Root: no
+
+Package: oaxaca-nvidia
+Architecture: all
+Depends: ${misc:Depends}, python3, initramfs-tools, ubuntu-drivers-common, nvidia-prime, oaxaca-hybrid-backlight
+Description: NVIDIA install path for Oaxaca (detector and early KMS)
+ Oaxaca does not ship the NVIDIA driver in its images. This package
+ ships what makes installing it on the target machine a single command, and
+ what Ubuntu's driver packages leave out for a Wayland desktop:
+ .
+  * oaxaca-drivers-install: runs ubuntu-drivers install --no-oem with
+    the newest NVIDIA open branch that has Canonical's prebuilt signed
+    modules (linux-modules-nvidia-<branch>-open-*) for the installed
+    kernel, so Secure Boot needs no MOK enrollment. ubuntu-drivers' own
+    choice would be the long-term branch (LTSB) over the newer one (NFB).
+    With no NVIDIA GPU, or one the open modules do not support,
+    ubuntu-drivers' own choice applies. The installed packages are
+    recorded in /var/log/oaxaca/drivers.list.
+  * an initramfs-tools hook that copies the nvidia, nvidia_modeset,
+    nvidia_uvm and nvidia_drm modules into the initramfs once they are
+    installed, so the kernel sets the display mode early (KMS) with the
+    modeset=1 option that nvidia-kernel-common-* ships. Ubuntu's own hook
+    only looks in the DKMS module directory and so skips the prebuilt
+    modules. Without the driver the hook copies nothing.
+  * nvidia-prime as a dependency: after installing an NVIDIA driver,
+    ubuntu-drivers runs "prime-select on-demand" when that command exists,
+    which puts a hybrid laptop's NVIDIA GPU into runtime power management
+    (gpu-manager then writes /lib/modprobe.d/nvidia-runtimepm.conf). The
+    driver packages only recommend nvidia-prime, and Oaxaca installs
+    no Recommends, so the dependency is explicit here.

@@ -1,0 +1,7 @@
+# Generated from packages/desktop/upstream.in by scripts/render.py. Edit the .in file, not this one.
+# The port of Omarchy: a git tree, not a tarball (see scripts/build.sh). UPSTREAM_DIR=<checkout>
+# in the environment builds from a local working tree instead, uncommitted changes included.
+GIT=https://github.com/santisbon/omarchy
+REF=oaxaca
+# The commit's date (UTC, YYYYMMDD), the +git part of the upstream version; build.sh checks it.
+DATE=20261013

@@ -1,0 +1,13 @@
+# Generated from packages/hybrid-backlight/debian/service.in by scripts/render.py. Edit the .in file, not this one.
+[Unit]
+Description=Hide the phantom NVIDIA backlight device on hybrid laptops
+Documentation=file:/usr/share/doc/oaxaca-hybrid-backlight/README.md
+
+[Service]
+Type=oneshot
+# "no" so the udev rule can start it again each time a backlight device appears.
+RemainAfterExit=no
+ExecStart=/usr/libexec/oaxaca/hide-phantom-backlight
+
+[Install]
+WantedBy=multi-user.target

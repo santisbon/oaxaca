@@ -1,0 +1,6 @@
+# Installed by the base metapackage. Ubuntu's NetworkManager package depends on
+# netplan; this file hands every interface to NetworkManager so netplan writes
+# no systemd-networkd configuration of its own.
+network:
+  version: 2
+  renderer: NetworkManager

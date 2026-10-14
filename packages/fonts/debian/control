@@ -1,0 +1,28 @@
+# Generated from packages/fonts/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: oaxaca-fonts
+Section: fonts
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13), unzip
+Standards-Version: 4.7.2
+Homepage: https://github.com/santisbon/oaxaca
+Rules-Requires-Root: no
+
+Package: oaxaca-fonts
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}
+Description: Oaxaca desktop fonts (JetBrains Mono Nerd Font, iA Writer)
+ The two font families the Oaxaca desktop asks for by name and
+ Ubuntu's archive does not carry:
+ .
+  * JetBrains Mono Nerd Font (Regular, Bold, Italic, Bold Italic): the
+    JetBrains Mono typeface patched by the Nerd Fonts project with icon
+    glyphs. The desktop shell, the terminal and the editor configuration
+    ask for "JetBrainsMono Nerd Font", and the icons in the shell's bar
+    and menus come from this font.
+  * iA Writer Mono S, Quattro S, Duo S and Duospace (Regular, Bold,
+    Italic, Bold Italic): the writing typefaces of iA Writer, derived
+    from IBM Plex, used for documents and notes.
+ .
+ The files install under /usr/share/fonts/truetype/oaxaca/.

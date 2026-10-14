@@ -1,0 +1,29 @@
+oaxaca-hw-legion (0.1.2) stonking; urgency=medium
+
+  * Keep only what is specific to this model, /etc/oaxaca/gpu: the other
+    dependencies serve every machine and moved (docs/7 choice 44): fwupd to
+    oaxaca-base with fwupd-signed, intel-media-va-driver-non-free to
+    oaxaca-session, oaxaca-hybrid-backlight to oaxaca-nvidia,
+    nvidia-vaapi-driver to oaxaca-drivers-install; firmware-sof-signed,
+    alsa-ucm-conf, linux-firmware, bolt and asdcontrol already came with
+    oaxaca-base, the kernel and oaxaca-desktop.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Tue, 13 Oct 2026 20:00:00 -0500
+
+oaxaca-hw-legion (0.1.1) stonking; urgency=medium
+
+  * Name the Intel GPU in /etc/oaxaca/gpu, read by oaxaca-session's user
+    environment generator, instead of a static environment.d file: Hyprland's
+    backend fails to start when AQ_DRM_DEVICES holds the by-path symlink, so
+    the generator resolves the name to the card's node at login (QEMU,
+    2026-10-11).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sun, 11 Oct 2026 20:00:00 -0500
+
+oaxaca-hw-legion (0.1.0) stonking; urgency=medium
+
+  * Initial release: the "add" packages from the plan's inventory of the
+    Lenovo Legion Pro 7 16IAX10H and the AQ_DRM_DEVICES session variable
+    that keeps Hyprland on the Intel GPU (roadmap step 6).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sat, 10 Oct 2026 12:00:00 -0500

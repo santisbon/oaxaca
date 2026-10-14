@@ -1,0 +1,41 @@
+#!/bin/sh
+# Generated from packages/nvidia/debian/initramfs-hook.in by scripts/render.py. Edit the .in file, not this one.
+# oaxaca-nvidia: copy the NVIDIA kernel modules into the initramfs when they are installed.
+#
+# Ubuntu's own hook (framebuffer-nvidia, from nvidia-kernel-common-*) copies modules found
+# under updates/dkms only, the directory DKMS builds into. Canonical's prebuilt signed modules
+# (linux-modules-nvidia-<branch>[-open]-<kernel>) live under kernel/nvidia-<branch>[-open]/,
+# so that hook copies nothing for them and the display mode is set late, by udev. This hook
+# names the modules; manual_add_modules resolves them for the initramfs' kernel version and
+# ignores names that are not installed (dracut-install -o), so a machine without the driver
+# gets the same initramfs as before. initramfs-tools copies /etc/modprobe.d into the initramfs
+# on its own, which carries nvidia-kernel-common's "options nvidia_drm modeset=1".
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in
+prereqs) prereqs; exit 0 ;;
+esac
+# Only when an NVIDIA GPU drives the firmware's display (boot_vga = 1 under its PCI device): with
+# "options nvidia_drm modeset=1", nvidia_drm in the initramfs takes over the firmware framebuffer
+# at once. On hybrid graphics, where an Intel or AMD GPU drives the panel and the initramfs has
+# no driver for it, the boot splash and the disk passphrase prompt then go to the NVIDIA GPU,
+# which drives no screen, and the machine sits at an invisible prompt (Lenovo Legion Pro 7,
+# 2026-10-13, docs/7 choice 39). There the NVIDIA modules load later, from the root filesystem,
+# as Ubuntu does. When no GPU says which one the firmware used (no boot_vga files, as in a
+# container), the modules are added as before.
+nvidia_drives_display() {
+    found=""
+    for dev in /sys/bus/pci/devices/*; do
+        [ -r "$dev/boot_vga" ] || continue
+        found=1
+        if [ "$(cat "$dev/boot_vga")" = 1 ]; then
+            [ "$(cat "$dev/vendor" 2>/dev/null)" = 0x10de ] && return 0
+            return 1
+        fi
+    done
+    [ -z "$found" ]
+}
+. /usr/share/initramfs-tools/hook-functions
+if nvidia_drives_display; then
+    manual_add_modules nvidia nvidia_modeset nvidia_uvm nvidia_drm
+fi

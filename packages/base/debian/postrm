@@ -1,0 +1,10 @@
+#!/bin/sh
+# Generated from packages/base/debian/postrm.in by scripts/render.py. Edit the .in file, not this one.
+# Undo the preinst's diversion once this package's os-release is gone, so
+# base-files' original comes back as /usr/lib/os-release.
+set -e
+if [ "$1" = remove ] || [ "$1" = abort-install ]; then
+    dpkg-divert --package oaxaca-base --rename \
+        --divert /usr/lib/os-release.ubuntu --remove /usr/lib/os-release
+fi
+#DEBHELPER#

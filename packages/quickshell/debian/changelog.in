@@ -1,0 +1,46 @@
+quickshell (0.3.2-0oaxaca1) @BASE_SERIES@; urgency=medium
+
+  * New upstream release 0.3.2, built for @DISTRO_NAME@ from Debian's 0.3.1-1
+    packaging (roadmap step 5). Omarchy @OMARCHY_TAG@ pins Quickshell 0.3.2;
+    0.3.1 fixed session lock crashes on sleep, wake and unlock (the shell's
+    lock screen), 0.3.2 fixed networking after a NetworkManager restart and
+    reentrant session lock crashes. Ubuntu's archive has 0.3.0.
+  * d/control: @DISTRO_NAME@ as Maintainer, Debian's maintainer as
+    XSBC-Original-Maintainer; Vcs fields dropped (they named Debian's tree).
+  * d/rules: DISTRIBUTOR=@DISTRO_NAME@.
+  * d/gbp.conf, d/salsa-ci.yml: dropped (Debian's workflow files).
+  * The upstream tarball comes from the GitHub release tag, as Debian's
+    d/watch fetches it; see the "upstream" file next to debian/.
+
+ -- @MAINTAINER@  Fri, 09 Oct 2026 12:00:00 -0500
+
+quickshell (0.3.1-1) unstable; urgency=medium
+
+  * New upstream release.
+  * d/copyright: Update path for src/wayland/toplevel/
+
+ -- Michael Lloyd <michael@micl.dev>  Mon, 24 Aug 2026 20:06:42 +1000
+
+quickshell (0.3.0-1) unstable; urgency=medium
+
+  * New upstream release.
+  * d/watch, d/upstream/signing-key.asc: Verify signed upstream tag.
+  * d/control: Restrict architecture to linux-any.
+  * d/control: Add libcpptrace-dev, libvulkan-dev, libpolkit-agent-1-dev,
+    libpolkit-gobject-1-dev, and libglib2.0-dev to Build-Depends.
+  * d/rules: Disable PCH to work around non-deterministic DWARF
+    (see GCC bug 124811, Debian #1131840).
+  * d/rules: Drop CRASH_REPORTER and DISTRIBUTOR_DEBUGINFO_AVAILABLE,
+    which were removed upstream after cpptrace replaced breakpad.
+  * d/control: Bump Standards-Version to 4.7.4 (no changes needed).
+  * d/control: Drop redundant Priority: optional from source paragraph.
+  * d/copyright: Extend outfoxxed copyright range to 2026.
+  * d/quickshell.1: Update for 0.3.0.
+
+ -- Michael Lloyd <michael@micl.dev>  Wed, 06 May 2026 16:28:12 +1000
+
+quickshell (0.2.1-1) unstable; urgency=medium
+
+  * Initial release. (Closes: #1129032)
+
+ -- Michael Lloyd <michael@micl.dev>  Fri, 27 Feb 2026 12:54:57 +1100

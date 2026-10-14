@@ -1,0 +1,268 @@
+#!/bin/bash
+# Generated from packages/live/live-boot-test.in by scripts/render.py. Edit the .in file, not this one.
+# The ISO boot test's guest half (scripts/iso-boot-test.sh is the host half). Runs as root
+# from a oneshot unit, only when the kernel command line carries oaxaca.boottest, which
+# the test variant of the ISO's GRUB entry sets. Prints one line per check on the console
+# (the serial line QEMU logs), then powers the guest off. The checks mirror the desktop
+# boot test's where the live session is concerned, and add what the ISO is for: Secure
+# Boot state, casper, the live user, and the installer running in the session.
+id=oaxaca
+user=$id
+uid=$(id -u "$user" 2>/dev/null || echo 1000)
+as_user() { runuser -u "$user" -- env XDG_RUNTIME_DIR=/run/user/$uid DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus HYPRLAND_INSTANCE_SIGNATURE="$sig" OAXACA_PATH=/usr/share/oaxaca "$@"; }
+
+# Kernel messages share the serial console with these lines and can land mid-line (a raid6
+# benchmark line glued to "shell layers:" failed a check on 2026-10-11); keep them off the
+# console from here on.
+dmesg -n 1
+# Keep the live user's manager (and /run/user/<uid>, where Hyprland writes its log) alive after
+# a session that ends at once, so a compositor failure can be read below. Test ISO only.
+loginctl enable-linger "$user" 2>/dev/null
+echo "=== LIVE-TEST BEGIN"
+echo "kernel: $(uname -r)"
+echo "cmdline casper: $(grep -c 'boot=casper' /proc/cmdline)"
+echo "secure boot: $(mokutil --sb-state 2>&1 | paste -sd' ')"
+echo "live user: $(getent passwd "$user" | cut -d: -f1,3)"
+echo "live sudo: $(runuser -u "$user" -- sudo -n true 2>&1 && echo ok || echo no)"
+# Flathub is added by oaxaca-apply-system at install time, so the live session has none; flatpak itself is present.
+echo "flatpak: $(command -v flatpak >/dev/null && echo yes || echo no)"
+echo "snapd: $(systemctl is-enabled snapd.socket 2>/dev/null)"
+
+# Wait for the session: SDDM autologin, uwsm, Hyprland, then the shell.
+sig=""
+for _ in $(seq 1 120); do
+  sig=$(ls /run/user/$uid/hypr 2>/dev/null | head -1)
+  [[ -n $sig ]] && as_user hyprctl version >/dev/null 2>&1 && break
+  sleep 2
+done
+echo "hyprland signature: ${sig:+yes}"
+# The session's start, for a run where Hyprland never comes up: the display manager, the
+# user manager (which runs the environment generators), and the first session lines.
+echo "sddm: $(systemctl is-active sddm 2>&1) user manager: $(systemctl is-active user@$uid 2>&1)"
+journalctl -b -o cat -u sddm 2>/dev/null | tail -n 4 | cut -c1-180 | sed 's/^/sddm journal: /'
+journalctl -b -o cat -u user@$uid 2>/dev/null | tail -n 4 | cut -c1-180 | sed 's/^/user manager journal: /'
+echo "cmdline gpu: $(tr ' ' '\n' < /proc/cmdline | grep "^$id.gpu=" || echo none)"
+journalctl -b -o cat -u user@$uid 2>/dev/null | grep -iE 'generator|environment|failed|error' | head -n 4 | cut -c1-180 | sed 's/^/user manager env: /'
+journalctl -b -o cat _SYSTEMD_USER_UNIT=wayland-wm@hyprland.desktop.service 2>/dev/null | grep -v 'RTKit' | tail -n 25 | cut -c1-200 | sed 's/^/compositor unit: /'
+echo "generator output: [$(sh /usr/lib/systemd/user-environment-generators/50-$id-gpu 2>&1 | paste -sd' ')]"
+if [[ -z $sig ]]; then for log in /run/user/$uid/hypr/*/hyprland.log; do [[ -f $log ]] && tail -n 30 "$log" | grep -v 'RTKit' | cut -c1-200 | sed 's/^/hyprland log: /'; done; fi
+echo "user env gpu: $(as_user systemctl --user show-environment 2>/dev/null | grep '^AQ_DRM' || echo none)"
+# The session starts gvfs's volume monitors in the background at login (docs/7, choice 46): the
+# unit ran, and the monitors are up, Apple's (gvfs-afc, through usbmuxd) included.
+echo "volume monitors unit: $(as_user systemctl --user show $id-volume-monitors.service -p Result --value 2>&1) enabled=$(as_user systemctl --user is-enabled $id-volume-monitors.service 2>&1)"
+echo "volume monitors: $(for m in udisks2 gphoto2 mtp afc; do printf '%s=%s ' $m "$(as_user systemctl --user is-active gvfs-$m-volume-monitor.service 2>&1)"; done)usbmuxd=$(dpkg-query -W -f='${Status}' usbmuxd 2>/dev/null | awk '{print $3}')"
+for log in /run/user/$uid/hypr/*/hyprland.log; do [[ -f $log ]] && grep -iE 'err|crit|drm|gpu' "$log" | head -n 5 | cut -c1-180 | sed 's/^/hyprland log: /'; done
+echo "session: $(loginctl list-sessions --no-legend 2>/dev/null | awk -v u="$user" '$3==u {print $NF; exit}')"
+for _ in $(seq 1 60); do [[ $(as_user $id-shell shell ping 2>/dev/null) == ok ]] && break; sleep 2; done
+echo "shell ping: $(as_user $id-shell shell ping 2>&1 | head -1)"
+echo "shell layers: [$(as_user hyprctl layers -j 2>/dev/null | jq -r '.. | .namespace? // empty' | grep "^$id-" | sort -u | paste -sd' ')]"
+# The installer autostarts in the live session; give it time to draw its window.
+for _ in $(seq 1 60); do pgrep -x calamares >/dev/null && break; sleep 2; done
+echo "installer process: $(pgrep -x calamares >/dev/null && echo yes || echo no)"
+for _ in $(seq 1 30); do as_user hyprctl clients -j 2>/dev/null | jq -e '.[] | select(.class | test("calamares"; "i"))' >/dev/null && break; sleep 2; done
+echo "installer window: $(as_user hyprctl clients -j 2>/dev/null | jq -r '[.[] | select(.class | test("calamares"; "i"))] | length')"
+echo "window classes: [$(as_user hyprctl clients -j 2>/dev/null | jq -r '.[].class' | paste -sd' ')]"
+pid=$(pgrep -x calamares | head -1)
+echo "installer env: $(tr '\0' '\n' < /proc/${pid:-0}/environ 2>/dev/null | grep -E '^(WAYLAND_DISPLAY|XDG_RUNTIME_DIR|QT_QPA_PLATFORM|USER|HOME)=' | paste -sd' ')"
+journalctl -b --no-pager -o cat 2>/dev/null | grep -iE 'calamares|oaxaca-installer' | grep -viE '^\s*$' | tail -n 8 | sed 's/^/installer journal: /'
+echo "installer config: $(ls /etc/calamares/modules/*.conf 2>/dev/null | wc -l) module files"
+echo "installer log: $(journalctl -b --no-pager -o cat 2>/dev/null | grep -ciE 'calamares.*(error|fail)')"
+echo "failed units: [$(systemctl --failed --no-legend --plain | awk '{print $1}' | paste -sd' ')]"
+# Groups casper's user-setup gave the live user; "video" is what the backlight udev rule grants.
+echo "live groups: [$(id -Gn "$user" 2>/dev/null)]"
+# The programs Calamares's modules run in this image's sequence: unpackfs (rsync, unsquashfs),
+# partition (sfdisk, the mkfs tools of the offered filesystems, cryptsetup), bootloader
+# (grub-install, efibootmgr), initramfs, locale. The first install on the Legion laptop failed
+# on a missing rsync (2026-10-11), which this line would have shown.
+missing=()
+for t in rsync unsquashfs sfdisk mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat cryptsetup grub-install efibootmgr update-initramfs locale-gen; do
+  command -v "$t" >/dev/null || missing+=("$t")
+done
+echo "installer tools missing: [${missing[*]}]"
+# Installer steps that run inside the target (shellprocess with dontChroot false) must not call
+# a program from a package the packages step removes from the target before them (packages.conf,
+# try_remove); sddm-last-user, shipped in the installer package, failed that way on 2026-10-12.
+removed=$(sed -n '/try_remove:/,/^[^ ]/s/^ *- *//p' /etc/calamares/modules/packages.conf | tr '\n' ' ')
+bad=()
+for conf in /etc/calamares/modules/shellprocess_*.conf; do
+  grep -q '^dontChroot: *true' "$conf" && continue
+  for prog in $(sed -n 's/^ *- *"\(.*\)"$/\1/p' "$conf" | tr ' ' '\n' | grep '^/\|^-/' | sed 's/^-//'); do
+    owner=$(dpkg -S "$prog" 2>/dev/null | cut -d: -f1 | head -1)
+    for r in $removed; do [[ $owner == "$r" ]] && bad+=("$(basename "$conf"):$prog($owner)"); done
+  done
+done
+echo "chroot steps on removed packages: [${bad[*]}]"
+# The installer's own scripts must exit 0 in the cases that keep nothing: keep-previous-loader
+# printed its work and then exited 1 from a failing cleanup trap, which failed an install on
+# 2026-10-12. Against a fake target: a stub naming no filesystem here, and no stub at all.
+fake=$(mktemp -d); mkdir -p "$fake/boot/efi/EFI/ubuntu" "$fake/etc"
+printf 'search.fs_uuid 00000000-0000-0000-0000-000000000000 root \n' > "$fake/boot/efi/EFI/ubuntu/grub.cfg"
+/usr/libexec/$id/keep-previous-loader "$fake" >/dev/null 2>&1; k1=$?
+rm -f "$fake/boot/efi/EFI/ubuntu/grub.cfg"; : > "$fake/etc/fstab"
+/usr/libexec/$id/keep-previous-loader "$fake" >/dev/null 2>&1; k2=$?
+/usr/libexec/$id/loader-fallback "$fake" >/dev/null 2>&1; k3=$?
+echo "installer scripts exit: keep-previous-loader stale=$k1 none=$k2 loader-fallback=$k3"
+rm -rf "$fake"
+# The programs the port's keybindings and launchers run: the volume keys need pactl
+# (pulseaudio-utils), brightness needs brightnessctl, every application launch goes through
+# uwsm-app and the terminal through xdg-terminal-exec (volume keys did nothing on the Legion
+# laptop, 2026-10-11: pactl was missing).
+missing=()
+for t in pactl wpctl brightnessctl uwsm-app xdg-terminal-exec foot gtk-launch gawk; do
+  command -v "$t" >/dev/null || missing+=("$t")
+done
+echo "desktop tools missing: [${missing[*]}]"
+# Launch the terminal the way Super+Return does: Hyprland's exec dispatcher runs
+# oaxaca-launch-terminal (setsid uwsm-app -- xdg-terminal-exec) with the session's own
+# environment, as the keybinding would, then wait for the terminal's window. This Hyprland
+# takes its dispatches as Lua ("hl.dsp.exec_cmd(...)", the form the port's own scripts use);
+# the classic "dispatch exec <cmd>" is a Lua syntax error here. "Applications do not open"
+# was a laptop finding (2026-10-11); the lines after the count are for its cause.
+t0=$(date +%s%N)
+echo "dispatch: $(as_user hyprctl dispatch 'hl.dsp.exec_cmd("oaxaca-launch-terminal")' 2>&1 | head -1)"
+for _ in $(seq 1 300); do as_user hyprctl clients -j 2>/dev/null | jq -e '.[] | select(.class | test("foot"; "i"))' >/dev/null && break; sleep 0.2; done
+echo "terminal launch ms: $(( ($(date +%s%N) - t0) / 1000000 ))"
+echo "terminal window: $(as_user hyprctl clients -j 2>/dev/null | jq -r '[.[] | select(.class | test("foot"; "i"))] | length')"
+echo "terminal id: $(as_user xdg-terminal-exec --print-id 2>&1 | head -1)"
+# What the shell's application menu runs; Nautilus is in the image and has its own window class.
+t0=$(date +%s%N)
+# The menu's own command (AppLibrary.launch in the port's shell calls oaxaca-launch-desktop).
+echo "launch decision: $(as_user oaxaca-launch-desktop --print org.gnome.Nautilus 2>&1 | sed -n 's/^runs on //p')"
+as_user hyprctl dispatch 'hl.dsp.exec_cmd("oaxaca-launch-desktop org.gnome.Nautilus")' >/dev/null 2>&1
+for _ in $(seq 1 300); do as_user hyprctl clients -j 2>/dev/null | jq -e '.[] | select(.class | test("nautilus"; "i"))' >/dev/null && break; sleep 0.2; done
+echo "menu launch ms: $(( ($(date +%s%N) - t0) / 1000000 ))"
+# The same program straight from the compositor, without uwsm-app and gtk-launch, for comparison.
+as_user hyprctl dispatch 'hl.dsp.exec_cmd("foot --app-id=oaxaca.timing")' >/dev/null 2>&1; t1=$(date +%s%N)
+for _ in $(seq 1 300); do as_user hyprctl clients -j 2>/dev/null | jq -e '.[] | select(.class == "oaxaca.timing")' >/dev/null && break; sleep 0.2; done
+echo "plain foot launch ms: $(( ($(date +%s%N) - t1) / 1000000 ))"
+echo "menu launch window: $(as_user hyprctl clients -j 2>/dev/null | jq -r '[.[] | select(.class | test("nautilus"; "i"))] | length')"
+# GNU awk's three-argument match(), which the keybindings menu's parser needs.
+echo "awk match: $(awk 'BEGIN { print (match("a1b", /([0-9])/, m) ? m[1] : "no") }' 2>&1 | head -1)"
+echo "installer floating: $(as_user hyprctl clients -j 2>/dev/null | jq -r '.[] | select(.class | test("calamares"; "i")) | "\(.floating) \(.size[0])x\(.size[1])"' | head -1)"
+# The installer at the laptop's scale. QEMU's display is 2560x1600 like the Legion's panel;
+# the guest sets the monitor to scale 1.6 (Hyprland's "auto" choice there gives a fractional
+# scale), starts the installer anew the way its autostart does (hyprctl exec of the launcher),
+# and records the window's state twice: right after it maps, and after a pointer move over
+# the window, the kind of input that made the button row appear on the laptop (2026-10-11
+# and -12). Each PNG (whole screen, half size) goes to the serial console as base64
+# between marker lines; scripts/iso-boot-test.sh writes it to build/iso/test-<sb>/<name>.png.
+# Ubuntu's grim has no JPEG support.
+mon=$(as_user hyprctl monitors -j 2>/dev/null | jq -r '.[0].name')
+mode=$(as_user hyprctl monitors -j 2>/dev/null | jq -r '.[0] | "\(.width)x\(.height)@\(.refreshRate)"')
+echo "monitor mode: $mode"
+as_user hyprctl eval "hl.monitor({ output = \"$mon\", mode = \"$mode\", position = \"auto\", scale = 1.6 })" >/dev/null 2>&1
+sleep 3
+echo "monitor scale: $(as_user hyprctl monitors -j 2>/dev/null | jq -r '.[0].scale')"
+pkill -x calamares; sleep 3
+as_user hyprctl dispatch "hl.dsp.exec_cmd(\"$id-installer\")" >/dev/null 2>&1
+for _ in $(seq 1 30); do as_user hyprctl clients -j 2>/dev/null | jq -e '.[] | select(.class | test("calamares"; "i"))' >/dev/null && break; sleep 2; done
+sleep 8
+wl=$(ls /run/user/$uid | grep '^wayland-[0-9]*$' | head -1)
+shot() {
+  if as_user env WAYLAND_DISPLAY="$wl" grim -t png -s 0.5 /tmp/shot.png 2>/tmp/grim.err; then
+    echo "=== SCREENSHOT $1 BEGIN"; base64 -w 0 /tmp/shot.png; echo; echo "=== SCREENSHOT $1 END"
+  else
+    echo "screenshot $1: grim failed: $(head -c 200 /tmp/grim.err | tr '\n' ' ')"
+  fi
+}
+echo "installer geometry: $(as_user hyprctl clients -j 2>/dev/null | jq -r '.[] | select(.class | test("calamares"; "i")) | "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1]) floating=\(.floating)"' | head -1)"
+shot installer-mapped
+as_user hyprctl dispatch "hl.dsp.focus({ window = \"class:io.calamares.calamares\" })" >/dev/null 2>&1
+sleep 3
+shot installer-focused
+# The Summary page. On the laptop, reaching it left the window showing the previous page's
+# frame: the Next button's label stayed as it was instead of "&Install" (ViewManager.cpp,
+# updateButtonLabels) and the summary's scrollbars were missing, until a click on a bar panel
+# (2026-10-11 and -12). A second Calamares with a test configuration (calamares -c, a copy of
+# /etc/calamares whose pages are welcome, locale, keyboard and summary, with no requirement
+# checks and nothing to execute) is driven there with Alt+N, which the host's watcher in
+# scripts/iso-boot-test.sh presses through QEMU's monitor; screenshots on arrival and later.
+pkill -x calamares; sleep 2
+rm -rf /tmp/caltest; cp -a /etc/calamares /tmp/caltest
+# A -c directory must hold qml/ as well (Calamares refuses to start without it).
+ln -s /usr/share/calamares/qml /tmp/caltest/qml
+printf -- '---\ndontChroot: true\nscript:\n    - "true"\n' > /tmp/caltest/modules/shellprocess_noop.conf
+cat > /tmp/caltest/settings.conf <<EOF
+modules-search: [ local, /usr/lib/x86_64-linux-gnu/calamares/modules ]
+sequence:
+- show:
+  - welcome
+  - locale
+  - keyboard
+  - summary
+- exec:
+  - shellprocess@noop
+- show:
+  - finished
+instances:
+- id: noop
+  module: shellprocess
+  config: shellprocess_noop.conf
+branding: $id
+prompt-install: true
+dont-chroot: true
+EOF
+printf -- '---\nshowSupportUrl: false\nshowKnownIssuesUrl: false\nshowReleaseNotesUrl: false\nrequirements:\n    requiredStorage: 0\n    requiredRam: 0\n    check: []\n    required: []\ngeoip:\n    style: "none"\n' > /tmp/caltest/modules/welcome.conf
+wl=$(ls /run/user/$uid | grep '^wayland-[0-9]*$' | head -1)
+as_user env WAYLAND_DISPLAY="$wl" QT_QPA_PLATFORM=wayland sudo -E calamares -c /tmp/caltest -D6 >/tmp/caltest.log 2>&1 &
+for _ in $(seq 1 30); do as_user hyprctl clients -j 2>/dev/null | jq -e '.[] | select(.class | test("calamares"; "i"))' >/dev/null && break; sleep 2; done
+sleep 6
+as_user hyprctl dispatch "hl.dsp.focus({ window = \"class:io.calamares.calamares\" })" >/dev/null 2>&1
+sleep 2
+shot test-welcome
+for page in locale keyboard summary; do
+  echo "=== KEYS alt-n"
+  sleep 6
+  [[ $page == summary ]] && shot summary-arrived
+done
+sleep 10
+shot summary-later
+echo "test installer running: $(pgrep -x calamares >/dev/null && echo yes || echo no)"
+grep -iE 'error|fail|warn|cannot|could not' /tmp/caltest.log | grep -v RTKit | tail -n 8 | cut -c1-200 | sed 's/^/test installer log: /'
+pkill -x calamares
+# The medium's driver pool (scripts/driver-pool.sh): the drivers command in pool mode writes
+# its apt configuration and refreshes the pool's lists (as root), and apt resolves the
+# branch's two metapackages from the pool alone. QEMU has no NVIDIA GPU, so the command
+# itself picks nothing here; the install is the laptop's test.
+pool_branch=$(cat /cdrom/pool/branch 2>/dev/null)
+echo "pool: branch=${pool_branch:-none} debs=$(ls /cdrom/pool/*.deb 2>/dev/null | wc -l)"
+if [[ -n $pool_branch ]]; then
+  "$id-drivers-install" --show 2>&1 | grep -E '^$id-drivers-install: packages from|^driver:' | sed 's/^/pool show: /'
+  # ubuntu-drivers' own choice of module package against the pool: it takes the prebuilt modules
+  # only when their flavour metapackage is there and falls back to DKMS otherwise; a pool without
+  # the metapackage installed nothing on the laptop (2026-10-12).
+  echo "pool modules choice: $(APT_CONFIG=/run/$id-driver-pool/apt.conf python3 -c 'import apt_pkg, UbuntuDrivers.detect as d; apt_pkg.init_config(); apt_pkg.init_system(); print(d.get_linux_modules_metapackage(apt_pkg.Cache(None), "nvidia-driver-'"$pool_branch"'-open"))' 2>/dev/null)"
+  APT_CONFIG=/run/$id-driver-pool/apt.conf apt-get -s install "nvidia-driver-$pool_branch-open" "linux-modules-nvidia-$pool_branch-open-generic" nvidia-vaapi-driver > /tmp/pool-sim.txt 2>&1 \
+    && echo "pool simulate: ok, $(grep -c '^Inst ' /tmp/pool-sim.txt) to install" || { echo "pool simulate: FAILED"; tail -n 3 /tmp/pool-sim.txt | sed 's/^/pool simulate: /'; }
+fi
+hypr_pid=$(pgrep -x Hyprland | head -1)
+echo "hyprland gpu env: $(tr '\0' '\n' < /proc/${hypr_pid:-0}/environ 2>/dev/null | grep -E '^AQ_DRM_DEVICES=' || echo 'AQ_DRM_DEVICES unset')"
+echo "drm cards: [$(ls /dev/dri 2>/dev/null | grep '^card' | paste -sd' ')]"
+journalctl -b -o short-iso _UID=$uid 2>/dev/null | grep -iE 'uwsm-app|xdg-terminal|launch-terminal|foot\[' | tail -n 4 | cut -c1-200 | sed 's/^/launch journal: /'
+# The live user's per-login provisioning (oaxaca-provision-first-run -> -provision-user ->
+# install/user/*.sh), which creates ~/.local/state/oaxaca/current/theme that foot's
+# configuration includes; its log and the state directory, for the cause of a missing theme.
+echo "user state: [$(ls /home/$user/.local/state/$id 2>/dev/null | paste -sd' ')] current: [$(ls /home/$user/.local/state/$id/current 2>/dev/null | paste -sd' ')]"
+tail -n 4 /home/$user/.local/state/$id/first-run.log 2>/dev/null | sed 's/^/first-run log: /'
+# Plymouth under the distro's script theme (splash plymouth.debug on the test entry): the
+# crash seen on the Legion laptop (docs/7, choice 14) printed "backtrace:" from plymouthd and
+# would show as a kernel segfault line; both counts must be 0. The log lines are information.
+echo "plymouth crash: $(( $(journalctl -b -o cat _COMM=plymouthd 2>/dev/null | grep -c '^backtrace:') + $(journalctl -b -k -o cat 2>/dev/null | grep -c 'plymouthd.*segfault') ))"
+grep -h -i -o 'Using console viewer[^"]*\|Not using console viewer[^"]*\|starting boot animation\|no pixel displays\|loading theme [^"]*\|using [a-z]* renderer[^"]*' /var/log/plymouth*.log 2>/dev/null | sort -u | head -6 | sed 's/^/plymouth log: /'
+# A driven check from the host (scripts/iso-boot-test.sh with DRIVE=<dir>): its run.sh, on a disk
+# labelled OAXTEST, is sourced here with this script's helpers (as_user, shot) in reach.
+if [[ -e /dev/disk/by-label/OAXTEST ]]; then
+  mkdir -p /run/oaxtest && mount -o ro /dev/disk/by-label/OAXTEST /run/oaxtest && {
+    echo "=== DRIVE BEGIN"
+    # shellcheck source=/dev/null
+    source /run/oaxtest/run.sh
+    echo "=== DRIVE END"
+  }
+fi
+echo "=== LIVE-TEST END"
+# -ff: power off at once, without the shutdown transaction. A plain poweroff of the live
+# session in QEMU looped on "Failed unmounting cdrom.mount" until the test's timeout
+# (2026-10-10), and casper-stop, which runs at final.target, would then wait for a key
+# press on the console ("remove the installation medium, then press ENTER"). The test has
+# its lines by now; the live session's own shutdown is a finding for step 7's carried list.
+systemctl poweroff -ff

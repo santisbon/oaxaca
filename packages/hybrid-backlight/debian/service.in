@@ -1,0 +1,12 @@
+[Unit]
+Description=Hide the phantom NVIDIA backlight device on hybrid laptops
+Documentation=file:/usr/share/doc/@DISTRO_ID@-hybrid-backlight/README.md
+
+[Service]
+Type=oneshot
+# "no" so the udev rule can start it again each time a backlight device appears.
+RemainAfterExit=no
+ExecStart=/usr/libexec/@DISTRO_ID@/hide-phantom-backlight
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,9 @@
+# @DISTRO_ID@-hybrid-backlight
+
+Hides the phantom `nvidia_0` backlight device on hybrid laptops whose internal panel is driven by the integrated GPU, so brightness tools see one device with one scale.
+
+- `/usr/libexec/@DISTRO_ID@/hide-phantom-backlight` decides and mounts an empty read-only tmpfs over the phantom device's sysfs directory. `--dry-run` prints the decision without mounting.
+- `@DISTRO_ID@-hybrid-backlight.service` runs it. The udev rule starts the unit on every backlight device add, which is what makes the hide survive resume from suspend: the NVIDIA driver unregisters `nvidia_0` on suspend and registers a new directory on resume.
+- Nothing is hidden when the NVIDIA GPU drives the panel (MUX or dGPU-only mode).
+
+Check: `cat /sys/class/backlight/nvidia_0/type` must fail with "No such file or directory" while the device is hidden, including after a resume. Background: the suspend baseline and the brightness bug analysis in the project docs.

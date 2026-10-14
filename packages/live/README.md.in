@@ -1,0 +1,10 @@
+# @DISTRO_ID@-live
+
+The live session of the installation ISO (roadmap step 7). Installed only in the ISO's
+squashfs; the installer removes it from the installed system.
+
+Files:
+
+- `casper-bottom/16_autologin`: installed as `/usr/share/initramfs-tools/scripts/casper-bottom/16@DISTRO_ID@_autologin`, a casper script that runs in the initramfs after casper's `15autologin` and fills in the session name casper leaves empty in `/etc/sddm.conf`.
+- `casper-bottom/26_liveuser`: installed as `/usr/share/initramfs-tools/scripts/casper-bottom/26@DISTRO_ID@_liveuser`, runs after casper's `25adduser`, adds the live user to `video` (the group the session package's backlight udev rule grants write access to the backlights; user-setup's default groups lack it) (2026-10-11).
+- `live-boot-test`, `live-boot-test.service`, `live-boot-test.timer`: the guest half of `scripts/iso-boot-test.sh`, inert unless the kernel command line carries `@DISTRO_ID@.boottest`.

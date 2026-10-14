@@ -1,0 +1,33 @@
+Description: Let cryptsetup choose the LUKS2 encryption sector size
+ KPMcore 26.08 passes "--sector-size 4096" to "cryptsetup luksFormat" for
+ every LUKS2 volume (upstream commit 25d3a793, 2026-02-09). cryptsetup then
+ refuses a partition whose size is not a multiple of 4096 bytes: "Device size
+ is not aligned to requested sector size." Calamares 3.3.14 aligns the
+ partition it creates only in its "Erase disk" path (Ubuntu's
+ align-end-sector-to-4k.patch, LP: #2165428); "Replace a partition" keeps the
+ old partition's exact bounds and "Install alongside" starts two sectors past
+ the size slider's position, so an encrypted install in either mode fails
+ while formatting the root volume.
+ .
+ Without the option cryptsetup selects the sector size itself
+ (lib/setup.c, LUKS2 format): 4096 when the drive reports 4K physical sectors
+ and the device size is a multiple of it, otherwise 512, with the log line
+ "Device size is not aligned to sector size. Reverting to 512 bytes." The
+ other options KPMcore sets (key size, hash, PBKDF) are unchanged.
+Author: santisbon <santisbon@users.noreply.github.com>
+Origin: vendor
+Bug: https://codeberg.org/Calamares/calamares/issues/2526
+Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/kpmcore/+bug/2165428
+Forwarded: not-needed
+Last-Update: 2026-10-11
+---
+--- a/src/fs/luks2.cpp
++++ b/src/fs/luks2.cpp
+@@ -40,7 +40,6 @@
+     Q_ASSERT(!m_passphrase.isEmpty());
+ 
+     QStringList createCmdArgs = { QStringLiteral("--use-random"),
+-                                  QStringLiteral("--sector-size"), QStringLiteral("4096"),
+                                   QStringLiteral("--key-size"), QStringLiteral("512"),
+                                   QStringLiteral("--hash"), QStringLiteral("sha512"),
+                                   QStringLiteral("--batch-mode"),

@@ -1,0 +1,12 @@
+[Unit]
+Description=@DISTRO_NAME@ live image boot test
+ConditionKernelCommandLine=@DISTRO_ID@.boottest
+After=network-online.target display-manager.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/@DISTRO_ID@/live-boot-test
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/console

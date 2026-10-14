@@ -1,0 +1,130 @@
+# Step 8: the update path
+
+Done 2026-10-11. This document records roadmap step 8 of [the plan](0%20-%20plan.md): how an installed Oaxaca system gets updates, how a change that moves a user's files is carried to existing users (migrations), the test that upgrades release N to N+1 in CI, the rules that keep a published version honest, and a bug the step found in the automatic security updates. Each choice comes with reasons and the rejected alternative. Names: Oaxaca is the distro, `stonking` is Ubuntu 26.10, the base series; the port is the `oaxaca` branch of the Omarchy fork ([docs/6](6%20-%20omarchy-port.md)).
+
+## Terms
+
+Each entry uses only terms defined above it. The first use of each term in the body links to its entry.
+
+### Upgrade and full-upgrade
+
+Two apt commands. `apt-get upgrade` installs newer versions of installed packages but never removes a package or installs a new one to do so, so a package whose dependencies changed, and a new kernel, are "held back". `apt-get full-upgrade` (the same as `dist-upgrade`) may install new packages and remove packages to complete the upgrade. An Oaxaca update is a full-upgrade.
+
+### Origin
+
+A field in an archive's `Release` file (`Origin: Ubuntu` for the Ubuntu archive, `Origin: Oaxaca` for ours, set by aptly from `distro.conf`). apt shows an origin as `o=Ubuntu` in `apt-cache policy`, and tools that decide which archives to take packages from match on this field, not on the URL.
+
+### unattended-upgrades
+
+Ubuntu's package of the same name: a Python program, `/usr/bin/unattended-upgrade`, that `apt-daily-upgrade.service` (a unit of the `apt` package, run daily by `apt-daily-upgrade.timer`) runs when apt's setting `APT::Periodic::Unattended-Upgrade` is `1`. The program installs the upgrades whose [origin](#origin) and suite match its `Unattended-Upgrade::Allowed-Origins` list, which Ubuntu ships in the conffile `/etc/apt/apt.conf.d/50unattended-upgrades` as `${distro_id}:${distro_codename}-security` and three more entries of that shape. Ubuntu's `20auto-upgrades`, written by the package's postinst, turns the setting on. The package reaches the desktop through `python3-software-properties`' Recommends on Ubuntu and is listed in the port's package list on Oaxaca (docs/6, "Ubuntu's configuration, not Omarchy's").
+
+### lsb_release
+
+The command that prints a distribution's identity (`-i`, distributor id; `-c`, codename). In stonking the `lsb-release` package (`12.1-2build1`) ships `/usr/bin/lsb_release` as a shell script that reads `/etc/os-release` and capitalises its `ID` field. [unattended-upgrades](#unattended-upgrades) fills `${distro_id}` and `${distro_codename}` from `lsb_release -i -s` and `lsb_release -c -s`. On Oaxaca `/etc/os-release` is `oaxaca-base`'s diversion (docs/3, choice 2), so `lsb_release -is` prints `Oaxaca`.
+
+### Migration
+
+Omarchy's mechanism, kept by the port: a script under `/usr/share/oaxaca/migrations/`, named by a Unix timestamp, that `oaxaca-migrate` runs once per user, as that user, and then marks done with an empty file of the same name under `~/.local/state/oaxaca/migrations/`. A migration moves a user's files from the shape an older version wrote to the shape the new version expects; a fresh user starts with every shipped migration marked done (`oaxaca-provision-user` at first install), so a migration runs only for users who existed before the change. The runner is the port's `bin/omarchy-migrate`, renamed at build time.
+
+### Release N and N+1
+
+An Oaxaca release is a versioned set of our packages, published to the archive at `APT_URL` and tagged `vX.Y.Z` in this repository (policy, version scheme). In this document N is the set of versions the published archive offers, that is, what an installed system has, and N+1 is the set in `build/`, what the next publish will offer. The Ubuntu series underneath does not change between N and N+1; a series change is a separate path, described at the end.
+
+### Flat file archive
+
+An apt source whose packages sit in one directory with a `Packages` index beside them and no `dists/` tree: `deb file:/some/dir ./`. `dpkg-scanpackages` (package `dpkg-dev`) writes the index. The upgrade test uses one to hand `build/` to apt inside a chroot.
+
+## Anatomy
+
+An update on an installed Oaxaca system has three paths, and this section names the program behind each.
+
+1. **The user's update, `oaxaca-update`.** The port of Omarchy's `omarchy-update`, started from the bar's update indicator (the shell's `SystemUpdate` widget) or the menu's "Update, Oaxaca" entry, both of which open a floating terminal running the command. The command runs, in order: `oaxaca-update-confirm` (asks, unless `-y`), `oaxaca-update-system-pkgs` (`sudo apt-get update`, then `sudo apt-get -y full-upgrade`; under `-y` also `--force-confdef --force-confold`, so dpkg keeps a locally edited conffile instead of asking), `oaxaca-migrate` (the [migrations](#migration), after the packages so that each migration runs against the files its version shipped), `oaxaca-hook post-update` (the user's own hooks), `oaxaca-update-mise`, `oaxaca-update-orphan-pkgs` (lists `apt-get -s autoremove`'s candidates and asks before removing), `oaxaca-update-pkg-prune` (`apt-get autoclean`), `oaxaca-update-analyze-logs` (looks for a failed `update-initramfs` or a failed dpkg in the update's log), `oaxaca-update-status` (clears the bar indicator) and `oaxaca-update-restart` (offers a reboot when the newest kernel on disk is not the running one or Hyprland's binary was replaced, restarts the shell). The pieces are the port's own work from step 6; this step verified them end to end in the upgrade test's chroot, except the shell and reboot parts, which need a session.
+2. **Automatic security updates, [unattended-upgrades](#unattended-upgrades).** Ubuntu's mechanism, left configured as Ubuntu configures it, plus one file: `oaxaca-base 0.1.1` installs `/etc/apt/apt.conf.d/51oaxaca-unattended-upgrades`, which clears Ubuntu's `${distro_id}` entries and lists the same four origins with the literal name `Ubuntu`. Why that file is needed is the bug below. The desktop's own packages are deliberately absent from the list: they move only through path 1, which runs their migrations.
+3. **The update indicator.** `oaxaca-config` installs `/etc/apt/apt.conf.d/20oaxaca-periodic`, which sets `APT::Periodic::Update-Package-Lists "1"` so that `apt-daily.timer` refreshes the package lists daily; `oaxaca-update-available` then reads `apt list --upgradable` without privileges, keeps the `oaxaca-*` lines, and the bar shows the indicator.
+
+What this step added around those paths:
+
+- **The migrations directory ships.** `oaxaca-tools` now installs `/usr/share/oaxaca/migrations/` (step 6 left it out, choice 4 there). The port branch deleted Omarchy's 106 migrations on 2026-10-11 and keeps only the port's own, none yet; the directory's README on the branch states the rule, and PORT.md's rebase section repeats it.
+- **The upgrade test**, `scripts/upgrade-test.sh` (`make upgrade-test`, and a CI job of the same name after the build matrix). Anatomy and expectations are in the script's header and at its end; in short, one mmdebstrap run installs [N](#release-n-and-n1) from the published archive into a throwaway chroot, a script inside creates a user from N's `/etc/skel` with a marker line in one of the user's files, upgrades to N+1 from a [flat file archive](#flat-file-archive) of `build/` with the exact `apt-get` call `oaxaca-update -y` makes, records versions, `dpkg --audit`, remaining upgrades, the unattended-upgrades origins and the marker line, and, when `oaxaca-tools` is installed, drops a synthetic migration and runs `oaxaca-migrate` as the user. The report is compared line by line.
+- **The version-bump check**, `scripts/version-check.sh` (`make check-versions`, CI's prepare job), and **the publish guard** in `scripts/repo-publish.sh`: the policy's new bump rule, enforced at both ends.
+
+## Two bugs the step found
+
+Both found 2026-10-11 while writing the update path, before any installed system existed, and both silent: nothing fails, the update simply never happens.
+
+### No automatic security updates on Oaxaca
+
+Found while reading how unattended-upgrades picks its origins. Step 3 chose to divert `/usr/lib/os-release` and wrote that `lsb_release` would keep reporting `Ubuntu`; that was wrong, and docs/3 now carries the correction. The chain, each link checked against stonking's own files:
+
+| Link | Fact | How checked |
+|---|---|---|
+| `lsb_release` reads os-release | stonking's `lsb-release 12.1-2build1` ships `/usr/bin/lsb_release` as a POSIX shell script: `[ -f /etc/os-release ] && os_release=/etc/os-release`, then `. "$os_release"` and `ID` capitalised | the script, extracted from the live tarball; run with the tarball's `os-release` bind-mounted over `/etc/os-release`: `Oaxaca`, `stonking`, `Oaxaca 26.10` |
+| No `/etc/lsb-release` to fall back on | the live tarball has no `./etc/lsb-release` | `tar -tf` |
+| unattended-upgrades uses lsb_release | `unattended-upgrades 2.12ubuntu9`, `/usr/bin/unattended-upgrade`: `DISTRO_ID = subprocess.check_output(["lsb_release", "-i", "-s"])` at start-up, and `substitute(distro_id)` builds each allowed origin as `o=<id>,a=<codename>-security` | the program, extracted from the live tarball |
+| Ubuntu's list is all `${distro_id}` | `50unattended-upgrades`: `"${distro_id}:${distro_codename}"`, `"${distro_id}:${distro_codename}-security"`, `"${distro_id}ESMApps:${distro_codename}-apps-security"`, `"${distro_id}ESM:${distro_codename}-infra-security"` | the conffile, extracted from the live tarball |
+| Ubuntu's archive says Ubuntu | `Origin: Ubuntu` in `dists/stonking-security/InRelease` | README, "Archive" |
+
+So on Oaxaca the allowed origins resolve to `o=Oaxaca,a=stonking-security` and friends, which no archive publishes, and unattended-upgrade would run every day and install nothing. The symptom is silence: no error, no log line beyond "No packages found that can be upgraded unattended".
+
+**The fix, choice 1 below:** `51oaxaca-unattended-upgrades` in `oaxaca-base`. apt reads `apt.conf.d` in name order and lists only accumulate, so the file begins with `#clear Unattended-Upgrade::Allowed-Origins;`, which apt.conf(5) names as the only way to replace a list, and then declares Ubuntu's four entries with `Ubuntu` written out. Verified with apt itself before packaging: `apt-config dump Unattended-Upgrade::Allowed-Origins` over a directory holding Ubuntu's file alone prints the four `${distro_id}` entries; over Ubuntu's file plus ours it prints `Ubuntu:stonking`, `Ubuntu:stonking-security`, `UbuntuESMApps:stonking-apps-security`, `UbuntuESM:stonking-infra-security` and nothing else. The boot test now prints `lsb_release` and the resolved origins on every profile and, on the desktop profile, the origins `unattended-upgrade --dry-run --debug` itself reports.
+
+### Migrations never ran on an Ubuntu desktop
+
+Found while exercising the runner on this workstation with a synthetic migration: `omarchy-migrate` printed `Waiting for apt transaction to finish before running Omarchy migrations...` and sat there. The runner cannot test dpkg's lock (the lock file is root-only), so the port's version watched the process table for `apt`, `apt-get`, `dpkg` and `unattended-upgr`, the last being the 15-character process name the kernel keeps for `unattended-upgrade`. Ubuntu's unattended-upgrades package also ships `unattended-upgrades.service`, `ExecStart=/usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal`, enabled in `multi-user.target` (the live tarball has the `.wants` link), which runs for the whole session and has the same 15-character name (`/proc/<pid>/comm` of the helper on this workstation: `unattended-upgr`). So on every Oaxaca desktop the runner would wait its full 900 seconds, print `apt transaction is still running; Omarchy migrations will retry on next login`, and exit 0 without running anything, at every update and every login. Omarchy on Arch has no such service, which is why upstream's match is by name.
+
+**The fix, on the port branch (`bin/omarchy-migrate`):** `apt`, `apt-get` and `dpkg` stay matched by name; `unattended-upgrade` is matched on its command line, `pgrep -f '/unattended-upgrade( |$)'`, which the upgrader's `/usr/bin/unattended-upgrade` matches and the helper's `/usr/share/unattended-upgrades/unattended-upgrade-shutdown` does not. The runner was exercised again with the helper running: the synthetic migration ran at once (Verified).
+
+## Choices
+
+1. **Repair unattended-upgrades with an apt configuration file, not by un-diverting os-release.** Reasons: the identity in `os-release` is step 3's decision and what users, `hostnamectl` and the shell see; the breakage is in one consumer, and apt's own configuration language has the exact tool (`#clear`) for replacing a list a conffile set; the file lives in `oaxaca-base`, the package that causes the condition, so the two are installed and removed together. The distro's own archive is left out of the list on purpose: an unattended upgrade of `oaxaca-*` would leave migrations pending until the next login's notification, and Omarchy's model, which the port keeps, is that the desktop moves when the user runs the update. Rejected: editing `50unattended-upgrades` (a conffile of another package; dpkg would prompt on every upstream change). Rejected: `Unattended-Upgrade::Origins-Pattern` (a second list that is merged with the first, so the `Oaxaca:` entries would stay). Rejected: making `lsb_release` print `Ubuntu` (a diversion of a script that other tools read for the truth).
+2. **The migrations directory ships, with only the port's own migrations in it.** Reasons: the runner, the login notification and the first-install marking already exist and were verified; shipping the directory makes the mechanism real before the first migration is needed, and the empty directory keeps `oaxaca-migrate-notify.service`'s `ConditionPathIsDirectory` true. Omarchy's 106 were deleted on the branch rather than filtered at build time, so that what the branch holds is what ships, and a rebase that brings new ones makes them visible as new files to port or delete. Rejected: porting migrations into `postinst` scripts (the plan's other option): a migration edits files under `$HOME`, which a maintainer script cannot do for users it does not know about, and running them as root at package time is how upstream's Arch package does *not* do it either.
+3. **The upgrade test runs in a chroot, not a VM, and in CI.** Reasons: what an upgrade exercises is apt's resolver, dpkg's maintainer scripts, conffiles, diversions and alternatives, and the migration runner, none of which needs a kernel or a session; mmdebstrap's unshare mode gives a throwaway root with no privileges, which is what the CI runner has, and the chroot discards itself. The test takes N from the published archive, which is the only honest definition of "what users have". Rejected: a QEMU boot of the previous image followed by an in-guest update (covers the shell restart and the reboot prompt too, but needs KVM, which the runner lacks, and a kept copy of every previous image); carried as a workstation check for later.
+4. **Versions are bumped, never republished.** The policy's bump rule, enforced twice: `make check-versions` at the source (a changed package directory since the newest `v*` tag needs a higher changelog version) and the publish guard at the archive (a `.deb` whose name and version are already published with a different SHA-256 is refused, `--replace` overrides for a package no installed system can have yet). Reasons: apt identifies a package by name and version; a client holding the previous index fails the hash check on a replaced file; installed systems never see the change. The source check is blind to a change on the fork's branch alone (`packages/desktop/upstream` names a branch, not a commit), which is why the content check at publish time exists as well. Rejected: pinning the fork's `REF` to a commit (correct, but every port change would then need two commits in two repositories; revisit at the first release).
+5. **The series upgrade is designed, not built.** stonking's 9-month window ends around July 2027, and the policy's move trigger is three months before that. Nothing can be tested until the next series exists in Launchpad; what is fixed now is the shape. Ubuntu's own tool, `do-release-upgrade` (`ubuntu-release-upgrader-core`), is not in the image (the live manifest has `python3-apt` and nothing of the upgrader), and would read `lsb_release` and treat our archive as a third-party source. The path will be apt's: `distro.conf`'s `BASE_SERIES` changes, every package is rebuilt and published under the new suite in our archive (aptly publishes several distributions side by side), and a command on the port branch rewrites the two sources files (`ubuntu.sources` and `oaxaca.sources`) to the new suite and runs `oaxaca-update`. The upgrade test will then run with N on the old suite and N+1 on the new. Rejected: `do-release-upgrade`, for the two reasons above. Carried.
+
+## Running it
+
+```
+make check-versions                      # against the newest v* tag; passes with a note before the first tag
+VERSION_CHECK_TAG=b86bf89 scripts/version-check.sh   # against any ref
+make build PKG=packages/base             # oaxaca-base 0.1.1, the unattended-upgrades file
+UPSTREAM_DIR=~/Projects/omarchy make build PKG=packages/desktop   # oaxaca-tools with migrations/
+make upgrade-test                        # N from the published archive, N+1 from build/
+make publish                             # refuses a same-version file with different content
+```
+
+## Verified on 2026-10-11
+
+All on this workstation (Kubuntu 26.04 host, stonking chroots and images), 2026-10-11.
+
+- **The upgrade test passes**, sixth run, N being the seven published packages: `make upgrade-test` printed `N (published) -> N+1 (build/)` with `oaxaca-base 0.1.0 -> 0.1.1` and the other six unchanged, then the report: `apt sources: oaxaca.sources ubuntu.sources`, `apt update: ok` (our archive verified through the installed keyring and apt-source packages, mmdebstrap's own sources list removed), `upgradable before: 1` (`oaxaca-base/unknown 0.1.1 all [upgradable from: 0.1.0]`), `full-upgrade exit: 0` with dpkg's `Leaving 'diversion of /usr/lib/os-release ...'` and `Unpacking oaxaca-base (0.1.1) over (0.1.0)`, `conffile prompts: 0`, `dpkg audit: 0 lines`, `remaining upgrades: 0`, `at build versions: yes`, `autoremove candidates: []`, `unattended origins: Ubuntu:stonking Ubuntu:stonking-security UbuntuESMApps:stonking-apps-security UbuntuESM:stonking-infra-security`, `user config kept: 1` (the marker line in the user's `.bashrc`), `migrations: skipped (oaxaca-tools is not installed at N)`, `== upgrade test passed`. The five failed runs before it were the test's own bugs: four about the archive key (Facts) and one where `build/` held two versions of `oaxaca-base` and the check compared against the older.
+- **The migrations branch of the test is unexercised** until `oaxaca-tools` is published: N has no desktop yet. The runner itself was exercised on the branch's working tree instead, a synthetic migration in a temporary `OMARCHY_PATH` with a temporary `HOME`. First run, before the fix: `omarchy-migrate --pending` listed `1760000000.sh`; the run printed `Waiting for apt transaction to finish before running Omarchy migrations...` and did nothing, the second bug above, with `unattended-upgrade-shutdown --wait-for-signal` the only matching process on the host. Second run, after the fix, with that helper still running: `Running migration (1760000000)`, `synthetic migration running as <user>`, exit 0; the migration's file reads `ran`, the marker `1760000000.sh` exists under the state directory, and `--pending` exits 1 with nothing listed.
+- **The fix on a booted system**: `make rootfs PROFILE=base` with `oaxaca-base 0.1.1`, then `make rootfs-test PROFILE=base`: `oaxaca-base candidate: 0.1.1`, `lsb_release: not installed (base profile: lsb-release is not in the base set)`, `unattended origins: Ubuntu:stonking Ubuntu:stonking-security UbuntuESMApps:stonking-apps-security UbuntuESM:stonking-infra-security`, `failed units: []`, `== boot test passed`. The `lsb_release: Oaxaca stonking` line and `unattended-upgrade --dry-run --debug`'s own origin line are printed by the desktop profile, whose tarball was not rebuilt in this step (the live tarball from step 7 predates `oaxaca-base 0.1.1`); the bug's chain was verified on the extracted files instead (Facts).
+- **The version check**: with no tag, `make check-versions` prints `no v* tag reachable from HEAD, nothing to compare against` and passes. Exercised with `VERSION_CHECK_TAG=b86bf89` (the step 6 commit): `base: changed, 0.1.0 -> 0.1.1`, `desktop: CHANGED since b86bf89 but the version is still 4.0.4-0oaxaca1 ... add a debian/changelog.in entry`, `installer: new since b86bf89 (0.1.0)`, `live: new since b86bf89 (0.1.0)`, exit 1. (The desktop package did change after that commit without a bump; nothing of it is published, so no bump is owed yet.)
+- **The publish guard** is not exercised against the live archive in this step (publishing is the user's step); its comparison is the same `sha256sum` against the published index that the Facts table reports as all equal today.
+- **The `#clear` semantics**: `apt-config dump Unattended-Upgrade::Allowed-Origins` over a directory with Ubuntu's `50unattended-upgrades` alone prints the four `${distro_id}` entries; with `51oaxaca-unattended-upgrades` beside it, the four literal `Ubuntu:` entries only.
+- **Packages built**: `oaxaca-base 0.1.1` (lintian clean), `oaxaca-desktop 4.0.4-0oaxaca1` from the branch's working tree with `migrations/` (the README only) in `oaxaca-tools` and the runner fix, lintian clean (the third desktop build of the day; `build/` holds it).
+
+## Carried to later steps
+
+- The series upgrade (choice 5): the command on the port branch, the second suite in the archive, and the upgrade test across suites, when the next series opens in Launchpad.
+- A workstation-side update test in QEMU (choice 3): boot the previous release's image, run `oaxaca-update` in the session, check the shell restart and the reboot prompt.
+- Rollback: the policy keeps GRUB and ext4, so there is no snapshot to boot into. apt's cache keeps the current `.deb` files (`autoclean` drops only what no source offers), and the published archive carries one version per package (aptly's `publish switch` replaces the previous snapshot). Whether to keep the previous release's packages published, so that `apt install name=version` can go back, is a decision for the first release.
+- The first real migration, when a port change moves a user's files: `omarchy-dev-add-migration` on the branch, the upgrade test shows it running.
+- `oaxaca-update-confirm`'s "What's new" line now points at the distro's home URL through the rename; a release-notes page does not exist yet.
+
+## Facts checked on 2026-10-11
+
+| Fact | Value | Source |
+|---|---|---|
+| Published archive content | 7 packages: `oaxaca-apt-source`, `-archive-keyring`, `-base`, `-hybrid-backlight`, `-nvidia`, `-session` at `0.1.0`, `quickshell 0.3.2-0oaxaca1`; `InRelease` dated 2026-10-10 05:13 UTC | `curl` of `dists/stonking/InRelease` and `main/binary-amd64/Packages` at `APT_URL` |
+| Published files match the local build | all 7 SHA-256 sums equal to `build/`'s files of the same version | `sha256sum` against the index |
+| `lsb_release` on stonking | `lsb-release 12.1-2build1`, a shell script reading `/etc/os-release`; prints `Oaxaca` / `stonking` with our `os-release` | script from the live tarball, run with a bind mount in a user namespace |
+| `/etc/lsb-release` | absent from the live tarball | `tar -tf` |
+| `unattended-upgrades` | `2.12ubuntu9`; `DISTRO_ID` from `lsb_release -i -s`; Ubuntu's four `${distro_id}` origins in `50unattended-upgrades` | files from the live tarball |
+| `#clear` replaces an apt list | yes; `apt-config dump` over the two files prints the literal `Ubuntu:` entries only | apt on this workstation, with `APT_CONFIG` pointing at a directory holding copies of the two files (a test of apt's parser, not of stonking's packages) |
+| mmdebstrap and a second archive's key | the apt that mmdebstrap runs resolves keyring paths on the host (a key copied into the chroot's `trusted.gpg.d`, or named by an in-chroot `signed-by` path, is never read; with no `--keyring` at all Ubuntu's archive still verified through the host's keyrings), and its download methods run as `_apt`, which cannot read under a 0750 home directory. The working form is `signed-by=` with the key staged in a world-readable directory under `/tmp` | four failed runs and three one-minute experiments with the `apt` variant, 2026-10-11; the same `_apt` readability note is in `rootfs-create.sh` for the `.deb` files |
+| Omarchy's update pipeline on the port | `omarchy-update` runs `-confirm`, `-system-pkgs` (`apt-get update`, `full-upgrade`, `--force-confdef --force-confold` under `-y`), `omarchy-migrate`, `-hook post-update`, `-mise`, `-orphan-pkgs`, `-pkg-prune`, `-analyze-logs`, `-status`, `-restart` | the branch, `bin/omarchy-update` |
+| First-install marking | `omarchy-provision-user` touches a marker for every shipped migration when `first_install` | the branch, lines 105 to 108 |
+| Omarchy's migrations at the tag | 106 files, `1778623107.sh` to `1789444024.sh`; the two newest install the Omarchy kernel through Limine and its headers | `git ls-files migrations` on the branch before the deletion |
+| `do-release-upgrade` | not in the image: the live manifest lists `python3-apt 3.1.0ubuntu2` and no `ubuntu-release-upgrader-core` or `update-manager-core` | the live manifest |

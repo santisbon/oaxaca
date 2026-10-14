@@ -1,0 +1,163 @@
+#!/usr/bin/python3
+# Generated from packages/nvidia/drivers-install.in by scripts/render.py. Edit the .in file, not this one.
+"""oaxaca-drivers-install: install the driver packages for this machine's hardware,
+choosing the newest NVIDIA open branch that has Canonical's prebuilt signed modules.
+
+Run as root; the Oaxaca installer runs it against the target, and it is the recovery
+step after a GPU change ("sudo oaxaca-drivers-install"). "--show" prints the choice
+and the package list without installing anything and needs no root.
+
+Anatomy: ubuntu-drivers (from ubuntu-drivers-common) reads the PCI ids under /sys, maps
+them to driver packages through the apt cache, and calls apt to install one list. Left
+alone, it installs the NVIDIA branch it marks "recommended", and that ranking prefers a
+Long Term Support Branch (LTSB) over a New Feature Branch (NFB), so on a current GPU it
+picks the older branch. This command asks the same library for the candidates, keeps the
+"nvidia-driver-<branch>-open" ones that have a linux-modules-nvidia-<branch>-open-<flavour>
+package for the installed kernel (prebuilt, signed by Canonical, so Secure Boot needs no
+MOK), takes the highest branch number, and passes it to "ubuntu-drivers install" as
+"nvidia:<branch>-open". When no such branch fits (no NVIDIA GPU, or a GPU the open modules
+do not support, Maxwell to Volta), ubuntu-drivers' own default applies: the recommended
+closed branch for the GPU, or nothing. Options pinned on "ubuntu-drivers install":
+  --no-oem        do not add Canonical's OEM enablement archives for certified machines,
+                  so apt's sources stay the ones Oaxaca ships
+  --package-list  append the packages it installed to /var/log/oaxaca/drivers.list
+Any other arguments are passed on. An argument that does not start with "-" is a driver
+of the user's choice ("nvidia:580-open", "nvidia-driver-580"), and then no branch is chosen here.
+"""
+import os
+import re
+import subprocess
+import sys
+
+import apt_pkg
+import UbuntuDrivers.detect as detect
+
+LOG_DIR = "/var/log/oaxaca"
+SYS_PATH = "/sys"
+# The installation medium's package pool (scripts/driver-pool.sh writes it; on the booted
+# medium it is /cdrom/pool, and the installer binds /cdrom into the target). When the pool's
+# index exists, apt runs with a configuration file of its own, through APT_CONFIG, that names
+# the pool as the only source and keeps its package lists in a directory of its own, so the
+# drivers step needs no network and leaves the system's sources and lists untouched;
+# ubuntu-drivers and the apt it runs inherit the variable. Without the pool, apt runs as
+# configured on the system (the archive over the network).
+POOL_DIR = os.environ.get("OAXACA_DRIVER_POOL", "/cdrom/pool")
+POOL_STATE = "/run/oaxaca-driver-pool"
+
+
+def pool_apt_config():
+    """Write the pool's apt configuration and sources file and return the configuration
+    file's path, or None when the medium carries no pool."""
+    if not os.path.isfile(os.path.join(POOL_DIR, "Packages")):
+        return None
+    os.makedirs(os.path.join(POOL_STATE, "lists", "partial"), exist_ok=True)
+    sources = os.path.join(POOL_STATE, "pool.sources")
+    with open(sources, "w") as f:
+        f.write("Types: deb\nURIs: file:%s\nSuites: ./\nTrusted: yes\n" % POOL_DIR)
+    conf = os.path.join(POOL_STATE, "apt.conf")
+    with open(conf, "w") as f:
+        f.write('Dir::Etc::SourceList "%s";\nDir::Etc::SourceParts "%s";\nDir::State::Lists "%s";\n'
+                % (sources, os.path.join(POOL_STATE, "no-parts"), os.path.join(POOL_STATE, "lists")))
+    return conf
+
+
+def newest_open_branch(cache):
+    """The driver string for the highest NVIDIA open branch that fits this machine's GPU and
+    has prebuilt modules for the installed kernel, as "nvidia:<branch>-open", or None."""
+    candidates = detect.system_driver_packages(
+        cache, SYS_PATH, freeonly=False, include_oem=False
+    )
+    best = None
+    for name in candidates:
+        match = re.fullmatch(r"nvidia-driver-(\d+)-open", name)
+        if not match:
+            continue
+        # The same lookup ubuntu-drivers makes for the branch it installs: the
+        # linux-modules-nvidia-<branch>-open-<flavour> metapackage for the installed kernel,
+        # or the DKMS package when there is none. Only the prebuilt one qualifies here.
+        modules = detect.get_linux_modules_metapackage(cache, name)
+        if not modules or not modules.startswith("linux-modules-nvidia-"):
+            continue
+        branch = int(match.group(1))
+        if best is None or branch > best:
+            best = branch
+    return None if best is None else "nvidia:%d-open" % best
+
+
+def main(argv):
+    show = "--show" in argv
+    args = [a for a in argv if a != "--show"]
+    user_driver = any(not a.startswith("-") for a in args)
+
+    conf = pool_apt_config()
+    if conf:
+        os.environ["APT_CONFIG"] = conf
+        # Root refreshes the pool's lists; --show without root reads whatever lists exist.
+        if os.geteuid() == 0 and os.system("apt-get -q update >/dev/null 2>&1") != 0:
+            print("oaxaca-drivers-install: the medium's pool at %s could not be read" % POOL_DIR, file=sys.stderr)
+            return 1
+        print("oaxaca-drivers-install: packages from the medium's pool at %s" % POOL_DIR)
+
+    apt_pkg.init_config()
+    apt_pkg.init_system()
+    cache = apt_pkg.Cache(None)
+
+    driver = None
+    if user_driver:
+        # ubuntu-drivers joins its positional arguments into one driver string.
+        driver_string = "".join(a for a in args if not a.startswith("-"))
+        label = "%s (given on the command line)" % driver_string
+    else:
+        driver = newest_open_branch(cache)
+        driver_string = driver or ""
+        if driver:
+            args.append(driver)
+            label = "%s (newest NVIDIA open branch with prebuilt modules)" % driver
+        else:
+            label = "ubuntu-drivers default (no NVIDIA open branch with prebuilt modules fits)"
+
+    if show:
+        packages = detect.get_desktop_package_list(
+            cache,
+            SYS_PATH,
+            free_only=False,
+            include_oem=False,
+            driver_string=driver_string,
+            include_dkms=False,
+        )
+        print("driver: %s" % label)
+        print("packages: %s" % " ".join(packages))
+        return 0
+
+    print("oaxaca-drivers-install: driver: %s" % label)
+    os.makedirs(LOG_DIR, exist_ok=True)
+    # The decision, kept on the system: the installer runs this step as "may fail", and on
+    # 2026-10-12 it installed nothing without a trace (the pool lacked the modules' metapackage,
+    # so ubuntu-drivers fell back to DKMS, which the pool does not carry; docs/7 choice 36).
+    with open(os.path.join(LOG_DIR, "drivers-install.log"), "a") as log:
+        log.write("driver: %s; pool: %s\n" % (label, POOL_DIR if conf else "none (system apt sources)"))
+    cmd = ["ubuntu-drivers", "install", "--no-oem", "--package-list", os.path.join(LOG_DIR, "drivers.list")] + args
+    listing_path = os.path.join(LOG_DIR, "drivers.list")
+    before = open(listing_path).read() if os.path.exists(listing_path) else ""
+    status = subprocess.call(cmd)
+    after = open(listing_path).read() if os.path.exists(listing_path) else ""
+    installed = after[len(before):].split()
+    # With an NVIDIA driver installed, NVIDIA's VA-API driver too (nvidia-vaapi-driver), so
+    # applications started on the NVIDIA GPU decode video there; from the same source as the
+    # driver (the medium's pool, or the system's apt sources). Not on machines without NVIDIA
+    # (docs/7 choice 44).
+    if status == 0 and any(p.startswith("nvidia-driver-") for p in installed):
+        extra = "nvidia-vaapi-driver"
+        env = dict(os.environ, DEBIAN_FRONTEND="noninteractive")
+        if subprocess.call(["apt-get", "-q", "-y", "--no-install-recommends", "install", extra], env=env) == 0:
+            with open(listing_path, "a") as listing:
+                listing.write(extra + "\n")
+            with open(os.path.join(LOG_DIR, "drivers-install.log"), "a") as log:
+                log.write("also installed: %s\n" % extra)
+        else:
+            print("oaxaca-drivers-install: %s could not be installed" % extra, file=sys.stderr)
+    return status
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

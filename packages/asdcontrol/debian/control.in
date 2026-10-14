@@ -1,0 +1,24 @@
+Source: asdcontrol
+Section: utils
+Priority: optional
+Maintainer: @MAINTAINER@
+Build-Depends:
+ debhelper-compat (= 13),
+ sudo
+Standards-Version: 4.7.4
+Homepage: https://github.com/omakasui/asdcontrol
+Rules-Requires-Root: no
+
+Package: asdcontrol
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: brightness control for Apple Studio Display and Pro Display XDR
+ asdcontrol reads and sets the brightness of an Apple Studio Display or an
+ Apple Pro Display XDR connected over USB-C, by talking to the display's
+ USB HID interface through a /dev/usb/hiddev* or /dev/hiddev* device node.
+ Those nodes are owned by root, so the program is normally run with sudo.
+ .
+ This package ships /etc/sudoers.d/50-asdcontrol, which lets members of the
+ sudo group run the detect, read and set invocations of asdcontrol without
+ a password. The @DISTRO_NAME@ desktop's @DISTRO_ID@-brightness-display-apple
+ script relies on that rule.

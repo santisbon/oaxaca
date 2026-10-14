@@ -1,0 +1,18 @@
+# Generated from packages/hw-legion/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: oaxaca-hw-legion
+Section: misc
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://github.com/santisbon/oaxaca
+Rules-Requires-Root: no
+
+Package: oaxaca-hw-legion
+Architecture: all
+Depends: ${misc:Depends}
+Description: hardware support for the Lenovo Legion Pro 7 16IAX10H
+ What only this laptop model needs: /etc/oaxaca/gpu names the Intel GPU,
+ to which every display output of this model is wired, as the one GPU
+ Hyprland renders on, so the NVIDIA GPU can power down while nothing uses it.
+ The installer installs this package when the firmware names this model.

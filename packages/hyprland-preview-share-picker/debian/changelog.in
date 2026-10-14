@@ -1,0 +1,21 @@
+hyprland-preview-share-picker (0.2.1-0oaxaca1) @BASE_SERIES@; urgency=medium
+
+  * Initial @DISTRO_NAME@ package of hyprland-preview-share-picker 0.2.1
+    (roadmap step 6). Omarchy @OMARCHY_TAG@ installs the program and names
+    the binary as custom_picker_binary in config/hypr/xdph.conf, so
+    xdg-desktop-portal-hyprland opens the picker, with window and monitor
+    previews, on every screen-share request. Ubuntu's archive has no
+    hyprland-preview-share-picker.
+  * The upstream tarball is the GitHub release tag; the hyprland-protocols
+    git submodule, which the tarball ships as an empty directory, comes as
+    the component "hyprland-protocols" at the commit Omarchy's recipe pins
+    (3a5c2bda1c1a4e55cc1330c782547695a93f05b2); the crates from Cargo.lock
+    come as the component "vendor", made by cargo vendor on the build host.
+    See the "upstream" file next to debian/.
+  * d/patches/build-rs-no-git.patch: build.rs sets GIT_VERSION to a fixed
+    string instead of running git, as Omarchy's recipe does.
+  * d/rules: links lib/hyprland-protocols to the component, points cargo at
+    the vendored crates, builds with cargo build --frozen --release, and
+    installs the binary and the schema.json the binary prints.
+
+ -- @MAINTAINER@  Sat, 10 Oct 2026 12:00:00 -0500

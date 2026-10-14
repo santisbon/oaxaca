@@ -1,0 +1,8 @@
+# /etc/@DISTRO_ID@/gpu, installed by @DISTRO_ID@-hw-legion: the GPUs Hyprland renders on, one device
+# per line, read at every login by @DISTRO_ID@-session's user environment generator
+# (50-@DISTRO_ID@-gpu), which resolves a by-path name to the card's node and exports it to Hyprland
+# as AQ_DRM_DEVICES. Lenovo Legion Pro 7 16IAX10H: every display of this laptop (the internal
+# panel and both DisplayPort outputs) is wired to the Intel GPU, so rendering there copies no
+# frames between GPUs and lets the NVIDIA GPU power down when no game or browser uses it. The
+# by-path name is stable across boots where /dev/dri/cardN is not.
+/dev/dri/by-path/pci-0000:00:02.0-card

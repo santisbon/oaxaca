@@ -1,0 +1,9 @@
+# NVIDIA: @DISTRO_ID@-drivers-install (step 4) asks ubuntu-drivers what the machine needs and
+# installs the newest open driver branch with prebuilt signed modules; it does nothing on a
+# machine without an NVIDIA GPU. The leading "-" keeps a failure (no network, no driver yet
+# for a brand-new GPU) from aborting the installation.
+---
+dontChroot: false
+timeout: 1800
+script:
+    - "-@DISTRO_ID@-drivers-install"

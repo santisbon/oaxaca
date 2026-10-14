@@ -1,0 +1,2 @@
+replace-read-selection-before-revert.patch
+revert-device-on-gui-thread.patch

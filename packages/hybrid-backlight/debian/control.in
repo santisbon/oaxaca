@@ -1,0 +1,20 @@
+Source: @DISTRO_ID@-hybrid-backlight
+Section: admin
+Priority: optional
+Maintainer: @MAINTAINER@
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: @DISTRO_HOME_URL@
+Rules-Requires-Root: no
+
+Package: @DISTRO_ID@-hybrid-backlight
+Architecture: all
+Depends: ${misc:Depends}, udev, systemd
+Description: hide the phantom NVIDIA backlight device on hybrid laptops
+ On laptops whose internal panel is driven by the integrated GPU, the NVIDIA
+ driver still registers a backlight device (nvidia_0) with its own scale.
+ Brightness tools that pick the first device or rescale between devices then
+ set the wrong brightness, and the driver re-registers the device after every
+ resume from suspend. This package shadows the phantom device's sysfs directory
+ with an empty tmpfs whenever a backlight device appears, and leaves it alone
+ when the NVIDIA GPU drives the panel itself.

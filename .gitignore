@@ -1,0 +1,22 @@
+# build outputs
+build/
+# source packages that an sbuild run given a directory (not a .dsc) writes next to it
+packages/*.dsc
+packages/*.tar.xz
+# debhelper leftovers from in-tree builds
+packages/*/debian/.debhelper/
+packages/*/debian/files
+packages/*/debian/*.substvars
+packages/*/debian/*.debhelper.log
+packages/*/debian/debhelper-build-stamp
+# debhelper's staging directories, debian/<binary package>/ and debian/.debhelper/, plus the
+# desktop package's debian/renamed/. Named directories that belong in git are listed back in.
+packages/*/debian/*/
+!packages/*/debian/source/
+!packages/*/debian/extra/
+!packages/*/debian/patches/
+!packages/*/debian/upstream/
+# gpg revocation certificates must never be committed
+*.rev
+# python bytecode caches (py_compile, imports)
+__pycache__/

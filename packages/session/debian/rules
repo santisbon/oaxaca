@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+# Generated from packages/session/debian/rules.in by scripts/render.py. Edit the .in file, not this one.
+ID = oaxaca
+# "dest", not "PKG": make passes command-line variables such as "make build PKG=..." down to
+# every sub-make through MAKEFLAGS, and that would override a variable named PKG here.
+dest = debian/$(ID)-session
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	install -D -m 0644 sddm-wayland.conf $(dest)/etc/sddm.conf.d/10-$(ID)-wayland.conf
+	install -D -m 0644 sddm-greeter-hyprland.lua $(dest)/usr/share/$(ID)/sddm/hyprland.lua
+	install -D -m 0755 gpu-env $(dest)/usr/lib/systemd/user-environment-generators/50-$(ID)-gpu
+	install -D -m 0644 volume-monitors.service $(dest)/usr/lib/systemd/user/$(ID)-volume-monitors.service

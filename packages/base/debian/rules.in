@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+ID = @DISTRO_ID@
+# "dest", not "PKG": make passes command-line variables such as "make build PKG=..." down to
+# every sub-make through MAKEFLAGS, and that would override a variable named PKG here.
+dest = debian/$(ID)-base
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	install -D -m 0644 os-release $(dest)/usr/lib/os-release
+	install -D -m 0755 loader-fallback $(dest)/usr/libexec/$(ID)/loader-fallback
+	install -D -m 0644 apt-no-recommends.conf $(dest)/etc/apt/apt.conf.d/50$(ID)-no-recommends
+	install -D -m 0644 apt-unattended-upgrades.conf $(dest)/etc/apt/apt.conf.d/51$(ID)-unattended-upgrades
+	install -D -m 0600 netplan-network-manager.yaml $(dest)/etc/netplan/01-$(ID)-network-manager.yaml
+
+# dh_fixperms resets every file to 0644; netplan warns when its files are readable by others.
+override_dh_fixperms:
+	dh_fixperms
+	chmod 0600 $(dest)/etc/netplan/01-$(ID)-network-manager.yaml

@@ -1,0 +1,10 @@
+#!/usr/bin/make -f
+# Generated from packages/archive-keyring/debian/rules.in by scripts/render.py. Edit the .in file, not this one.
+ID = oaxaca
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	install -D -m 0644 archive-keyring.gpg debian/$(ID)-archive-keyring/etc/apt/keyrings/$(ID)-archive-keyring.gpg
+	install -D -m 0644 archive.sources debian/$(ID)-apt-source/etc/apt/sources.list.d/$(ID).sources

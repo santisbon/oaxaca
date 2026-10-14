@@ -1,0 +1,120 @@
+.TH QUICKSHELL 1 "2026-05-04" "quickshell 0.3.0" "User Commands"
+.SH NAME
+quickshell \- flexible QtQuick-based desktop shell toolkit
+.SH SYNOPSIS
+.B quickshell
+[\fIOPTIONS\fR] [\fISUBCOMMAND\fR]
+.SH DESCRIPTION
+Quickshell is a toolkit for building status bars, widgets, lockscreens,
+and other desktop components using Qt6 and QtQuick. It supports both
+Wayland and X11, with integrations for PipeWire, MPRIS, system tray,
+PAM, Bluetooth, and compositor-specific features for Hyprland and
+Sway/i3. Configuration is done declaratively in QML with live
+hot-reloading.
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+Print help message and exit.
+.TP
+.BR \-V ", " \-\-version
+Print quickshell's version and exit.
+.TP
+.BR \-n ", " \-\-no\-duplicate
+Exit immediately if another instance of the given config is running.
+.TP
+.BR \-d ", " \-\-daemonize
+Detach from the controlling terminal.
+.SS "Config Selection"
+Quickshell detects configurations as named directories under each XDG config
+directory as \fI<xdg dir>/quickshell/<config name>/shell.qml\fR.
+.PP
+If \fI<xdg dir>/quickshell/shell.qml\fR exists, it will be registered as
+the \(aqdefault\(aq configuration, and no subdirectories will be considered.
+If \fB\-\-config\fR is not passed, \(aqdefault\(aq will be assumed.
+.PP
+Alternatively, a config can be selected by path with \fB\-\-path\fR.
+.TP
+.BR \-p ", " \-\-path " " \fITEXT\fR
+Path to a QML file or config folder. Excludes \fB\-\-config\fR and
+\fB\-\-manifest\fR. Environment variable: \fBQS_CONFIG_PATH\fR.
+.TP
+.BR \-c ", " \-\-config " " \fITEXT\fR
+Name of a quickshell configuration to run. Excludes \fB\-\-path\fR.
+Environment variable: \fBQS_CONFIG_NAME\fR.
+.TP
+.BR \-m ", " \-\-manifest " " \fITEXT\fR
+[DEPRECATED] Path to a quickshell manifest. Excludes \fB\-\-path\fR.
+Environment variable: \fBQS_MANIFEST\fR.
+.SS Logging
+.TP
+.B \-\-no\-color
+Disables colored logging. Can also be disabled by setting the
+\fBNO_COLOR\fR environment variable.
+.TP
+.B \-\-log\-times
+Log timestamps with each message.
+.TP
+.BI \-\-log\-rules " TEXT"
+Log rules to apply, in the format of QT_LOGGING_RULES.
+.TP
+.BR \-v ", " \-\-verbose
+Increases log verbosity. \fB\-v\fR shows INFO level internal logs.
+\fB\-vv\fR shows DEBUG level internal logs.
+.SS Debugging
+.TP
+.BI \-\-debug " PORT"
+Open the given port (0\-65535) for a QML debugger connection.
+.TP
+.B \-\-waitfordebug
+Wait for a QML debugger to connect before executing the configuration.
+Requires \fB\-\-debug\fR.
+.SS "Subcommand Filtering"
+Subcommands that operate on running instances accept the following filter:
+.TP
+.B \-\-any\-display
+Do not restrict the match to instances launched on the current display.
+.SH SUBCOMMANDS
+.TP
+.B log
+Print quickshell logs.
+.TP
+.B list
+List running quickshell instances.
+.TP
+.B kill
+Kill quickshell instances.
+.TP
+.B ipc
+Communicate with other Quickshell instances. Includes per-handler
+listener subcommands for IpcHandler signals registered by the running
+shell.
+.TP
+.B msg
+[DEPRECATED] Moved to \fBipc call\fR.
+.SH EXAMPLES
+.TP
+Run the default configuration:
+.B qs
+.TP
+Run a named configuration:
+.B qs \-c myconfig
+.TP
+Run from a specific path:
+.B qs \-p ~/myshell
+.TP
+Run a specific QML file:
+.B qs \-p ~/myshell/randomfile.qml
+.SH ENVIRONMENT
+.TP
+.B QS_CONFIG_PATH
+Path to a QML file or config folder.
+.TP
+.B QS_CONFIG_NAME
+Name of a quickshell configuration to run.
+.TP
+.B NO_COLOR
+If set to a non-empty value, disables colored logging.
+.SH SEE ALSO
+.BR qs (1)
+.SH AUTHORS
+Quickshell was written by outfoxxed <outfoxxed@outfoxxed.me>.

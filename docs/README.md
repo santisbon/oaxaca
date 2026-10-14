@@ -1,0 +1,413 @@
+<!-- Generated from docs/README.md.in by scripts/render.py. Edit the .in file, not this one. -->
+# Oaxaca: the developer README
+
+Oaxaca is a Linux distribution built from the Ubuntu [archive](#archive): Ubuntu 26.10 (`stonking`) underneath, apt for packages, and on top a Wayland desktop made of Hyprland, Quickshell and the Omarchy shell, themes and fonts, ported from Arch to apt. Oaxaca works with Secure Boot on or off, with no key enrollment either way and never a requirement that Secure Boot be on, and Oaxaca installs onto an encrypted disk. The first machine Oaxaca is built for is a Lenovo Legion Pro 7 laptop with an Intel iGPU and an NVIDIA dGPU, so hybrid graphics and sleep are first-class concerns.
+
+Nothing is ever installed and then stripped out: the root filesystem is assembled from Ubuntu's archive one package at a time, and the parts Ubuntu doesn't have come from a small apt repository of our own. This document, the developer README (`docs/README.md`; the repository's top-level `README.md` is the short introduction), explains the tools that produce that repository and how those tools fit together. The reasoning behind each decision lives in the numbered documents next to this one in `docs/`.
+
+## Terms
+
+Each entry uses only terms defined above it. The first use of each term in the rest of this file links to its entry here.
+
+### Package
+
+A `.deb` file: one installable unit, such as `hyprland_0.56.2+ds-1_amd64.deb`. Inside the `.deb` file is an `ar` archive holding two tarballs, one with control metadata (name, version, architecture, the `Depends` list, maintainer scripts) and one with the files to unpack. `dpkg` installs packages; `apt` is the layer above dpkg that fetches packages and resolves their dependencies.
+
+### Source package
+
+What a package is built from: a `.dsc` description file plus a tarball of the source tree, which carries a `debian/` directory with `control` (names, dependencies, descriptions), `changelog` (the package version comes from this file), `rules` (a makefile, usually just `dh $@`), `copyright`, and small helper files such as `install`, `service` and `udev` that tell debhelper which files go where. `dpkg-buildpackage` turns a source package into one or more packages by running `debian/rules`. In this repo, each directory under `packages/` is a source package.
+
+### Suite and pocket
+
+A suite is a named set of packages published together. For Ubuntu a suite's name is the series codename: `stonking` is the suite for Ubuntu 26.10. Pockets are suites that differ only by a suffix on that name: `stonking` itself is the release pocket, the package set as it stood on release day and never changed afterwards; `stonking-security` receives security fixes; `stonking-updates` receives other fixes, with the security fixes copied in. Two more pockets exist: `-proposed`, where updates are staged for testing, and `-backports`, newer versions of selected packages. Until `stonking` is released in October, the release pocket is still the moving development set and the other pockets are empty.
+
+### Component
+
+Each suite is split into four components by license and by who maintains the packages. `main` is free software that Canonical maintains and issues security updates for (the kernel, systemd, Mesa, apt). `restricted` is proprietary software Canonical still supports, mostly drivers and firmware, such as the NVIDIA packages. `universe` is free software maintained by the community on a best-effort basis; Hyprland, Quickshell, sbuild and aptly all live in `universe`. `multiverse` is community software with license restrictions, such as `nvtop` and the Intel media driver. This split decides whose security team covers each package.
+
+### Archive
+
+Not a tar file. An archive is an apt repository: a directory tree with a fixed layout, usually served over HTTP, that publishes suites, their components and their packages, with signed index files describing those packages. "The Ubuntu archive" is the archive at `archive.ubuntu.com`, and a mirror is a copy of the same tree at another URL. Here is what the Ubuntu archive looks like, fetched on 2026-10-01 and trimmed:
+
+```
+$ curl -s http://archive.ubuntu.com/ubuntu/dists/stonking/InRelease
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+Origin: Ubuntu
+Suite: stonking
+Date: Thu, 01 Oct 2026  4:24:42 UTC
+Architectures: amd64 amd64v3 arm64 armhf i386 ppc64el riscv64 s390x
+Components: main restricted universe multiverse
+...then one line per index file, with its size and SHA256:
+ 709c71da...31008   1269941 main/binary-amd64/Packages.gz
+ 3929e8d4...4a979  18804355 universe/source/Sources.gz
+
+$ curl -s .../dists/stonking/universe/binary-amd64/Packages.gz | zcat | grep -A14 '^Package: hyprland$'
+Package: hyprland
+Version: 0.56.2+ds-1
+Depends: libaquamarine13 (>= 0.14.0), libc6 (>= 2.43), libcairo2 (>= 1.2.4), ...
+Filename: pool/universe/h/hyprland/hyprland_0.56.2+ds-1_amd64.deb
+Size: 5257018
+
+$ curl -sI .../pool/universe/h/hyprland/hyprland_0.56.2+ds-1_amd64.deb
+HTTP/1.1 200 OK
+Content-Length: 5257018
+Content-Type: application/vnd.debian.binary-package
+```
+
+1. **A sources entry in apt's configuration is the entry point.** apt reads the list of archives to use from `/etc/apt/sources.list` (one line per archive, the older format) and from files in `/etc/apt/sources.list.d/` (`*.sources` files in the stanza format Ubuntu now uses). Both formats carry the same three facts: a base URL, a suite, and components. The one-line form `deb http://archive.ubuntu.com/ubuntu stonking main universe` and this stanza mean the same thing:
+
+   ```
+   Types: deb
+   URIs: http://archive.ubuntu.com/ubuntu
+   Suites: stonking
+   Components: main universe
+   Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+   ```
+
+   Every other path below is derived from those three facts. In this project an apt sources entry appears in three places: `scripts/chroot-create.sh` passes three one-line entries to mmdebstrap on the command line, and mmdebstrap writes those entries into the chroot's `/etc/apt/sources.list`; an installed Ubuntu system has its own entries in `/etc/apt/sources.list.d/ubuntu.sources`; and `packages/archive-keyring/archive.sources` is the stanza for our archive, which the `oaxaca-apt-source` package installs into `/etc/apt/sources.list.d/`.
+2. **`dists/<suite>/InRelease` is the signed table of contents.** A GPG-signed text file with the suite's name, date, architectures and components, then one line per index file with its size and hash. The archive keyring is the key that verifies this signature. The older form of the same table of contents is a `Release` file plus a detached `Release.gpg` signature.
+3. **`dists/<suite>/<component>/binary-<arch>/Packages.gz` is the index.** One stanza per package in that component: name, version, dependencies, size, hash, and a `Filename:` path into the pool. `source/Sources.gz` does the same for source packages.
+4. **`pool/` holds the files.** The `.deb`, `.dsc` and tarballs sit at the paths the indexes name, grouped by component, first letter and source package.
+
+An apt client never lists directories. apt downloads `InRelease`, checks its signature, downloads the index files whose hashes `InRelease` vouches for, then fetches exactly the pool paths the indexes name and checks each file's hash. Those steps are what `apt update` and then `apt install` do. Our own apt repository is an archive of the same shape: aptly writes `dists/stonking/InRelease` signed with our key and a `pool/` directory beside `dists/`, and the S3 bucket only has to serve those paths as files. The transport doesn't matter: the publish test described in [docs/2 - build-infra.md](2%20-%20build-infra.md) read our tree over `file://`. Two package names follow from this layout: `oaxaca-archive-keyring` holds the key that signs our archive, and `ubuntu-archive-keyring` holds the key that signs Ubuntu's archive.
+
+### Essential and Priority
+
+Two markers every package in an archive carries. `Essential: yes` marks the handful of packages dpkg refuses to remove: the shell, coreutils, dpkg itself, 21 packages in `stonking`. `Priority` is one of `required`, `important`, `standard` or `optional`, a coarse ranking of how basic a package is. Tools that assemble a root filesystem choose their starting set from these two markers.
+
+### Recommends
+
+A package declares its relationships at three strengths. `Depends` must be installed. `Recommends` is for packages that would be found together with the declaring package in all but unusual installations, and apt installs Recommends by default (`APT::Install-Recommends "true"` is apt's stock setting). `Suggests` is never installed automatically. Recommends chains are how a small tool drags in half a desktop, which is why this project turns Recommends off wherever it assembles a system: in the build chroot now, and in the distro image in step 3. The reasons are given in the mmdebstrap section.
+
+### Metapackage
+
+A package that contains no files and exists only for its dependency list, so that installing one name pulls in a whole set of packages. `build-essential` and `linux-generic` are metapackages, and so is the planned `oaxaca-desktop`.
+
+### Build dependencies
+
+The packages a source package needs installed to build, declared in its `Build-Depends` line. The one toolchain a package may assume without declaring it is `build-essential`, a metapackage that in `stonking` depends on `libc6-dev` (the C library's headers), `gcc` and `g++` (version 14.2 or newer), `make`, and `dpkg-dev` (the tools that run `debian/rules` and produce `.deb` and `.dsc` files). Everything else, from `debhelper` to any library's `-dev` package, must be named in `Build-Depends`.
+
+### Chroot
+
+A directory holding a complete root filesystem, used by running a program with that directory as its `/`. A build chroot contains only the essential packages, the toolchain and apt; a build inside a build chroot can only use what its source package declared, which is how a successful build proves a `Build-Depends` line is complete. This project keeps its build chroot as a tarball; sbuild unpacks a fresh copy of that tarball for every build and deletes the copy when the build ends.
+
+## Status
+
+The roadmap is in [docs/0 - plan.md](0%20-%20plan.md). Done so far:
+
+| Step | What | Where |
+|---|---|---|
+| 1. Policy | name, base series, Omarchy pin (`v4.0.4`), package namespace, versioning, hard requirements, password login | [docs/1 - policy.md](1%20-%20policy.md) |
+| 2. Build infrastructure | signing key, clean builds, apt repository, CI, first two [packages](#package) | [docs/2 - build-infra.md](2%20-%20build-infra.md), this README |
+| 3. Minimal root filesystem | the `oaxaca-base` [metapackage](#metapackage), the root filesystem tarball built with mmdebstrap, and a QEMU boot test of it | [docs/3 - rootfs.md](3%20-%20rootfs.md) |
+| 4. Graphics and session layer | `oaxaca-session` (Mesa, Hyprland, Xwayland, uwsm, SDDM, portals, GNOME Keyring) and `oaxaca-nvidia` (the NVIDIA install path), the `session` profile of the root filesystem, the graphical boot test, and the driver check on this laptop | [docs/4 - session.md](4%20-%20session.md) |
+| 5. Hyprland and Quickshell | Hyprland stays the archive's 0.56.2 (Omarchy's exact pin); Quickshell 0.3.2 backported as `quickshell 0.3.2-0oaxaca1` from Debian's packaging, `oaxaca-session` depends on it, and the boot test runs Omarchy v4.0.4's shell on it | [docs/5 - hyprland-quickshell.md](5%20-%20hyprland-quickshell.md) |
+| 6. The Omarchy port | Omarchy v4.0.4 on the `oaxaca` branch of a fork, pacman replaced by apt, renamed at build time into `oaxaca-desktop`, `-tools`, `-shell`, `-themes` and `-config`; `oaxaca-fonts`, `asdcontrol`, `hyprland-preview-share-picker`, `nwg-displays` and `oaxaca-hw-legion` beside them; the `desktop` profile of the root filesystem and a boot test that logs into the ported session | [docs/6 - omarchy-port.md](6%20-%20omarchy-port.md) |
+| 7. Image and installer | the live installation ISO: casper's live session with the desktop, Calamares from Ubuntu's archive as the installer (`oaxaca-installer` configures it, `oaxaca-live` is the live session), Ubuntu's signed shim and GRUB in an EFI partition image written by xorriso, and a QEMU boot test under OVMF with Secure Boot on and off; since 2026-10-11 KPMcore, the library Calamares partitions with, is rebuilt with one patch (`kpmcore 26.08.1-0ubuntu1oaxaca1`) so an encrypted install works in every partitioning mode; the same day's laptop runs added rsync and the btrfs and xfs tools to the installer's dependencies, `md5sum.txt` to the medium, `plymouth-label` to the port's package list with Plymouth itself rebuilt for an upstream null-check patch (`packages/plymouth`), a backlight udev rule to the session `pulseaudio-utils` for the volume keys, and one GPU environment generator in the session package, which also fixed the Legion package's `AQ_DRM_DEVICES` (aquamarine rejects a by-path name); the fourth run put the hardware scripts' packages in the image so an install works offline, bound the resolver into the target, and added `gawk` and `gtk-launch` for the keybindings and application menus, put the NVIDIA driver's packages on the medium in a pool the drivers step installs from, and, after the first completed install overwrote Kubuntu's loader on a shared EFI System Partition, taught the installer to keep the previous system in the menu; the sixth run fixed the GRUB entry's name and the first-boot login, the shared GRUB stub now falls back to the previous system when Oaxaca is removed, Calamares is rebuilt with a Replace-mode patch, the boot and login screens say what they ask for, and encryption is the default; the dimming on the partition page is open, with what was tried recorded (choices 12 to 33) | [docs/7 - image-installer.md](7%20-%20image-installer.md) |
+| 8. Update path | `oaxaca-update` (Omarchy's update pipeline on apt) and unattended security updates from Ubuntu, the migrations runner with the port's own `migrations/`, the N to N+1 upgrade test in a chroot (`make upgrade-test`, also a CI job), the version-bump check (`make check-versions`) and the publish guard; the step also found and fixed two silent bugs: unattended-upgrades matched no origin on Oaxaca, and the migrations runner waited forever on Ubuntu's unattended-upgrades shutdown helper | [docs/8 - update-path.md](8%20-%20update-path.md) |
+| Baseline | suspend/resume measured on the Legion laptop before building anything | [docs/suspend-baseline.md](suspend-baseline.md) |
+
+Next: the roadmap's eight steps are done; what remains is the plan's verification list on the Legion laptop and the items each step carried (listed at the end of each document).
+
+## Repository map
+
+```
+distro.conf          the only place the distro's name and identity live
+Makefile             entry points: render, check-versions, chroot, build, publish, rootfs, rootfs-test, drivers-check, iso, iso-test, upgrade-test
+sbuild.conf          sbuild settings for this repo (loaded through SBUILD_CONFIG)
+scripts/
+  render.py          fills @TOKEN@ templates (*.in) from distro.conf
+  keygen.sh          creates the apt signing key (run once, by hand)
+  chroot-create.sh   builds the clean build chroot with mmdebstrap
+  build.sh           builds packages with sbuild, checks them with lintian
+  repo-publish.sh    publishes build/ into the apt repository with aptly; refuses a published version with different content
+  version-check.sh   fails when a package directory changed since the last v* tag without a version bump (step 8)
+  upgrade-test.sh    upgrades the published packages to build/ in a throwaway chroot and runs the migrations (step 8)
+  rootfs-create.sh   builds the root filesystem tarball with mmdebstrap (steps 3, 4, 6 and 7; PROFILE=base|session|desktop|live)
+  rootfs-boot-test.sh  boots that tarball in QEMU and checks the base system, the graphical session and, for desktop, the ported desktop
+  drivers-check.sh   runs ubuntu-drivers inside the tarball against this machine's GPU (step 4)
+  iso-create.sh      turns the live tarball into the installation ISO: squashfs, signed shim and GRUB in an EFI image, xorriso (step 7)
+  iso-boot-test.sh   boots the test ISO in QEMU under OVMF, Secure Boot on or off, and checks the live session and the installer
+  suspend-baseline.sh  one measured suspend/resume cycle, used for the baseline
+packages/
+  archive-keyring/   oaxaca-archive-keyring and oaxaca-apt-source
+  hybrid-backlight/  oaxaca-hybrid-backlight (phantom NVIDIA backlight hide)
+  base/              oaxaca-base, the base system metapackage (kernel, boot chain, init, network, sound)
+  session/           oaxaca-session, the graphics and session metapackage (Mesa, Hyprland, Xwayland, uwsm, SDDM, portals, GNOME Keyring, Quickshell), the backlight udev rule and the GPU environment generator
+  quickshell/        quickshell 0.3.2 backported from Debian's packaging (debian/ plus an "upstream" file naming the tarball; step 5)
+  nvidia/            oaxaca-nvidia, the NVIDIA install path (drivers-install command: newest open branch with prebuilt modules; initramfs hook)
+  desktop/           oaxaca-desktop, -tools, -shell, -themes, -config: the Omarchy port, built from the fork's branch ("upstream" names the git ref; step 6)
+  fonts/             oaxaca-fonts: JetBrains Mono Nerd Font and iA Writer, fetched from a file list
+  asdcontrol/        asdcontrol (Apple Studio Display brightness), from its release tarball
+  hyprland-preview-share-picker/  the screen-share picker, Rust, with its crates vendored at build time
+  nwg-displays/      nwg-displays 0.4.4 on Debian's packaging (monitor layout GUI)
+  hw-legion/         oaxaca-hw-legion, the Lenovo Legion Pro 7 hardware set (its /etc/oaxaca/gpu names the Intel GPU for Hyprland)
+  live/              oaxaca-live: the ISO's live session on casper (autologin fix-up, the ISO boot test's guest half)
+  installer/         oaxaca-installer: Calamares settings, module configuration and branding (step 7)
+  kpmcore/           kpmcore 26.08.1, the library Calamares partitions with, rebuilt from Ubuntu's source package with one patch so encrypted installs work in every partitioning mode ("upstream" names the .dsc; step 7)
+  calamares/         calamares 3.3.14, the installer framework, rebuilt from Ubuntu's source package with two patches for the partition page's crashes ("upstream" names the .dsc; step 7)
+  plymouth/          plymouth 24.004.60, the boot splash, rebuilt from Ubuntu's source package with one upstream patch so its script plugin survives a missing console viewer ("upstream" names the .dsc; step 7)
+.github/workflows/build.yml   CI: the same make targets on an Ubuntu runner
+docs/                the developer README (this file), plan, policy, build infrastructure, root filesystem, session layer, Hyprland and Quickshell, the Omarchy port, image and installer, update path, suspend baseline
+tests/
+  iso-drive/<name>/    driven installer and live-session checks: DRIVE=tests/iso-drive/<name> make iso-test puts the folder's run.sh on a disk the guest runs (docs/7, choices 26, 38, 41, 42)
+  gpu-env/run.sh       the session's GPU script against made-up machines (docs/7, choice 43); runs directly, no build
+  launch-dgpu/run.sh   the port's menu launcher and discrete-GPU launcher, from a fork checkout (docs/7, choice 43); runs directly
+build/               build output (not committed)
+```
+
+## The tools
+
+Each `make` target runs one script, and each script drives one program. The program is the thing worth understanding; the script only pins that program's options.
+
+### `distro.conf` and `scripts/render.py` (`make render`)
+
+The distro's name, `Oaxaca`, and its lowercase identifier, `oaxaca`, appear in package names, commands, paths, systemd units, the apt `Origin` field and the signing key's identity. Every one of those occurrences is generated. `distro.conf` is a shell-syntax file with `DISTRO_ID=oaxaca`, `DISTRO_NAME=Oaxaca`, the base series, the GitHub names and the apt settings. Any file that needs one of those values is a template ending in `.in`, with tokens such as `@DISTRO_ID@` (doubling the at-signs yields a literal token, as this sentence does). `make render` writes the real file next to each template and stamps the rendered file with a "generated, edit the .in" header. Rendered files are committed so a clone is complete, and CI fails if the rendered files drift from `distro.conf`. A rebrand is an edit to `distro.conf` plus the rebrand steps in [docs/2 - build-infra.md](2%20-%20build-infra.md).
+
+```
+make render            # render every *.in
+make check-render      # what CI runs: render, then fail if anything changed
+```
+
+### `mmdebstrap` (`make chroot`)
+
+mmdebstrap builds a Debian or Ubuntu root filesystem straight from an archive, without root privileges, into a directory or a tarball. Give it a [suite](#suite-and-pocket) name, an output path (an empty directory to fill, or a `.tar` file to write; mmdebstrap's manual calls this the target) and one or more apt sources entries, and mmdebstrap downloads the chosen package set, unpacks and configures those packages, and writes the resulting root filesystem to that path. This project uses mmdebstrap twice. Today, `make chroot` uses it to make the clean build environment, saved as `~/.cache/sbuild/stonking-amd64.tar` (about 430 MB, 118 packages). Later, in roadmap step 3, the same tool builds the distro's own root filesystem. The command in `scripts/chroot-create.sh` is, in words: the `buildd` variant of `stonking`, from the `main` and `universe` [components](#component), with the `-updates` and `-security` [pockets](#suite-and-pocket), [Recommends](#recommends) off. The variants are explained below; the reasons for the other three options follow here. `main` and `universe` are where everything we build against lives, while the distro image additionally enables `restricted` and `multiverse`, as [docs/0 - plan.md](0%20-%20plan.md) explains. All three pockets are enabled because a [chroot](#chroot) built from the release pocket alone would build against package versions that users no longer run. Recommends are off so that a build only sees what its package declares: if a build quietly needed something a Recommends line happened to pull in, the build would pass in the chroot and fail on any system where that package is absent. The distro image uses the same setting, and in the image that setting is what keeps GNOME and KDE pieces from arriving through the Recommends of packages like `nautilus` or `sddm`.
+
+```
+make chroot                          # creates the chroot tarball, or keeps the existing one if under a week old
+scripts/chroot-create.sh --force     # rebuild the tarball now
+UBUNTU_MIRROR=http://... make chroot  # use a closer mirror
+```
+
+**Variants.** `--variant` picks the starting package set from the [Essential and Priority](#essential-and-priority) markers. The variants build on each other:
+
+| Variant | Package set | Used for |
+|---|---|---|
+| `essential` | only `Essential: yes` packages | the floor the other variants stand on |
+| `apt` | essential plus apt | |
+| `minbase` | essential plus every `Priority: required` package, which includes apt | the distro's own root filesystem in step 3: enough to run apt, with nothing that presumes a use |
+| `buildd` | essential plus apt plus `build-essential` and its dependency closure | this build chroot; `buildd` mirrors what Debian's and Ubuntu's build machines, the "buildds", start from |
+| `important`, `standard` | minbase plus `Priority: important`, then `standard` too | not used. `important` is debootstrap's default and brings editors, network tools and documentation that nobody asked for |
+
+So `minbase` and `buildd` are siblings, not a ladder: `minbase` is "enough to run and install things", `buildd` is "enough to compile things", and each lacks the other's extras. The build chroot has no desktop, no kernel and no init. Each package's declared [build dependencies](#build-dependencies) are added by sbuild at build time, into a throwaway copy of the chroot, as the next paragraph describes.
+
+**Why `buildd` and nothing more.** The chroot tarball holds the essential set, apt and `build-essential`'s dependency closure, 118 packages in all. For every build, sbuild unpacks a fresh copy of that tarball, installs the package's declared build dependencies into the copy, builds there, and deletes the copy afterwards. The tarball itself never changes, and a build can only use what its package declared, which is why a successful build in the chroot proves the `Build-Depends` line is complete: nothing else is present in the chroot.
+
+### `sbuild` with `dpkg-buildpackage` and `debhelper` (`make build`)
+
+`dpkg-buildpackage` turns a [source package](#source-package) into packages by running its `debian/rules` through debhelper's `dh` sequence. sbuild runs that build inside the clean chroot. In unshare mode sbuild unpacks the chroot tarball into an unprivileged user namespace, installs only the package's declared build dependencies into that copy, builds, and copies the results out to `build/`. No root is involved, and a build that works proves the `Build-Depends` line is complete. `sbuild.conf` in the repo selects unshare mode and stops sbuild from recreating the chroot on its own. The results land in `build/`: the `.deb` binaries, a `.dsc` plus tarball (the source package), a `.changes` file listing every produced file, and a `.buildinfo` record of the build environment.
+
+```
+make build                                  # every directory under packages/
+make build PKG=packages/hybrid-backlight    # one package
+make build PKG=packages/quickshell          # a third-party package: downloads its upstream tarball into build/ first
+UPSTREAM_DIR=~/Projects/omarchy make build PKG=packages/desktop   # the Omarchy port from the local checkout (without UPSTREAM_DIR: from the fork's ref)
+WITH_REPO=1 make build                      # also enable our published repo in the chroot,
+                                            # for packages that build-depend on ours
+```
+
+### `lintian` (runs inside `make build`)
+
+lintian checks finished packages against Debian policy: file placement, maintainer scripts, descriptions, licenses, and rules such as "only a package named `*-apt-source` may install an apt sources file". `scripts/build.sh` runs lintian on every `.changes` file after the build and fails on errors. The `*-apt-source` rule is why the first source package produces two binaries, `oaxaca-archive-keyring` and `oaxaca-apt-source`.
+
+### `gpg` (`scripts/keygen.sh`, once)
+
+apt only trusts a repository whose `Release` file is signed by a key the system already has. `scripts/keygen.sh` creates our archive's signing key in your GnuPG home (RSA 4096, sign-only, two-year expiry), exports the public half into `packages/archive-keyring/`, and writes the fingerprint into `distro.conf`. The secret key never leaves the workstation; CI builds but does not sign. Run the script yourself in a terminal, because gpg asks for the apt signing key passphrase through pinentry.
+
+```
+scripts/keygen.sh
+```
+
+### `aptly` (`make publish`)
+
+aptly manages apt repositories. aptly keeps a database and a package pool under `~/.local/state/oaxaca/aptly`, and a *publish* turns a snapshot of the aptly repository into the `dists/` and `pool/` tree apt reads, with the `Release` file signed by the archive signing key from the gpg section. Snapshots make each publish atomic and let you switch the published tree back to an earlier snapshot. `scripts/repo-publish.sh` adds the newest version of each package in `build/` to the aptly repository (by dpkg's version order) and removes the older versions, so the repository offers one version of each, takes a snapshot, publishes that snapshot with `Origin: Oaxaca`, and, with `--push`, uploads the published tree to the S3 bucket `oaxaca-apt` with the aws-cli. The bucket and its CloudFormation stack are described in [infra/apt-repo/README.md](../infra/apt-repo/README.md) (`make apt-infra` creates them once).
+
+```
+make publish                        # add build/'s newest packages, snapshot, publish, list what an upload would change
+make publish PUBLISH_FLAGS=--push   # the same, then upload to the S3 bucket
+make publish PUBLISH_FLAGS=--replace   # publish over a same-version file (only before the first release)
+```
+
+Before adding anything, the script fetches the published index and refuses a `.deb` whose name and version are already published with different content: apt identifies a package by name and version, so installed systems would never see the new file. The fix is a version bump, which `make check-versions` asks for.
+
+The published repository is served from the S3 bucket at `https://oaxaca-apt.s3.us-east-1.amazonaws.com`. An installed system reaches the repository through the `oaxaca-apt-source` package, whose sources entry binds the repository to the key from `oaxaca-archive-keyring`.
+
+### `mmdebstrap` again (`make rootfs`)
+
+The same program as `make chroot`, with the `minbase` variant instead of `buildd`, and the output is the distro's root filesystem rather than a build environment. `scripts/rootfs-create.sh` points mmdebstrap at the `stonking` archive with the `-updates` and `-security` pockets and the `main`, `restricted` and `universe` components, has it install the three `.deb` files of ours from `build/` (the keyring, the apt source and `oaxaca-base`), and lets the base metapackage's dependency list pull in the kernel, shim, GRUB, systemd, AppArmor, NetworkManager and PipeWire. Hooks write the hostname, the resolver symlink and apt's `ubuntu.sources`. The result is `build/rootfs/oaxaca-26.10-amd64-<profile>.tar` and a manifest of every installed package, where the profile chooses which of our packages go in: `PROFILE=base` for step 3's set, `session` for step 4's set on top of it, `desktop` for step 6's set on top of that, and `live` for step 7's set on top of that (casper, `oaxaca-live` and `oaxaca-installer`, with the initramfs rebuilt so casper's scripts are in it). `live` is the default because the default is always the newest layer, the one the ISO is made from; the `desktop` and `live` profiles also enable `multiverse`. No disk, partition or bootloader is touched: that is the image step.
+
+```
+make rootfs                        # needs build/*.deb from make build; PROFILE=live, the ISO's input
+make rootfs PROFILE=desktop        # step 6's tarball, without casper and the installer
+make rootfs PROFILE=session        # step 4's tarball
+make rootfs PROFILE=base           # step 3's tarball
+UBUNTU_MIRROR=http://us.archive.ubuntu.com/ubuntu make rootfs
+```
+
+### `qemu-system-x86_64` with `mke2fs` (`make rootfs-test`)
+
+QEMU is the machine emulator; with KVM (`/dev/kvm`) it runs the guest on the real CPU. `scripts/rootfs-boot-test.sh` pulls the kernel and initramfs out of the root filesystem tarball with `tar`, unpacks the tarball inside an unprivileged user namespace and turns it into a raw ext4 disk image with `mke2fs -d`, drops in a oneshot systemd unit that runs the checks and powers off, then boots the kernel directly (`-kernel`, `-initrd`, `-append`) with the ext4 image as `/dev/vda` and the serial console logged to a file. The script prints the checks (systemd running, no failed units, `os-release` identity, AppArmor and NetworkManager active, network connected, `apt update` succeeding against both archives, snapd available from the archive) and exits non-zero if any check failed. For the `session` profile the guest also gets a virtio GPU (with virgl through the host's render node when one is writable) and a test user that SDDM logs in automatically, and the checks continue: uwsm's units active in the user's systemd manager, Hyprland on the virtual monitor, `xeyes` as an Xwayland client, the three portals answering, the Secret Service (GNOME Keyring) answering, `ubuntu-drivers` and `oaxaca-drivers-install --show` running. For the `desktop` profile the test user's home is seeded from `/etc/skel`, `oaxaca-apply-system` runs before SDDM as the installer will run it, SDDM logs the user into the port's own session, and the checks continue with the shell the port launched (its IPC ping, its bar and background layers), first-run (the theme it set, the user units it enabled), a live theme switch, the menu, the fonts and the third-party packages.
+
+```
+make rootfs-test                   # the live tarball with the desktop checks (casper's medium check masked, the installer's autostart removed: both need the ISO)
+make rootfs-test PROFILE=desktop   # step 6's tarball, the same checks
+make rootfs-test PROFILE=session   # steps 4 and 5's checks
+make rootfs-test PROFILE=base      # step 3's checks only
+KEEP=1 make rootfs-test            # keep build/rootfs/boot-test/ with the serial log
+```
+
+### `mksquashfs`, `mkfs.vfat` with `mtools`, and `xorriso` (`make iso`)
+
+`scripts/iso-create.sh` reads the live tarball (`make rootfs`, whose default profile is `live`: the desktop plus casper, `oaxaca-live` and `oaxaca-installer`) and writes `build/iso/oaxaca-26.10-amd64.iso`. Before the image is written, `scripts/driver-pool.sh` extracts the tarball in a user namespace, asks apt inside it for the newest NVIDIA open branch with prebuilt modules for the tarball's kernel, downloads that branch's packages, and lays them with a `dpkg-scanpackages` index and the NVIDIA license under `pool/` at the medium's root, where `oaxaca-drivers-install` finds them during the install (`docs/7 - image-installer.md`, choice 20). mksquashfs compresses the tarball straight from standard input into `casper/filesystem.squashfs` (no extraction, no root); the kernel and the initramfs, rebuilt with casper's hooks inside the live tarball, go to `casper/`; a FAT image made with mkfs.vfat and filled with mtools holds Ubuntu's Microsoft-signed shim, Canonical-signed CD GRUB and MokManager, taken from the tarball's `shim-signed` and `grub-efi-amd64-signed`; xorriso writes the ISO 9660 image with that FAT image appended as an EFI System partition. A second image, `-test.iso`, is the same ISO with a GRUB entry that wakes the boot test; xorriso copies the first and replaces one file. UEFI only.
+
+### `qemu-system-x86_64` with OVMF (`make iso-test`)
+
+`scripts/iso-boot-test.sh` boots the test ISO under OVMF, Ubuntu's UEFI firmware for QEMU: `OVMF_CODE_4M.secboot.fd` with Microsoft's keys enrolled (`SECURE_BOOT=on`, the default) or the same firmware with no keys enrolled (`SECURE_BOOT=off`). The guest's test unit, from `oaxaca-live`, prints its checks on the serial console; the script compares them: Secure Boot state, casper, the live user, the session with the shell, the installer running with its window.
+
+### `unshare` with `chroot` (`make drivers-check`)
+
+`unshare` opens an unprivileged user namespace with its own mount and pid namespaces; `chroot` runs a command with the extracted tarball as its root. `scripts/drivers-check.sh` extracts the root filesystem tarball, bind-mounts the host's `/sys` and `/dev` into it, mounts a fresh `/proc`, then runs `apt-get update`, `ubuntu-drivers devices`, `oaxaca-drivers-install --show` and an `apt-get --simulate install` of the list that command would hand apt, all without root privileges. The script prints what Ubuntu's detector recommends for this machine's GPU, which branch `oaxaca-drivers-install` chooses instead (the newest NVIDIA open branch with prebuilt modules), and checks that the choice resolves to Canonical's prebuilt signed NVIDIA modules, not DKMS.
+
+```
+make drivers-check
+KEEP=1 make drivers-check          # keep build/rootfs/drivers-check/root
+```
+
+### `git` with `dpkg --compare-versions` (`make check-versions`)
+
+`scripts/version-check.sh` finds the newest `v*` tag reachable from `HEAD`, and for every directory under `packages/` that differs from that tag it compares the first line of the directory's `debian/changelog` at `HEAD` with the same line at the tag; the version must rank higher. A directory that did not change needs no bump, and a package new since the tag passes. Before the first tag the script prints that there is nothing to compare against and passes.
+
+```
+make check-versions
+VERSION_CHECK_TAG=<ref> scripts/version-check.sh   # compare against any ref
+```
+
+### `mmdebstrap` with `dpkg-scanpackages` (`make upgrade-test`)
+
+`scripts/upgrade-test.sh` is the N to N+1 test: N is the set of versions the published archive at `https://oaxaca-apt.s3.us-east-1.amazonaws.com` offers, N+1 is `build/`. One mmdebstrap run (unshare mode, output `/dev/null`) installs the `minbase` variant plus, from the published archive, every package name that is both published and in `build/`; a script then runs inside the chroot: it creates a user from N's `/etc/skel` with a marker line in one of the user's files, points apt at `build/` (copied in as a flat file archive indexed by `dpkg-scanpackages`), runs `apt-get full-upgrade` with the options `oaxaca-update -y` uses, records versions, `dpkg --audit`, what apt would still upgrade and the unattended-upgrades origins, and, when `oaxaca-tools` is installed, drops a synthetic migration and runs `oaxaca-migrate` as the user. The report lands in `build/upgrade-test/report.txt` and the script compares it with its expectations.
+
+```
+make upgrade-test                  # needs build/*.deb and network access to the published archive
+```
+
+### GitHub Actions (`.github/workflows/build.yml`)
+
+On every push, pull request and `v*` tag, four jobs run on `ubuntu-26.04` runners. `prepare` runs `make check-render` and `make check-versions`, lists the directories under `packages/` and runs `make chroot` once (cached weekly). `build` runs one job per package directory, in parallel: a job whose package directory, `distro.conf`, build scripts and chroot week are unchanged since its last successful build restores that build from the cache and uploads it; otherwise it installs sbuild, mmdebstrap and cargo and runs `make build PKG=packages/<directory>` with `TMPDIR=/var/tmp` (sbuild unpacks the chroot and builds under `/tmp` otherwise, a 3.9 GB tmpfs on the runner; `quickshell` needs 4.8 GB there) and `DEB_BUILD_OPTIONS=parallel=2` (the runner has 16 GB; `quickshell` peaks at 12.4 GB with four compiler jobs and 1.9 GB with two). Each job uploads its packages and sbuild's build log as the artifact `packages-<directory>`. `upgrade-test` gathers every artifact into `build/` and runs `make upgrade-test` against the published archive. On a tag, `release` gathers every artifact and attaches the packages to a GitHub Release. The runners use the same toolchain as the workstation, so a green run means the packages build from a clean checkout. Publishing stays on the workstation, where the signing key is.
+
+### `scripts/suspend-baseline.sh` (measurement, not build)
+
+Before the distro existed, the Legion laptop's suspend behaviour was measured on its current Ubuntu install so that a later sleep failure on the new distro can be blamed on the distro or on the hardware. The script records device state, sets an RTC wake alarm with `rtcwake -m no`, runs `systemctl suspend`, waits for the kernel's `PM: suspend exit` line, and records device state and the relevant journal lines again. The same script will run the plan's sleep tests on the new distro.
+
+```
+scripts/suspend-baseline.sh --label lid-open-docked
+scripts/suspend-baseline.sh --label lid-closed-docked --delay 30
+scripts/suspend-baseline.sh --snapshot          # just print device state
+```
+
+## How the pieces fit together
+
+```
+distro.conf ──render──▶ packages/*/debian/*, README.md, ...        (make render)
+
+Ubuntu archive ──mmdebstrap──▶ ~/.cache/sbuild/stonking-amd64.tar  (make chroot)
+                                        │
+packages/<dir>/ ──sbuild (dpkg-buildpackage + dh, inside the chroot)──▶ build/*.deb, *.dsc
+                                        │                                   (make build)
+                                     lintian
+                                        │
+build/ ──aptly (snapshot, publish, sign with the gpg key)──▶ ~/.local/state/oaxaca/aptly/public/dists, pool
+                                                                            (make publish)
+                                        │
+                                aws s3 sync ──▶ S3 bucket oaxaca-apt ──▶ https://oaxaca-apt.s3.us-east-1.amazonaws.com
+                                                                      │
+                     installed systems: oaxaca-apt-source + oaxaca-archive-keyring ──▶ apt update
+
+~/Projects/omarchy (the fork's oaxaca branch) ──git archive, rename at build──▶ build/oaxaca-{desktop,tools,shell,themes,config}*.deb   (make build PKG=packages/desktop)
+
+Ubuntu archive + build/{archive-keyring,apt-source,base[,nvidia,session,quickshell[,fonts,desktop,tools,shell,themes,config,asdcontrol,hyprland-preview-share-picker,nwg-displays,plymouth,libplymouth5,plymouth-label[,live,installer,libkpmcore13]]]}.deb ──mmdebstrap (minbase)──▶ build/rootfs/oaxaca-26.10-amd64-<profile>.tar
+                                                                                        │        (make rootfs PROFILE=base|session|desktop|live)
+                                                tar + mke2fs (+ Omarchy's shell/ for the session profile; /etc/skel and apply-system for desktop) ──▶ ext4 image ──qemu──▶ boot checks   (make rootfs-test)
+                                                tar + unshare/chroot ──▶ ubuntu-drivers devices, oaxaca-drivers-install --show, apt --simulate   (make drivers-check)
+
+https://oaxaca-apt.s3.us-east-1.amazonaws.com (N) + build/*.deb (N+1) ──mmdebstrap (minbase + N), apt-get full-upgrade, oaxaca-migrate──▶ build/upgrade-test/report.txt   (make upgrade-test; CI)
+
+live tarball (PROFILE=live: desktop + casper + oaxaca-live + oaxaca-installer) + the NVIDIA driver pool (apt download) ──mksquashfs, signed shim and GRUB into a FAT image, xorriso──▶ build/iso/oaxaca-26.10-amd64.iso (+ -test.iso)   (make iso)
+                                                                                        │
+                                                              qemu + OVMF (Secure Boot on, then off) ──▶ live session checks   (make iso-test)
+```
+
+CI runs the first three rows (render, chroot, build) and the upgrade test on every push and hands the packages to a GitHub Release; the workstation runs the publish and push rows and the root filesystem rows.
+
+## Building the distro from source
+
+Going from a fresh clone of this repository to a bootable USB stick is a chain of `make` targets, then one `dd`. Every target is described above; this list gives the order the targets run in on a clean checkout and what each one leaves behind. Nothing here needs root except the final write to the stick. Two targets are missing on purpose. `make render` is absent because every rendered file is committed next to its `.in` template (CI's `make check-render` keeps the two in step), so a clone is complete, and `make build` runs `render` first anyway. `make publish` is absent because no step reads the published repository or the secret signing key: `make rootfs` installs our packages from the `.deb` files in `build/` and writes only Ubuntu's apt sources into the tarball, and the one key file the build needs, the public `packages/archive-keyring/archive-keyring.gpg`, is committed. Publishing matters after installation: the installed system's apt sources entry points at `https://oaxaca-apt.s3.us-east-1.amazonaws.com`, so `apt update` on an installed machine needs the repository published, which is the "Releasing" line under Day-to-day.
+
+1. Install the tools. `git`, `curl` and `cargo` are for `scripts/build.sh`, which fetches the fork's branch, the upstream tarballs and the share picker's crates:
+
+   ```
+   sudo apt install git curl cargo python3 sbuild mmdebstrap uidmap devscripts debhelper lintian \
+       qemu-system-x86 e2fsprogs ovmf squashfs-tools xorriso dosfstools mtools
+   ```
+
+2. `make chroot`: the clean build [chroot](#chroot) tarball under `~/.cache/sbuild/`, about 25 minutes the first time, kept for a week afterwards.
+3. `make build`: every [source package](#source-package) under `packages/`, in a fresh copy of the chroot each, into `build/*.deb`. No package of ours build-depends on another, so one run builds all of them in any order. `quickshell` is the slow one (16 minutes on a 4-CPU CI runner).
+4. `make rootfs`: mmdebstrap assembles the live root filesystem (`live` is the default profile) from the Ubuntu archive plus `build/*.deb` into `build/rootfs/oaxaca-26.10-amd64-live.tar` (3.6 GB, 1188 packages on 2026-10-10) and rebuilds the initramfs inside the tarball so casper's scripts are in the initramfs the ISO boots.
+5. `make iso`: the tarball becomes `build/iso/oaxaca-26.10-amd64.iso`, plus `-test.iso` for the next step. This step also downloads the NVIDIA driver's packages from Ubuntu's archive into a pool on the medium (`scripts/driver-pool.sh`, a few hundred MB, so the install works offline; `DRIVER_POOL=0 make iso` leaves them out for a quick build).
+6. `make iso-test`, then `make iso-test SECURE_BOOT=off`: the test ISO boots in QEMU under OVMF and the live session's checks print on the serial console; each run ends with `ISO boot test passed`. Optional, but the only automated check of the image.
+7. Write the ISO to a USB stick. The image is a disk image, not just a CD image: xorriso wrote a protective MBR and a GPT with two partitions, the ISO 9660 filesystem as partition 1 and the FAT image with shim and GRUB as partition 2, type EFI System (`fdisk -l build/iso/oaxaca-26.10-amd64.iso` lists them). A raw copy of the image onto a stick therefore gives the firmware a GPT disk with an EFI System partition to boot from. Find the stick's device, then copy; everything on the stick is erased:
+
+   ```
+   lsblk -d -o NAME,SIZE,MODEL,TRAN                   # the stick is the "usb" row; say it is /dev/sdX
+   sudo dd if=build/iso/oaxaca-26.10-amd64.iso of=/dev/sdX bs=4M status=progress conv=fsync
+   ```
+
+   `conv=fsync` makes `dd` wait until the stick has the data before it exits. Any program that writes a raw image to a device does the same job (GNOME Disks' "Restore Disk Image", `cp image /dev/sdX`); the ISO is not re-packed by any of them.
+8. Boot the stick with the firmware's boot menu, Secure Boot on or off. The live session logs in as `oaxaca` and opens the installer; the installer's pages and what runs after them are in [docs/7 - image-installer.md](7%20-%20image-installer.md). This last step is verified in QEMU only so far; the first run on the Legion laptop is carried in that document.
+
+Rebuilding after a change repeats the chain from the step whose input changed: a package edit is steps 3 to 7 (`make build PKG=packages/<dir>` for just that package), a change to the fork's branch is the same with `PKG=packages/desktop`, and an ISO-only change (the GRUB menu, the EFI image) is steps 5 to 7.
+
+## Day-to-day
+
+The first time on a new workstation: install the tools from step 1 of [Building the distro from source](#building-the-distro-from-source) plus `aptly` and the aws-cli for publishing, then `make chroot`. Creating the signing key, the GitHub repository and the apt repository's S3 bucket (`make apt-infra`) are one-time steps described in [docs/2 - build-infra.md](2%20-%20build-infra.md) and [infra/apt-repo/README.md](../infra/apt-repo/README.md).
+
+Adding a package: create `packages/<dir>` with a `debian/` directory, using `.in` templates wherever the distro's name or identifier appears, and debhelper's unprefixed file names (`debian/install`, `debian/service`, `debian/udev`), then `make build PKG=packages/<dir>` until lintian is quiet. A third-party package we rebuild (`packages/quickshell`) holds only `debian/` and an `upstream` file with the tarball's URL and SHA-256; `scripts/build.sh` downloads the tarball into `build/` and unpacks it around `debian/` before `dpkg-source`. The `upstream` file can instead name a git tree (`GIT=`, `REF=`; `packages/desktop`) or a list of files (`FILES=`; `packages/fonts`), or an Ubuntu source package rebuilt with our additions (`DSC=`; `packages/kpmcore`, whose `debian/` holds only a patch, its series line and a changelog entry, laid over Ubuntu's `debian/` at build time, so a one-line fix to an archive package needs no fork and no copy of its packaging), and add component tarballs and `CARGO_VENDOR=1` (`packages/hyprland-preview-share-picker`); the header of `scripts/build.sh` documents each. Directory names never carry the distro name. Versions follow the scheme in [docs/1 - policy.md](1%20-%20policy.md).
+
+Releasing: bump the versions of the packages that changed (`make check-versions` lists them once a tag exists), commit, tag `vX.Y.Z`, let CI build and run the upgrade test, then `make publish PUBLISH_FLAGS=--push`, which uploads to the S3 bucket.
+
+## Shipping a change: the apt repository or a new ISO
+
+A change reaches users one of two ways. The installation ISO (the [live medium](7%20-%20image-installer.md#live-medium-and-casper) built by `make iso`) is what a new install is made from; the apt repository at `https://oaxaca-apt.s3.us-east-1.amazonaws.com` (filled by `make publish PUBLISH_FLAGS=--push`) is what an installed system updates from, through `oaxaca-update`, the port of Omarchy's update command (`apt-get update`, `apt-get full-upgrade`, then the [migrations](8%20-%20update-path.md#migration), the user's hooks, the cleanup and the reboot offer; [docs/8 - update-path.md](8%20-%20update-path.md)).
+
+**Through the apt repository, no new ISO:** any change inside a [package](#package) that is installed on the system: the desktop (`oaxaca-desktop`, `-tools`, `-shell`, `-themes`, `-config`, built from the Omarchy fork), `oaxaca-base`, `oaxaca-session`, `oaxaca-nvidia`, `oaxaca-hw-legion`, and the Ubuntu packages their dependency lists add. The package's version has to be bumped (`make check-versions`), then built and published; installed systems get it with `oaxaca-update`. What a package install alone cannot change, such as files already in users' home folders (`/etc/skel` only seeds new users), ships as a migration in the fork's `migrations/`, which `oaxaca-update` runs after the packages.
+
+**Only through a new ISO:**
+1. The installer: Calamares and KPMcore (our rebuilds), `oaxaca-installer` (its pages and settings, `keep-previous-loader`, `hardware-install`, `sddm-last-user`) and the install-time steps (`oaxaca-apply-system --first-install`, the drivers and hardware steps). They run only from the medium, so a fix helps the next install only.
+2. The live session: `oaxaca-live`, the live user and what the live desktop starts.
+3. The medium's boot setup: its GRUB menu, kernel command line and EFI System Partition image.
+4. The medium's package pool (`/cdrom/pool`, `scripts/driver-pool.sh`): the NVIDIA driver branch and the hardware packages the installer installs without a network.
+5. Anything that has to be right on the first boot after an install, before an update can run: an installed system that cannot boot, or whose sources entry names the wrong repository URL (`oaxaca-apt-source`), never receives the fix through apt. The initramfs hook that put the disk encryption passphrase prompt on a screenless GPU (docs/7, choice 39) was such a change.
+6. Every new install: it gets the ISO's package versions. With a network, `oaxaca-update` brings it up to date right after, but a defect that bites before that first update stays. So an ISO is offered for installing only when it was built after every change in this repository and the fork, and its package versions are the published ones.
+
+**In practice:** a package change is bump, `make build PKG=packages/<dir>`, `make publish PUBLISH_FLAGS=--push`, then `oaxaca-update` on the installed system; before the next install, `make rootfs && make iso && make iso-test` from the same sources.
+
+## Conventions
+
+- One file, `distro.conf`, holds the distro's identity (name, identifier, base series, apt and GitHub settings). Never edit a rendered file; edit its `.in` and run `make render`.
+- Every decision in `docs/` is a choice with reasons and the rejected alternative, dated, not a claimed best practice.
+- Docs under `docs/` are dated records and are not templated; they name Oaxaca directly.
+- Secrets never enter the repo: the signing key lives in GnuPG, logs with hardware details stay under `~/.local/state/oaxaca/`.
+- Nothing in this repo commits on your behalf; `make publish PUBLISH_FLAGS=--push` and `make apt-infra` are the only commands that change anything outside this workstation: the first uploads to the apt repository's S3 bucket, the second creates or updates that bucket's CloudFormation stack.
+
+## Documents
+
+- [docs/0 - plan.md](0%20-%20plan.md): the approved plan. Options compared, the Ubuntu base, NVIDIA, AppArmor, the Legion laptop's hardware, sleep, the roadmap and the verification list.
+- [docs/1 - policy.md](1%20-%20policy.md): roadmap step 1. Name, base series and move triggers, Omarchy pin and rebase policy, naming and version rules, the Secure Boot and encryption requirements, the password login rule with its fingerprint and FIDO2 key paths, and why hibernation is out of the first release.
+- [docs/2 - build-infra.md](2%20-%20build-infra.md): roadmap step 2. The tools above with their rejected alternatives, one-time setup, key rotation, the rebrand playbook, and what was verified.
+- [docs/3 - rootfs.md](3%20-%20rootfs.md): roadmap step 3. What the base metapackage pulls in and why, the files the build writes into the root filesystem, the choices (os-release diversion, netplan kept, Recommends off), how to run the build and the boot test, and what was verified
+- [docs/5 - hyprland-quickshell.md](5%20-%20hyprland-quickshell.md): roadmap step 5. Omarchy's Hyprland and Quickshell pins against the archive, why Hyprland stays and Quickshell is backported, how a third-party package is built from Debian's packaging plus an upstream tarball, and the QEMU check that runs Omarchy's shell.
+- [docs/6 - omarchy-port.md](6%20-%20omarchy-port.md): roadmap step 6. The fork and its port branch, the rename script, how Omarchy's two packages become five, what the port changed (apt, PAM, Ubuntu names, drops), the third-party packages, the choices (no browser in the metapackage, no migrations, install-time setup as a script), the desktop boot test, and what was verified.
+- [docs/7 - image-installer.md](7%20-%20image-installer.md): roadmap step 7. The live ISO (casper, the squashfs, the EFI partition image with Ubuntu's signed shim and GRUB), the installer (Calamares from Ubuntu's archive, its module sequence and every configuration), the Plymouth theme through alternatives, the boot test under OVMF with Secure Boot on and off, what the installed system still needs checked by hand, and the KPMcore rebuild that lets an encrypted install work in every partitioning mode (choice 11, 2026-10-11).
+- [docs/8 - update-path.md](8%20-%20update-path.md): roadmap step 8. How an installed system updates (`oaxaca-update` on apt, unattended security updates from Ubuntu), the migrations runner and the rule for the port's own migrations, the N to N+1 upgrade test and its CI job, the version-bump check and the publish guard, the unattended-upgrades origin bug and its fix, what the series upgrade will need, and what was verified.
+- [docs/4 - session.md](4%20-%20session.md): roadmap step 4. What the session metapackage pulls in, the NVIDIA install path (ubuntu-drivers, prebuilt signed modules, early KMS hook), SDDM's Wayland greeter under Hyprland, the choices, the graphical boot test, the driver check on this laptop, and what was verified.
+- [docs/suspend-baseline.md](suspend-baseline.md): the three measured suspend scenarios on the Legion laptop, the known noise, and the phantom-backlight finding.

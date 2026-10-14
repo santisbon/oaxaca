@@ -1,0 +1,39 @@
+Source: hyprland-preview-share-picker
+Section: x11
+Priority: optional
+Maintainer: @MAINTAINER@
+Build-Depends:
+ debhelper-compat (= 13),
+ cargo,
+ rustc,
+ pkgconf,
+ libgtk-4-dev (>= 4.8),
+ libgtk4-layer-shell-dev,
+ libglib2.0-dev,
+ libcairo2-dev,
+ libpango1.0-dev,
+ libgdk-pixbuf-2.0-dev,
+ libgraphene-1.0-dev
+Standards-Version: 4.7.4
+Homepage: https://github.com/WhySoBad/hyprland-preview-share-picker
+Rules-Requires-Root: no
+
+Package: hyprland-preview-share-picker
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ xdg-desktop-portal-hyprland
+Suggests: slurp
+Description: screen share picker for Hyprland with window and monitor previews
+ hyprland-preview-share-picker is a GTK4 window that xdg-desktop-portal-hyprland
+ opens when an application asks to share the screen. The window shows a live
+ preview of every monitor and every open window, captured through Hyprland's
+ toplevel export protocol, plus a region option, and prints the user's choice
+ back to the portal. It replaces the portal's default picker, a plain list of
+ names.
+ .
+ xdg-desktop-portal-hyprland runs the picker when its configuration file names
+ the binary in custom_picker_binary. The @DISTRO_NAME@ desktop does so in its
+ Hyprland configuration (Omarchy's config/hypr/xdph.conf), and styles the window
+ with the current theme's hyprland-preview-share-picker.css.
+ .
+ The region option runs slurp by default (package slurp).

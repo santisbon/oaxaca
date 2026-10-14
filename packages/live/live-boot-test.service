@@ -1,0 +1,13 @@
+# Generated from packages/live/live-boot-test.service.in by scripts/render.py. Edit the .in file, not this one.
+[Unit]
+Description=Oaxaca live image boot test
+ConditionKernelCommandLine=oaxaca.boottest
+After=network-online.target display-manager.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/oaxaca/live-boot-test
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/console

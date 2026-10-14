@@ -1,0 +1,13 @@
+# shellprocess@fallback: from the live system (dontChroot), right after the bootloader step wrote
+# the target's GRUB and the /EFI/ubuntu/grub.cfg stub: when the installer found another system's
+# stub (keep-previous-loader wrote /etc/@DISTRO_ID@/previous-loader in the target), rewrite the
+# stub so it falls back to that system when this one's /boot is gone (loader-fallback, from
+# @DISTRO_ID@-base, which the live system has too; docs/7, choice 24). ${ROOT} is the target.
+---
+dontChroot: true
+timeout: 60
+script:
+    - "/usr/libexec/@DISTRO_ID@/loader-fallback ${ROOT}"
+    # The login screen's last user (sddm-last-user's header); from the live system as well,
+    # because the packages step has removed this installer's files from the target by now.
+    - "/usr/libexec/@DISTRO_ID@/sddm-last-user ${ROOT} ${gs[username]}"

@@ -1,0 +1,59 @@
+<!-- Generated from infra/apt-repo/README.md.in by scripts/render.py. Edit the .in file, not this one. -->
+# The apt repository's bucket
+
+Oaxaca's apt repository, the packages Ubuntu's archive does not have, is served from an Amazon S3 bucket. This folder holds the bucket's definition; the scripts that create the bucket and upload to it are in `scripts/`. Nothing here goes into a package or the installation image: installed systems only read the repository over HTTPS, through the URL in `oaxaca-apt-source`'s sources entry.
+
+## Terms
+
+### S3 bucket
+
+A named container of files ("objects") in Amazon S3, AWS's object storage. Bucket names are global across all AWS accounts. An object is read over HTTPS at `https://<bucket>.s3.<region>.amazonaws.com/<key>`, the bucket's REST endpoint, when the bucket's policy allows it.
+
+### CloudFormation stack
+
+AWS CloudFormation creates AWS resources from a template, a YAML file that declares them, and keeps them together as a stack: deploying the template again changes the resources to match it.
+
+### aptly
+
+The program that builds the repository on this workstation: it keeps a database of packages under `~/.local/state/oaxaca/aptly`, and its `publish` writes the repository's two directories, `dists/` (the signed indexes apt reads first) and `pool/` (the `.deb` files and source packages), under `~/.local/state/oaxaca/aptly/public/`.
+
+## Anatomy
+
+| Piece | What it is | Command |
+|---|---|---|
+| `infra/apt-repo/bucket.yaml` | the [CloudFormation](#cloudformation-stack) template: one [bucket](#s3-bucket) anyone can read objects from, no listing, no public writes, plain HTTP refused, kept when the stack is deleted | |
+| `scripts/apt-infra.sh` | runs the aws-cli's `cloudformation deploy` with that template as the stack `oaxaca-apt-repo` | `make apt-infra` (create or update), `make apt-infra-check` (validate, show the stack, change nothing) |
+| `scripts/repo-publish.sh` | adds the newest version of each package in `build/` to [aptly](#aptly), keeps one version of each, publishes and signs, then uploads `public/` with the aws-cli's `s3 sync` | `make publish` (shows what an upload would change), `make publish PUBLISH_FLAGS=--push` (uploads) |
+
+The settings are in `distro.conf`, in shell syntax at the repository root: `APT_S3_BUCKET=oaxaca-apt`, `APT_S3_REGION=us-east-1`, `APT_AWS_PROFILE=personal` (the aws-cli profile, from `~/.aws/config`; the `AWS_PROFILE` environment variable overrides it), and `APT_URL`, which is derived from the first two: `https://oaxaca-apt.s3.us-east-1.amazonaws.com`. `make render` writes `APT_URL` into `packages/archive-keyring/archive.sources`, the sources entry `oaxaca-apt-source` installs.
+
+Why the REST endpoint and not S3's static website hosting: AWS's documentation, "Website endpoints" (read 2026-10-13), says "Amazon S3 website endpoints do not support HTTPS or access points." apt needs no web pages, only files at known paths, and the REST endpoint serves them over HTTPS. Rejected: website hosting behind CloudFront for HTTPS (a second service to run, for nothing apt uses).
+
+Why S3 and not GitHub Pages, where the repository was until 2026-10-13: GitHub refuses files over 100 MB (`oaxaca-themes` is 111 MB, the fonts and desktop source tarballs 135 MB and 118 MB), and GitHub's "GitHub Pages limits" page says "Published GitHub Pages sites may be no larger than 1 GB"; the Pages checkout had already reached 758 MB. S3 has neither limit. Storage and downloads are billed by AWS; see AWS's S3 pricing page for current prices.
+
+## Setting it up, once
+
+1. The aws-cli installed, with the profile named in `APT_AWS_PROFILE` able to manage CloudFormation and S3 in `APT_S3_REGION`.
+2. Create the bucket:
+   ```sh
+   make apt-infra
+   ```
+   The last line printed is the repository URL, which must equal `APT_URL`. If the account blocks public bucket policies (S3's account-level "Block Public Access"), the deploy fails on the bucket policy; that setting is the account owner's to change.
+3. Publish (next section).
+
+## Publishing
+
+```sh
+make publish                         # sign locally, list what an upload would change
+make publish PUBLISH_FLAGS=--push    # sign and upload
+```
+
+gpg asks for the apt signing key passphrase (the archive signing key's). The upload runs in three passes, `pool/` first, then `dists/`, then `pool/` again deleting what no index names, so a client never reads an index that names a missing file. Check from any machine:
+
+```sh
+curl -sI https://oaxaca-apt.s3.us-east-1.amazonaws.com/dists/stonking/InRelease | head -1   # HTTP/1.1 200 OK
+```
+
+## Teardown
+
+Deleting the stack keeps the bucket and its contents (`DeletionPolicy: Retain` in the template), because installed systems read it. Removing the repository for good is two steps: empty and delete the bucket (`aws s3 rb s3://oaxaca-apt --force`), then delete the stack (`aws cloudformation delete-stack --stack-name oaxaca-apt-repo`).

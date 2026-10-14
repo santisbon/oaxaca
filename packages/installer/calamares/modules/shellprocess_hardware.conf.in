@@ -1,0 +1,11 @@
+# shellprocess@hardware: from the live system (dontChroot), after the drivers step: install the
+# hardware package for this machine's model into the target, such as @DISTRO_ID@-hw-legion on the
+# Lenovo Legion Pro 7 (hardware-install's header). From the live system because the packages
+# step has removed this installer's files from the target by now. The leading "-" keeps a
+# failure from aborting the installation; the target keeps the log in
+# /var/log/@DISTRO_ID@/hardware-install.log. ${ROOT} is the target.
+---
+dontChroot: true
+timeout: 1800
+script:
+    - "-/usr/libexec/@DISTRO_ID@/hardware-install ${ROOT}"

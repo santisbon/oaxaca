@@ -1,0 +1,12 @@
+# quickshell
+
+Quickshell 0.3.2, the Qt/QML toolkit the Omarchy shell runs on, backported into @DISTRO_NAME@'s repository: roadmap step 5. Ubuntu's archive carries 0.3.0 and Omarchy @OMARCHY_TAG@ pins 0.3.2 (`omacom/omarchy-pkgs`, `pkgbuilds/quickshell/PKGBUILD`); between the two, Quickshell fixed session lock crashes on sleep, wake and unlock, which is the shell's lock screen. See `docs/5 - hyprland-quickshell.md`.
+
+The package keeps the upstream name, as the policy says for third-party software we rebuild, and the version `0.3.2-0oaxaca1`: a new upstream release on Debian's packaging, so the `-0oaxaca1` revision marks "not in Debian yet" and sorts below a future Debian `0.3.2-1`.
+
+| Path | What |
+|---|---|
+| `debian/` | Debian's `quickshell` 0.3.1-1 packaging (Michael Lloyd), with our changelog entry, Maintainer, and `DISTRIBUTOR=@DISTRO_NAME@` in `rules` |
+| `upstream` | the upstream tarball's URL and SHA-256; `scripts/build.sh` downloads it as the orig tarball and unpacks it around `debian/` before `dpkg-source` |
+
+Unlike the `@DISTRO_ID@-*` packages, this directory holds no upstream source: `make build PKG=packages/quickshell` fetches it into `build/`.

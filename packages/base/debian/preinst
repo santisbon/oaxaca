@@ -1,0 +1,10 @@
+#!/bin/sh
+# Generated from packages/base/debian/preinst.in by scripts/render.py. Edit the .in file, not this one.
+# Divert base-files' /usr/lib/os-release so this package can ship its own.
+# /etc/os-release is base-files' symlink to ../usr/lib/os-release and keeps working.
+set -e
+if [ "$1" = install ] || [ "$1" = upgrade ]; then
+    dpkg-divert --package oaxaca-base --rename \
+        --divert /usr/lib/os-release.ubuntu --add /usr/lib/os-release
+fi
+#DEBHELPER#

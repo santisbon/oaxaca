@@ -1,0 +1,7 @@
+// @DISTRO_NAME@: refresh apt's package lists once a day through apt-daily.timer (apt's own
+// timer reads this setting), so that "@DISTRO_ID@-update-available", which runs without
+// privileges, sees new versions in "apt list --upgradable". What gets upgraded by itself is
+// Ubuntu's security pocket only, through unattended-upgrades (Ubuntu's 20auto-upgrades turns the
+// upgrade on; @DISTRO_ID@-base's 51@DISTRO_ID@-unattended-upgrades names the origins); the
+// desktop's own packages move only through "@DISTRO_ID@-update", which runs their migrations.
+APT::Periodic::Update-Package-Lists "1";

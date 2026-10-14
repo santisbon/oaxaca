@@ -1,0 +1,19 @@
+# @DISTRO_ID@-hw-legion
+
+The hardware package for the first machine @DISTRO_NAME@ is built for, the Lenovo Legion Pro 7 16IAX10H (roadmap step 6; the inventory is in `docs/0 - plan.md`, "This machine"). It holds only what this model needs and other machines must not get: one file, `/etc/@DISTRO_ID@/gpu`. The installer's hardware step (`packages/installer/hardware-install`, run by Calamares's `shellprocess@hardware`) installs this package from the installation medium's package pool when the firmware's DMI strings name this model (`sys_vendor` `LENOVO`, `product_version` `Legion Pro 7 16IAX10H`); nothing in `@DISTRO_ID@-desktop` depends on it.
+
+What the inventory lists for this laptop and every other machine gets too comes from other packages (`docs/7 - image-installer.md`, choice 44):
+
+| Package | Comes with | What it does |
+|---|---|---|
+| `fwupd`, `fwupd-signed` | `@DISTRO_ID@-base` | firmware updates, including UEFI capsule updates through the Canonical-signed EFI program |
+| `firmware-sof-signed`, `alsa-ucm-conf` | `@DISTRO_ID@-base` | the Sound Open Firmware and the mixer profiles the internal speakers and microphone need |
+| `linux-firmware` | the kernel (`linux-image-generic`) | the Intel BE200 Wi-Fi and Bluetooth firmware |
+| `intel-media-va-driver-non-free` | `@DISTRO_ID@-session` | video decode on Intel GPUs (multiverse) |
+| `@DISTRO_ID@-hybrid-backlight` | `@DISTRO_ID@-nvidia` | hides the NVIDIA driver's phantom backlight device on hybrid laptops |
+| `nvidia-vaapi-driver` | `@DISTRO_ID@-drivers-install`, after an NVIDIA driver | video decode on the NVIDIA GPU, for applications started on that GPU (`@DISTRO_ID@-launch-dgpu`) |
+| `bolt`, `asdcontrol` | `@DISTRO_ID@-desktop` | Thunderbolt device authorization; Apple Studio Display brightness |
+
+| Installed path | Purpose |
+|---|---|
+| `/etc/@DISTRO_ID@/gpu` | one line, `/dev/dri/by-path/pci-0000:00:02.0-card`: the GPU list `@DISTRO_ID@-session`'s user environment generator (`50-@DISTRO_ID@-gpu`) resolves to the card's node and exports to Hyprland as `AQ_DRM_DEVICES` at login, so Hyprland renders on the Intel GPU, to which every display of this laptop is wired, and the NVIDIA GPU can power down. Until 2026-10-11 this was a static `environment.d` file naming the by-path symlink, which aquamarine does not accept (`docs/7 - image-installer.md`, choice 17). The file applies only while the Intel GPU drives the display the firmware booted on; with the laptop's GPU switch set to the NVIDIA GPU in the firmware, the session skips the file and Hyprland chooses for itself (`docs/7 - image-installer.md`, choice 45) |

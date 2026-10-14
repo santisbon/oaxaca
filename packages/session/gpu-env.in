@@ -1,0 +1,151 @@
+#!/bin/sh
+# systemd user environment generator (systemd.environment-generator(7)), installed by
+# @DISTRO_ID@-session as /usr/lib/systemd/user-environment-generators/50-@DISTRO_ID@-gpu. It prints
+# KEY=VALUE lines that systemd's user manager adds to its environment at login; uwsm hands that
+# environment to Hyprland, whose backend (aquamarine) reads AQ_DRM_DEVICES for the GPUs to use.
+#
+# Why a generator and not a static environment.d file: aquamarine splits AQ_DRM_DEVICES on
+# ":" (one device per piece), and a stable device name is a by-path symlink such as
+# /dev/dri/by-path/pci-0000:00:02.0-card, whose PCI address holds colons: handed that, the
+# compositor sees three nonsense pieces, finds no GPU and fails at start ("CBackend::create()
+# failed", QEMU, 2026-10-11, docs/7 choice 17). The card's own node (/dev/dri/cardN) has no
+# colon but can change number between boots. So the by-path name is resolved to the node here,
+# at login, when the device exists.
+#
+# The GPU list comes from, in this order:
+#   1. @DISTRO_ID@.gpu=<list> on the kernel command line: a troubleshooting knob; the value is
+#      one or more device paths joined by "," (not ":", which by-path names contain), or
+#      "boot" for rule 3 even on one GPU.
+#   2. /etc/@DISTRO_ID@/gpu: one device path per line, by-path or node, installed by a hardware
+#      package (@DISTRO_ID@-hw-legion names the Intel GPU, to which every display of that laptop
+#      is wired, so the NVIDIA GPU is left alone and can power down).
+#   3. Under casper (the installation ISO's live session, boot=casper on the command line) on a
+#      machine with more than one card: the firmware's boot GPU (boot_vga under the PCI device),
+#      the one aquamarine would make primary anyway, now alone, so the live session matches what
+#      the hardware package arranges afterwards. A single-GPU machine gets no line.
+# Nothing else: an installed system without a hardware package keeps aquamarine's own choice.
+# Hybrid graphics: the GPU the firmware used at boot (boot_vga = 1 under its PCI device) drives
+# the display, and a second GPU beside it renders only what is started on it ("offload"). Two
+# cases are recognized, and @DISTRO_ID_UPPER@_GPU_OFFLOAD names the discrete GPU's kind for the
+# session (the port's nvidia.lua) and for @DISTRO_ID@-launch-dgpu, the launcher the menu uses:
+#   nvidia  an NVIDIA GPU beside an Intel or AMD display GPU. Every application's EGL and Vulkan
+#           point at Mesa, the display GPU's driver, so that starting one does not load NVIDIA's
+#           libraries and wake the NVIDIA GPU from its runtime suspend. Measured on a Lenovo
+#           Legion Pro 7 on 2026-10-12 (oaxaca-debug-launch, Files): 3.9 s with the NVIDIA GPU
+#           suspended, 1.1 s with it awake, 0.33 s with Mesa only (docs/7, choice 34).
+#           @DISTRO_ID@-launch-nvidia runs an application on the NVIDIA GPU (PRIME render offload).
+#   amd     an AMD GPU that is not the display GPU, beside an Intel or AMD display GPU, and no
+#           NVIDIA GPU. Both GPUs run Mesa, which already defaults to the display GPU, so no
+#           driver selection is needed; @DISTRO_ID_UPPER@_GPU_OFFLOAD_DEVICE carries the AMD GPU's
+#           PCI address in the form Mesa's DRI_PRIME takes ("pci-0000_03_00_0", Mesa's
+#           docs/envvars.rst), and @DISTRO_ID@-launch-dgpu sets DRI_PRIME to it (docs/7, choice 43).
+# With an NVIDIA and a second AMD GPU both beside the display GPU, the NVIDIA case applies.
+# Printed before the AQ_DRM_DEVICES decision below, which may exit.
+# The GPUs are read from the PCI devices of the display class (class 0x03xxxx), which exist
+# whether or not a driver is loaded, not from /sys/class/drm, where a GPU appears only once
+# its driver has bound: since the NVIDIA modules load from the root filesystem rather than the
+# initramfs on hybrid graphics (docs/7 choice 39), a login before nvidia_drm had loaded would
+# otherwise see no NVIDIA GPU and leave applications on NVIDIA's libraries, as the boot with
+# the NVIDIA modules blacklisted showed (Legion laptop, 2026-10-13, docs/7 choice 40).
+# @DISTRO_ID_UPPER@_GPU_SYSFS replaces /sys for the PCI scan, for tests/gpu-env only.
+hybrid_env() {
+    sys=${@DISTRO_ID_UPPER@_GPU_SYSFS:-/sys}
+    nvidia=""; amd_offload=""; display_vendor=""
+    for dev in "$sys"/bus/pci/devices/*; do
+        case $(cat "$dev/class" 2>/dev/null) in 0x03*) ;; *) continue ;; esac
+        vendor=$(cat "$dev/vendor" 2>/dev/null)
+        if [ "$(cat "$dev/boot_vga" 2>/dev/null)" = 1 ]; then
+            display_vendor=$vendor
+            continue
+        fi
+        [ "$vendor" = 0x10de ] && nvidia=1
+        # Mesa's PCI form: "pci-" and the address with ":" and "." turned into "_".
+        [ "$vendor" = 0x1002 ] && [ -z "$amd_offload" ] && amd_offload="pci-$(basename "$dev" | tr ':.' '__')"
+    done
+    case $display_vendor in
+        0x8086) icds="/usr/share/vulkan/icd.d/intel_icd.json:/usr/share/vulkan/icd.d/intel_hasvk_icd.json" ;;
+        0x1002) icds="/usr/share/vulkan/icd.d/radeon_icd.json" ;;
+        *) return 0 ;;
+    esac
+    if [ -n "$nvidia" ]; then
+        echo "__EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json"
+        echo "VK_DRIVER_FILES=$icds"
+        echo "@DISTRO_ID_UPPER@_GPU_OFFLOAD=nvidia"
+    elif [ -n "$amd_offload" ]; then
+        echo "@DISTRO_ID_UPPER@_GPU_OFFLOAD=amd"
+        echo "@DISTRO_ID_UPPER@_GPU_OFFLOAD_DEVICE=$amd_offload"
+    fi
+}
+[ -n "$__EGL_VENDOR_LIBRARY_FILENAMES" ] || hybrid_env
+[ -z "$AQ_DRM_DEVICES" ] || exit 0
+cmdline=$(cat /proc/cmdline 2>/dev/null)
+mode=""
+for arg in $cmdline; do
+    case $arg in @DISTRO_ID@.gpu=*) mode=${arg#*=} ;; esac
+done
+list=""
+resolve() {
+    # By-path symlink or node to the node; a name that does not exist is dropped with a note
+    # on stderr (the user manager's journal), so a wrong file never leaves Hyprland with no GPU.
+    node=$(readlink -f "$1" 2>/dev/null)
+    if [ -n "$node" ] && [ -c "$node" ]; then
+        list="${list:+$list:}$node"
+    else
+        echo "@DISTRO_ID@-gpu: ignoring '$1': not a device" >&2
+    fi
+}
+case $mode in
+    ""|boot) ;;
+    *)
+        old_ifs=$IFS; IFS=,
+        for dev in $mode; do IFS=$old_ifs; resolve "$dev"; done
+        IFS=$old_ifs
+        [ -n "$list" ] && echo "AQ_DRM_DEVICES=$list"
+        exit 0 ;;
+esac
+# The hardware package's file is used only when a GPU it names drives the display the firmware
+# booted on (boot_vga = 1 under the GPU's PCI device). A laptop whose GPU switch (a MUX, set in
+# the firmware) wires the panel to the discrete GPU still has the file, which names the
+# integrated GPU; Hyprland limited to that GPU would show nothing on the panel. Then the file is
+# skipped with a note on stderr, and Hyprland makes its own choice (docs/7, choice 45). A by-path
+# name carries the PCI address; a node name is looked up under /sys/class/drm.
+# @DISTRO_ID_UPPER@_GPU_FILE replaces /etc/@DISTRO_ID@/gpu, for tests/gpu-env only.
+gpu_file=${@DISTRO_ID_UPPER@_GPU_FILE:-/etc/@DISTRO_ID@/gpu}
+drives_display() {
+    sys=${@DISTRO_ID_UPPER@_GPU_SYSFS:-/sys}
+    case $1 in
+        */by-path/pci-*-card) addr=${1##*/pci-}; addr=${addr%-card}; f="$sys/bus/pci/devices/$addr/boot_vga" ;;
+        *) f="$sys/class/drm/$(basename "$(readlink -f "$1")")/device/boot_vga" ;;
+    esac
+    [ "$(cat "$f" 2>/dev/null)" = 1 ]
+}
+if [ "$mode" != boot ] && [ -s "$gpu_file" ]; then
+    named_display=""
+    while IFS= read -r dev; do
+        case $dev in ""|\#*) continue ;; esac
+        drives_display "$dev" && named_display=1
+    done < "$gpu_file"
+    if [ -n "$named_display" ]; then
+        while IFS= read -r dev; do
+            case $dev in ""|\#*) continue ;; esac
+            resolve "$dev"
+        done < "$gpu_file"
+        [ -n "$list" ] && echo "AQ_DRM_DEVICES=$list"
+        exit 0
+    fi
+    echo "@DISTRO_ID@-gpu: ignoring $gpu_file: no GPU it names drives the display the firmware booted on (GPU switch set to the discrete GPU?)" >&2
+fi
+case " $cmdline " in *" boot=casper "*) ;; *) [ "$mode" = boot ] || exit 0 ;; esac
+n=0; boot=""
+for card in /sys/class/drm/card[0-9]*; do
+    # Connectors (card1-eDP-1) match the glob too; only the cards count.
+    case ${card##*/} in *-*) continue ;; esac
+    [ -e "$card/device" ] || continue
+    n=$((n + 1))
+    if [ "$(cat "$card/device/boot_vga" 2>/dev/null)" = "1" ]; then
+        boot=${card##*/}
+    fi
+done
+[ -n "$boot" ] || exit 0
+[ "$n" -gt 1 ] || [ "$mode" = boot ] || exit 0
+echo "AQ_DRM_DEVICES=/dev/dri/$boot"

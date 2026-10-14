@@ -1,0 +1,15 @@
+plymouth (24.004.60+git20250831.4a3c171d-0ubuntu10oaxaca1) @BASE_SERIES@; urgency=medium
+
+  * Ubuntu's 24.004.60+git20250831.4a3c171d-0ubuntu10 rebuilt for @DISTRO_NAME@
+    with one upstream patch, script-check-console-viewer.patch (plymouth
+    commit 88c8dd8d, 2026-08-06, "script: check if console_viewer is
+    enabled"): the script plugin's sprite refresh showed or hid each
+    display's console viewer without checking that one exists, and a view has
+    none when text rendering is unavailable (no label plugin) or
+    plymouth.prefer-fbcon is set. plymouthd then crashed in
+    script_lib_sprite_refresh -> ply_console_viewer_hide booting the
+    @DISTRO_NAME@ live ISO on the Legion laptop (2026-10-11), which also hid
+    casper's "remove the installation medium" prompt at shutdown. Ubuntu's
+    snapshot predates the fix. debian/ is otherwise Ubuntu's.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sun, 11 Oct 2026 17:00:00 -0500

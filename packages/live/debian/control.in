@@ -1,0 +1,19 @@
+Source: @DISTRO_ID@-live
+Section: misc
+Priority: optional
+Maintainer: @MAINTAINER@
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: @DISTRO_HOME_URL@
+Rules-Requires-Root: no
+
+Package: @DISTRO_ID@-live
+Architecture: all
+Depends: ${misc:Depends}, casper, mokutil
+Description: live session of the @DISTRO_NAME@ installation image
+ Installed only in the squashfs of the installation ISO, never on an installed
+ system (the installer removes it). It makes casper's live session land in the
+ @DISTRO_NAME@ desktop: a casper-bottom script completes the SDDM autologin casper
+ writes for the live user with the desktop's session name, and a boot test unit,
+ inert unless the kernel command line carries @DISTRO_ID@.boottest, reports the
+ live session's state on the serial console for the ISO boot test.

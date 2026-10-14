@@ -1,0 +1,6 @@
+@DISTRO_ID@-hybrid-backlight (0.1.0) @BASE_SERIES@; urgency=medium
+
+  * Initial release: hide the phantom nvidia_0 backlight device on every
+    backlight device add (boot, resume from suspend, driver reload).
+
+ -- @MAINTAINER@  Wed, 30 Sep 2026 19:00:00 -0500

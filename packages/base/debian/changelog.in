@@ -1,0 +1,45 @@
+@DISTRO_ID@-base (0.1.4) @BASE_SERIES@; urgency=medium
+
+  * Depend on fwupd and fwupd-signed, so every machine gets firmware
+    updates: fwupd only recommends fwupd-signed, the Canonical-signed EFI
+    program that applies UEFI capsule updates (BIOS/UEFI firmware), and
+    Recommends are off here, so without it no system firmware update could
+    be applied, with Secure Boot on or off.
+
+ -- @MAINTAINER@  Tue, 13 Oct 2026 20:00:00 -0500
+
+@DISTRO_ID@-base (0.1.3) @BASE_SERIES@; urgency=medium
+
+  * Package description: drop the paragraph about an apt preferences file for
+    snapd, which the system no longer has.
+
+ -- @MAINTAINER@  Tue, 13 Oct 2026 19:00:00 -0500
+
+@DISTRO_ID@-base (0.1.2) @BASE_SERIES@; urgency=medium
+
+  * Add /usr/libexec/@DISTRO_ID@/loader-fallback and dpkg triggers on Ubuntu's
+    signed GRUB and shim: on an EFI System Partition shared with another
+    Ubuntu-family system (named in /etc/@DISTRO_ID@/previous-loader by the
+    installer), the /EFI/ubuntu/grub.cfg stub tries this system's /boot and
+    falls back to the previous system's GRUB, so deleting this system's
+    partitions no longer leaves the machine at a GRUB prompt (Legion laptop,
+    2026-10-12).
+
+ -- @MAINTAINER@  Mon, 12 Oct 2026 22:00:00 -0500
+
+@DISTRO_ID@-base (0.1.1) @BASE_SERIES@; urgency=medium
+
+  * Unattended security updates: install /etc/apt/apt.conf.d/51@DISTRO_ID@-unattended-upgrades,
+    which clears the ${distro_id} origins of Ubuntu's 50unattended-upgrades (lsb_release reads
+    the diverted os-release and reports the distro's own name, so those origins matched nothing)
+    and lists Ubuntu's security origins by their literal name.
+
+ -- @MAINTAINER@  Sat, 11 Oct 2026 12:00:00 -0500
+
+@DISTRO_ID@-base (0.1.0) @BASE_SERIES@; urgency=medium
+
+  * Initial release: base system metapackage, os-release diversion,
+    apt default (no Recommends), netplan renderer NetworkManager.
+
+ -- @MAINTAINER@  Wed, 07 Oct 2026 15:00:00 -0500
+

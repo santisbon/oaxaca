@@ -1,0 +1,19 @@
+#!/bin/sh
+# sddm-last-user: record the user the installer created as SDDM's last user in the target, so
+# the login screen's theme, which shows a password field and no user field, logs that user in
+# on the first boot. The theme also falls back to the first listed user (the port's
+# default/sddm/<id>/Main.qml); this file is the second safeguard. SDDM keeps the state in
+# /var/lib/sddm/state.conf, section [Last], key User. The first boot on the Legion laptop on
+# 2026-10-12 rejected every password because the theme sent an empty user name.
+# Runs from the live system with the target's root as $1 (Calamares's shellprocess with
+# dontChroot): inside the target this script would not exist, because the installer's packages
+# step removes @DISTRO_ID@-installer from the target before the shellprocess steps run, which
+# failed the install with "sddm-last-user: not found" (2026-10-12).
+# Usage: sddm-last-user <target root> <user>
+set -e
+root=${1:?target root}
+user=${2:?user}
+install -d "$root/var/lib/sddm"
+printf '[Last]\nUser=%s\n' "$user" > "$root/var/lib/sddm/state.conf"
+if chroot "$root" getent passwd sddm >/dev/null 2>&1; then chroot "$root" chown -R sddm:sddm /var/lib/sddm; fi
+echo "@DISTRO_ID@: SDDM's last user is $user"

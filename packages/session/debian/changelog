@@ -1,0 +1,75 @@
+oaxaca-session (0.1.5) stonking; urgency=medium
+
+  * Depend on usbmuxd, the service through which Linux talks to iPhones and
+    iPads: libimobiledevice only recommends it, so with Recommends off gvfs's
+    Apple device monitor (gvfs-afc-volume-monitor) could not reach them and
+    Files could not browse them (docs/7 choice 46).
+  * New user unit oaxaca-volume-monitors.service, wanted by
+    graphical-session.target: runs "gio mount -l" right after login, so the
+    gvfs volume monitors start in the background. The camera monitor took 2
+    to 4 s with an iPad connected, and Files' first launch of a session
+    waited for it (4.9 s on the Legion laptop, docs/7 choice 46).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Tue, 13 Oct 2026 23:00:00 -0500
+
+oaxaca-session (0.1.4) stonking; urgency=medium
+
+  * Depend on intel-media-va-driver-non-free (multiverse), Intel's VA-API
+    driver, so every machine with an Intel GPU decodes video in hardware;
+    Mesa provides VA-API for AMD (mesa-va-drivers) but not for Intel. It
+    came only with oaxaca-hw-legion before (docs/7 choice 44).
+  * The GPU environment generator uses /etc/oaxaca/gpu only when a GPU
+    it names drives the display the firmware booted on (boot_vga), so a
+    laptop switched to its discrete GPU in the firmware (MUX) does not get
+    Hyprland limited to a GPU without a screen (docs/7 choice 45).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Tue, 13 Oct 2026 21:00:00 -0500
+
+oaxaca-session (0.1.3) stonking; urgency=medium
+
+  * The GPU environment generator recognizes an AMD GPU beside an Intel or
+    AMD display GPU: it exports OAXACA_GPU_OFFLOAD=amd and the AMD
+    GPU's PCI address in Mesa's DRI_PRIME form
+    (OAXACA_GPU_OFFLOAD_DEVICE), for oaxaca-launch-dgpu and the
+    menu (docs/7 choice 43). The PCI scan reads OAXACA_GPU_SYSFS when
+    set, for tests/gpu-env.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Tue, 13 Oct 2026 18:00:00 -0500
+
+oaxaca-session (0.1.2) stonking; urgency=medium
+
+  * The GPU environment generator finds the GPUs from the PCI devices of the
+    display class rather than /sys/class/drm, so hybrid graphics is detected
+    before the NVIDIA driver has loaded (docs/7 choice 40).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Tue, 13 Oct 2026 12:00:00 -0500
+
+oaxaca-session (0.1.1) stonking; urgency=medium
+
+  * Add a udev rule giving the "video" group write access to the display and
+    keyboard backlights: brightnessctl, which the port's brightness commands
+    call, writes sysfs directly, and Ubuntu's package ships no rule and no
+    logind support, so brightness could not be changed (Legion laptop,
+    2026-10-11). The installer's users.conf and the live session put the user
+    in "video".
+  * Add a user environment generator, 50-oaxaca-gpu, that exports
+    AQ_DRM_DEVICES to Hyprland from the kernel command line (oaxaca.gpu=),
+    from /etc/oaxaca/gpu (hardware packages) or, in the live session on a
+    dual-GPU machine, the boot GPU; by-path names are resolved to the card
+    node, since aquamarine fails to start when given the symlink.
+  * On hybrid graphics (Intel or AMD driving the display, an NVIDIA GPU
+    beside it) the generator points applications' EGL and Vulkan at Mesa:
+    starting an application woke the NVIDIA GPU and took 3.9 s instead of
+    0.33 s (Legion laptop, 2026-10-12). oaxaca-launch-nvidia runs one on
+    the NVIDIA GPU.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sun, 11 Oct 2026 16:00:00 -0500
+
+oaxaca-session (0.1.0) stonking; urgency=medium
+
+  * Initial release: graphics and session metapackage (Mesa, Hyprland,
+    Xwayland, uwsm, SDDM, portals, GNOME Keyring, Quickshell >= 0.3.2) and
+    SDDM's Wayland greeter configuration.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 08 Oct 2026 12:00:00 -0500
+

@@ -1,0 +1,51 @@
+Source: quickshell
+Section: x11
+Maintainer: @MAINTAINER@
+XSBC-Original-Maintainer: Michael Lloyd <michael@micl.dev>
+Build-Depends:
+ debhelper-compat (= 13),
+ cmake,
+ ninja-build,
+ pkgconf,
+ qt6-base-dev,
+ qt6-declarative-dev,
+ qt6-wayland-dev,
+ qt6-shadertools-dev,
+ qt6-base-private-dev,
+ qt6-declarative-private-dev,
+ qt6-wayland-private-dev,
+ libcli11-dev,
+ libcpptrace-dev,
+ libwayland-dev,
+ wayland-protocols (>= 1.41),
+ libpipewire-0.3-dev,
+ libpam0g-dev,
+ libpolkit-agent-1-dev,
+ libpolkit-gobject-1-dev,
+ libglib2.0-dev,
+ libdrm-dev,
+ libgbm-dev,
+ libjemalloc-dev,
+ libegl-dev,
+ libgles-dev,
+ libvulkan-dev,
+ libxcb1-dev,
+ spirv-tools
+Standards-Version: 4.7.4
+Homepage: https://quickshell.org/
+
+Package: quickshell
+Architecture: linux-any
+Depends: ${misc:Depends}, ${shlibs:Depends},
+ hicolor-icon-theme,
+ qt6-svg-plugins,
+ qml6-module-qtquick,
+ qml6-module-qtquick-controls,
+ qml6-module-qtquick-layouts
+Description: flexible QtQuick-based desktop shell toolkit
+ Quickshell is a toolkit for building status bars, widgets,
+ lockscreens, and other desktop components using Qt6 and QtQuick.
+ It supports both Wayland and X11, with integrations for PipeWire,
+ MPRIS, system tray, PAM, Bluetooth, and compositor-specific
+ features for Hyprland and Sway/i3. Configuration is done
+ declaratively in QML with live hot-reloading.

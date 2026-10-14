@@ -1,0 +1,27 @@
+# Generated from packages/archive-keyring/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: oaxaca-archive-keyring
+Section: misc
+Priority: important
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://github.com/santisbon/oaxaca
+Rules-Requires-Root: no
+
+Package: oaxaca-archive-keyring
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}
+Description: Oaxaca apt repository signing key
+ The public key that signs the Oaxaca apt repository, installed to
+ /etc/apt/keyrings/ so a sources entry can bind the repository to it.
+
+Package: oaxaca-apt-source
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, oaxaca-archive-keyring
+Description: Oaxaca apt repository sources entry
+ The deb822 sources entry that points apt at the Oaxaca repository and
+ binds it to the key from oaxaca-archive-keyring. Installed by the
+ Oaxaca image builder; it is what makes the repository's own updates,
+ including a changed repository location, reach installed systems.

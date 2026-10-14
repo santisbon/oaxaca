@@ -1,0 +1,6 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format. FILES= names a list of
+# "<url> <sha256>" lines, relative to this directory; build.sh downloads and checks each
+# file and packs them all, by basename, into build/<source>_<upstream version>.orig.tar.gz.
+# The upstream version 3.5.1+ia20261002 names the Nerd Fonts release (3.5.1) and the date
+# of the iA-Fonts commit the iA Writer files come from (2026-10-02).
+FILES=sources.list

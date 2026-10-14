@@ -1,0 +1,39 @@
+@DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
+  * Version scheme: the upstream version is the Omarchy tag plus the date of
+    the fork commit the packages are built from (+git<YYYYMMDD>), so every
+    change to the fork has its own orig tarball; under the tag alone two
+    revisions shared one orig tarball name with different contents.
+  * New @DISTRO_ID@-launch-dgpu: runs a command on the discrete GPU of a
+    hybrid-graphics machine, through @DISTRO_ID@-launch-nvidia on NVIDIA and
+    with DRI_PRIME set to the AMD GPU's PCI address on AMD. The menu's
+    launcher (@DISTRO_ID@-launch-desktop) uses it for entries that ask for the
+    discrete GPU and for applications listed in ~/.config/@DISTRO_ID@/dgpu-apps
+    (nvidia-apps, the list's first name, is still read), on NVIDIA and AMD
+    machines alike. @DISTRO_ID@-debug-launch shows the offload variables
+    (docs/7 choice 43).
+  * The port changes made since the first build, from the fork's branch
+    (2026-10-10 to 2026-10-13): the Plymouth theme and its passphrase hint,
+    the migrations runner, packages added to the base list (plymouth-label,
+    pulseaudio-utils, gawk, libgtk-3-bin, thermald, intel-lpmd,
+    lsp-plugins-lv2), the login screen's user fallback, mise for the
+    commands that need it, the balanced default power profile, the
+    installer's window rule, @DISTRO_ID@-debug-launch, applications on the
+    display GPU's Mesa driver on hybrid graphics with
+    @DISTRO_ID@-launch-nvidia, and the menu's discrete-GPU choice.
+
+ -- @MAINTAINER@  Tue, 13 Oct 2026 18:00:00 -0500
+
+@DISTRO_ID@-desktop (@OMARCHY_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
+  * Initial release: Omarchy @OMARCHY_TAG@ ported from Arch Linux to Ubuntu
+    (roadmap step 6). One source, five binary packages: @DISTRO_ID@-desktop
+    (metapackage, dependency list from the ported package list),
+    @DISTRO_ID@-tools (the commands and install scripts), @DISTRO_ID@-shell
+    (the Quickshell shell and icon font), @DISTRO_ID@-themes (theme bundles
+    and templates) and @DISTRO_ID@-config (Hyprland defaults, /etc/skel seeds,
+    session variables, units, drop-ins, SDDM theme, session file, Plymouth
+    theme files, launchers and branding placeholders). Built from the port
+    branch of the fork named in distro.conf, renamed at build time.
+
+ -- @MAINTAINER@  Sat, 10 Oct 2026 12:00:00 -0500

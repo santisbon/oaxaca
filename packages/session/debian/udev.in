@@ -1,0 +1,14 @@
+# Installed by dh_installudev as /usr/lib/udev/rules.d/60-@DISTRO_ID@-session.rules.
+# Write access to the display and keyboard backlights for the "video" group. The port's
+# brightness commands (@DISTRO_ID@-brightness-display, -keyboard) call brightnessctl, which
+# writes /sys/class/backlight/<dev>/brightness and /sys/class/leds/<dev>/brightness directly:
+# Ubuntu's brightnessctl 0.5.1 ships no udev rule and is built without logind support, so a
+# desktop user cannot change brightness at all without this (seen in the live session on the
+# Legion laptop, 2026-10-11). The lines are upstream brightnessctl's 90-brightnessctl.rules,
+# which Arch (Omarchy's platform) installs with the package, except that the LED line grants
+# "video" rather than upstream's "input": "input" also means raw access to every input
+# device, and the installer's users.conf and the live session give the user "video" only.
+ACTION=="add", SUBSYSTEM=="backlight", RUN+="/bin/chgrp video /sys/class/backlight/%k/brightness"
+ACTION=="add", SUBSYSTEM=="backlight", RUN+="/bin/chmod g+w /sys/class/backlight/%k/brightness"
+ACTION=="add", SUBSYSTEM=="leds", RUN+="/bin/chgrp video /sys/class/leds/%k/brightness"
+ACTION=="add", SUBSYSTEM=="leds", RUN+="/bin/chmod g+w /sys/class/leds/%k/brightness"

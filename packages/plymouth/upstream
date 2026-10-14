@@ -1,0 +1,8 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format. DSC= names Ubuntu's own source
+# package for plymouth in stonking (24.004.60+git20250831.4a3c171d-0ubuntu10, main), which
+# build.sh downloads into build/dsc/plymouth/ with the orig and debian tarballs the .dsc lists,
+# unpacks with dpkg-source -x, and lays this directory's debian/ over: one patch, its series
+# line and one changelog entry. The SHA-256 is of the .dsc file and came out of sha256sum on
+# the download on 2026-10-11; the .dsc's own checksums cover the tarballs.
+DSC=https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/plymouth/24.004.60+git20250831.4a3c171d-0ubuntu10/plymouth_24.004.60+git20250831.4a3c171d-0ubuntu10.dsc
+SHA256=92abdeddda2eb5a1875ab13c47c6f0260c25199405be59192528c264321d9849

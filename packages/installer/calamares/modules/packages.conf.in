@@ -1,0 +1,16 @@
+# Removed from the installed system: the live session's packages and the installer itself,
+# through apt. The sources in the target are the live image's (Ubuntu's archive, the
+# distro's repository); update_db refreshes them first, which needs the network the welcome
+# page checked for.
+---
+backend: apt
+update_db: true
+update_system: false
+skip_if_no_internet: false
+operations:
+  - try_remove:
+    - casper
+    - @DISTRO_ID@-live
+    - @DISTRO_ID@-installer
+    - calamares
+    - calamares-data

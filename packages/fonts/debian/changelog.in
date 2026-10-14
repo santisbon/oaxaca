@@ -1,0 +1,18 @@
+@DISTRO_ID@-fonts (3.5.1+ia20261002-0oaxaca1) @BASE_SERIES@; urgency=medium
+
+  * Initial release (roadmap step 6): the two font families the desktop
+    names and Ubuntu's archive lacks. JetBrains Mono Nerd Font, the four
+    basic faces from the Nerd Fonts 3.5.1 release zip (the shell, the
+    terminal and the editor ask for "JetBrainsMono Nerd Font" and its icon
+    glyphs), and the 16 iA Writer TTFs Omarchy pins (Mono S, Quattro S and
+    Duo S from iaolo/iA-Fonts commit c6588670 of 2026-10-02; Duospace from
+    commit b337fe1a, the last one carrying that family). The upstream
+    version names the Nerd Fonts release and the iA-Fonts commit date.
+  * The orig tarball is assembled by scripts/build.sh from the file list
+    in sources.list (see the "upstream" file next to debian/); the Nerd
+    Fonts zip is unpacked at build time, so unzip is a build dependency.
+  * Files install under /usr/share/fonts/truetype/@DISTRO_ID@/; fontconfig's
+    own file trigger on /usr/share/fonts rebuilds the cache, so no snippet
+    or maintainer script is shipped.
+
+ -- @MAINTAINER@  Sat, 10 Oct 2026 12:00:00 -0500

@@ -1,0 +1,4 @@
+# Start the phantom-backlight hide every time a backlight device is added: boot, resume from
+# suspend (the NVIDIA driver re-registers nvidia_0 then), driver reload. The script decides
+# whether anything needs hiding.
+ACTION=="add", SUBSYSTEM=="backlight", TAG+="systemd", ENV{SYSTEMD_WANTS}+="@DISTRO_ID@-hybrid-backlight.service"

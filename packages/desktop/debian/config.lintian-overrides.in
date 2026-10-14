@@ -1,0 +1,4 @@
+# /etc/skel is how Omarchy seeds a new user's home (useradd -m copies it), and this is the
+# distro's own desktop package, the one case /etc/skel exists for. Debian's tag guards
+# against ordinary packages changing every new user's defaults.
+@DISTRO_ID@-config: package-contains-file-in-etc-skel *

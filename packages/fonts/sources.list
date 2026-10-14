@@ -1,0 +1,30 @@
+# Read by scripts/build.sh (FILES= in the "upstream" file next to this list): one
+# "<url> <sha256>" line per file. build.sh downloads each file into build/, checks its
+# SHA-256, and packs all of them, by basename, into the one orig tarball. The SHA-256 of
+# the Nerd Fonts zip is the one Omarchy's recipe records (omacom/omarchy-pkgs,
+# pkgbuilds/ttf-jetbrains-mono-nerd-basic/PKGBUILD, 2026-10-10) and matched the download
+# the same day. The iA Writer SHA-256s were computed on 2026-10-10 from downloads whose
+# SHA-512s match Omarchy's recipe (pkgbuilds/ttf-ia-writer/PKGBUILD, pkgver 20261002.r63).
+
+# Nerd Fonts 3.5.1: the JetBrains Mono release zip (every face; debian/rules unzips four)
+https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/JetBrainsMono.zip fab782a66f7d3019da64f6572db9fc5d3a4bcb19f9fa13e2d8a62e3693d6396e
+
+# iA Writer Mono, Quattro and Duo: static TTFs at iaolo/iA-Fonts commit c6588670c71e9ac628acc27b72cde4bf12726b7f (2026-10-02)
+https://github.com/iaolo/iA-Fonts/raw/c6588670c71e9ac628acc27b72cde4bf12726b7f/iA%20Writer%20Mono/Static/iAWriterMonoS-Bold.ttf 76aa5b5b4f9091a9c686a2a6fe5ff3495bb791994d7079857e5b24ae98063743
+https://github.com/iaolo/iA-Fonts/raw/c6588670c71e9ac628acc27b72cde4bf12726b7f/iA%20Writer%20Mono/Static/iAWriterMonoS-BoldItalic.ttf b0cf9571234528b0896aacf97eb3ec45712da40b8410c799fa43ea123bc19e35
+https://github.com/iaolo/iA-Fonts/raw/c6588670c71e9ac628acc27b72cde4bf12726b7f/iA%20Writer%20Mono/Static/iAWriterMonoS-Italic.ttf c7e7e36e8167bf50f27e46c9cab447d04cc570bd388b998044e2e29f4cebc216
+https://github.com/iaolo/iA-Fonts/raw/c6588670c71e9ac628acc27b72cde4bf12726b7f/iA%20Writer%20Mono/Static/iAWriterMonoS-Regular.ttf 929605302a57250e712908cb5f6e1ce80c7d0accd5fd2555345f29a5e8d4e30b
+https://github.com/iaolo/iA-Fonts/raw/c6588670c71e9ac628acc27b72cde4bf12726b7f/iA%20Writer%20Quattro/Static/iAWriterQuattroS-Bold.ttf 40dbb1ffed472cdc96a0133073bc777a40782883678b80dfd31677d5963b72b9
+https://github.com/iaolo/iA-Fonts/raw/c6588670c71e9ac628acc27b72cde4bf12726b7f/iA%20Writer%20Quattro/Static/iAWriterQuattroS-BoldItalic.ttf f61aa3c97d611dec01c7414e07b9212a164501b6d1a800af0dcda11acf4eabb0
+https://github.com/iaolo/iA-Fonts/raw/c6588670c71e9ac628acc27b72cde4bf12726b7f/iA%20Writer%20Quattro/Static/iAWriterQuattroS-Italic.ttf 84c19517be57e8c0521f43a1d5c29766b1f0cb9353300e819b193da1b02f47ac
+https://github.com/iaolo/iA-Fonts/raw/c6588670c71e9ac628acc27b72cde4bf12726b7f/iA%20Writer%20Quattro/Static/iAWriterQuattroS-Regular.ttf 6e367e0e00e057d383680ffae7b64f520d06e1f96abd28bddd67d424fee8e8df
+https://github.com/iaolo/iA-Fonts/raw/c6588670c71e9ac628acc27b72cde4bf12726b7f/iA%20Writer%20Duo/Static/iAWriterDuoS-Bold.ttf 779963585007973753ba1c4aa85d67b21c29854c1f9730411d80dc0c879b0908
+https://github.com/iaolo/iA-Fonts/raw/c6588670c71e9ac628acc27b72cde4bf12726b7f/iA%20Writer%20Duo/Static/iAWriterDuoS-BoldItalic.ttf 830443f3ec75a277ec00917a7ed0523a93869ea9a7ea5f8d9f1d643b25b6cd47
+https://github.com/iaolo/iA-Fonts/raw/c6588670c71e9ac628acc27b72cde4bf12726b7f/iA%20Writer%20Duo/Static/iAWriterDuoS-Italic.ttf 8e15abab476026abd362d079fd519e9c1220e0ab32b3ce3e4c13695af53e7153
+https://github.com/iaolo/iA-Fonts/raw/c6588670c71e9ac628acc27b72cde4bf12726b7f/iA%20Writer%20Duo/Static/iAWriterDuoS-Regular.ttf 454a20d2b4569ba66810f0f710bb022065cbaac11c82fdcef677545ab27329f2
+
+# iA Writer Duospace: upstream removed the family later, so the TTFs come from its last commit, b337fe1a4c93026268f70e4b2678371f3e89e2ce
+https://github.com/iaolo/iA-Fonts/raw/b337fe1a4c93026268f70e4b2678371f3e89e2ce/iA%20Writer%20Duospace/TTF%20(PC)/iAWriterDuospace-Bold.ttf a7d5781c76a42ef3a5b5666e19e694b8797fc9de0be60e6d6bbcfd6bb279420e
+https://github.com/iaolo/iA-Fonts/raw/b337fe1a4c93026268f70e4b2678371f3e89e2ce/iA%20Writer%20Duospace/TTF%20(PC)/iAWriterDuospace-BoldItalic.ttf 47ab6d0aa3f593bf71f0d5484fe919af245aec53ae9c7c4b51ad8e5256d0ae4b
+https://github.com/iaolo/iA-Fonts/raw/b337fe1a4c93026268f70e4b2678371f3e89e2ce/iA%20Writer%20Duospace/TTF%20(PC)/iAWriterDuospace-Italic.ttf c34803c11866af27a10fa283df01b56b1a7980f1229795b3f7ca95ccb70e82d1
+https://github.com/iaolo/iA-Fonts/raw/b337fe1a4c93026268f70e4b2678371f3e89e2ce/iA%20Writer%20Duospace/TTF%20(PC)/iAWriterDuospace-Regular.ttf 58faf7d444401ca5260a09cfbbe04b7acfe74e6d5a5512dd2163cb29947cae1a

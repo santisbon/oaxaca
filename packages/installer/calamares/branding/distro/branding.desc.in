@@ -1,0 +1,40 @@
+# Branding of the installer window; the images beside this file are placeholders rendered
+# from the distro's name at build time (debian/rules).
+---
+componentName: @DISTRO_ID@
+welcomeStyleCalamares: false
+welcomeExpandingLogo: true
+# noexpand: with "normal" Calamares grows its window to fit a page (CalamaresWindow::ensureSize,
+# 3.3.14); under Hyprland, which keeps the floating window at the size its rule gives
+# (default/hypr/apps/installer.lua in the port, 1100x720), the Summary page with its partition
+# bars was laid out taller than the window, and the button row with Install fell below its edge
+# until a click on a bar panel made Hyprland send the size again (Legion laptop, 2026-10-12).
+# With noexpand the page keeps the window's size and scrolls. windowSize matches the rule.
+windowExpanding: noexpand
+windowSize: 1100px,720px
+windowPlacement: center
+sidebar: widget
+navigation: widget
+strings:
+    productName:         "@DISTRO_NAME@"
+    shortProductName:    "@DISTRO_NAME@"
+    version:             "@BASE_VERSION@"
+    shortVersion:        "@BASE_VERSION@"
+    versionedName:       "@DISTRO_NAME@ @BASE_VERSION@"
+    shortVersionedName:  "@DISTRO_NAME@ @BASE_VERSION@"
+    bootloaderEntryName: "@DISTRO_NAME@"
+    productUrl:          "@DISTRO_HOME_URL@"
+    supportUrl:          "@DISTRO_BUG_URL@"
+    knownIssuesUrl:      "@DISTRO_BUG_URL@"
+    releaseNotesUrl:     "@DISTRO_HOME_URL@"
+images:
+    productLogo:         "logo.png"
+    productIcon:         "icon.png"
+    productWelcome:      "welcome.png"
+slideshow:               "show.qml"
+slideshowAPI:            2
+style:
+   SidebarBackground:    "#1a1b26"
+   SidebarText:          "#c0caf5"
+   SidebarTextCurrent:   "#ffffff"
+   SidebarBackgroundCurrent: "#7aa2f7"

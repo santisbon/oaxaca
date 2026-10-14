@@ -1,0 +1,17 @@
+#!/bin/sh
+# Generated from packages/desktop/debian/config.postinst.in by scripts/render.py. Edit the .in file, not this one.
+# Register the distro's Plymouth theme the way Ubuntu's theme packages do: an alternative
+# for default.plymouth (plymouth-theme-spinner registers bgrt at priority 110; 150 wins),
+# then a rebuild of the initramfs, whose plymouth hook copies the selected theme in.
+# stonking ships no plymouth-set-default-theme.
+set -e
+case "$1" in
+  configure)
+    update-alternatives --install /usr/share/plymouth/themes/default.plymouth default.plymouth \
+      /usr/share/plymouth/themes/oaxaca/oaxaca.plymouth 150
+    if [ -x /usr/sbin/update-initramfs ] && [ -d /boot ] && ls /boot/vmlinuz-* >/dev/null 2>&1; then
+      update-initramfs -u
+    fi
+    ;;
+esac
+#DEBHELPER#

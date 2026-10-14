@@ -1,0 +1,21 @@
+oaxaca-live (0.1.2) stonking; urgency=medium
+
+  * live-boot-test: report whether oaxaca-volume-monitors.service ran
+    at login and which gvfs volume monitors are up, and whether usbmuxd is
+    installed (docs/7 choice 46).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Tue, 13 Oct 2026 23:00:00 -0500
+
+oaxaca-live (0.1.1) stonking; urgency=medium
+
+  * live-boot-test: the pool simulation also resolves nvidia-vaapi-driver,
+    which the drivers step installs after an NVIDIA driver (docs/7 choice 44).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Tue, 13 Oct 2026 21:00:00 -0500
+
+oaxaca-live (0.1.0) stonking; urgency=medium
+
+  * Initial release: the live session of the installation image, built on
+    Ubuntu's casper (roadmap step 7).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sat, 10 Oct 2026 20:00:00 +0000

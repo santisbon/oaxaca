@@ -1,0 +1,8 @@
+#!/bin/sh
+# Generated from packages/base/debian/postinst.in by scripts/render.py. Edit the .in file, not this one.
+set -e
+# triggered: Ubuntu's GRUB or shim package changed and ran grub-install (debian/triggers).
+if [ "$1" = triggered ] || [ "$1" = configure ]; then
+    /usr/libexec/oaxaca/loader-fallback || true
+fi
+#DEBHELPER#

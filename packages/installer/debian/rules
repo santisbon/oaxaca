@@ -1,0 +1,32 @@
+#!/usr/bin/make -f
+# Generated from packages/installer/debian/rules.in by scripts/render.py. Edit the .in file, not this one.
+ID = oaxaca
+NAME = Oaxaca
+dest = debian/$(ID)-installer
+brand = $(dest)/etc/calamares/branding/$(ID)
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# Placeholder artwork from the distro's name, as the desktop package does, until the
+	# distro has artwork: the product logo and icon Calamares shows, and a welcome image.
+	magick -background none -fill white -font DejaVu-Sans-Bold -pointsize 44 -size 256x256 -gravity center 'label:$(NAME)' PNG32:logo.png
+	magick -background none -fill white -font DejaVu-Sans-Bold -pointsize 20 -size 64x64 -gravity center 'label:$(NAME)' PNG32:icon.png
+	magick -background '#1a1b26' -fill white -font DejaVu-Sans-Bold -pointsize 48 -size 800x450 -gravity center 'label:$(NAME)' PNG32:welcome.png
+
+override_dh_auto_install:
+	install -D -m 0644 calamares/settings.conf $(dest)/etc/calamares/settings.conf
+	install -d $(dest)/etc/calamares/modules
+	install -m 0644 calamares/modules/*.conf $(dest)/etc/calamares/modules/
+	install -d $(brand)
+	install -m 0644 calamares/branding/distro/branding.desc calamares/branding/distro/show.qml logo.png icon.png welcome.png $(brand)/
+	install -D -m 0755 installer $(dest)/usr/bin/$(ID)-installer
+	install -D -m 0755 keep-previous-loader $(dest)/usr/libexec/$(ID)/keep-previous-loader
+	install -D -m 0755 sddm-last-user $(dest)/usr/libexec/$(ID)/sddm-last-user
+	install -D -m 0755 hardware-install $(dest)/usr/libexec/$(ID)/hardware-install
+	install -D -m 0644 installer.desktop $(dest)/usr/share/applications/$(ID)-installer.desktop
+	install -D -m 0644 installer.desktop $(dest)/etc/xdg/autostart/$(ID)-installer.desktop
+
+override_dh_auto_clean:
+	rm -f logo.png icon.png welcome.png

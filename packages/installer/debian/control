@@ -1,0 +1,27 @@
+# Generated from packages/installer/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: oaxaca-installer
+Section: misc
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13), imagemagick, fonts-dejavu-core
+Standards-Version: 4.7.2
+Homepage: https://github.com/santisbon/oaxaca
+Rules-Requires-Root: no
+
+Package: oaxaca-installer
+Architecture: all
+Depends: ${misc:Depends}, calamares, sudo, rsync, btrfs-progs, xfsprogs
+# rsync: Calamares 3.3.14's unpackfs module copies the squashfs with rsync (its main.py
+# always builds an UnpackOperation around "rsync -aHAXSr"); Ubuntu's calamares package does
+# not depend on rsync because Ubuntu's own images get it from the standard task, which this
+# minbase image does not install. Without it the install fails after partitioning with
+# "rsync failed with error code 127" (seen on the Legion laptop, 2026-10-11).
+# btrfs-progs, xfsprogs: partition.conf offers btrfs and xfs; mkfs.btrfs and mkfs.xfs come
+# from these (ext4 and vfat tools are in the base image).
+Description: Calamares settings and branding for installing Oaxaca
+ The configuration that turns Ubuntu's calamares package into the Oaxaca
+ installer: the module sequence (partitioning with optional LUKS, users, the
+ SDDM session, GRUB with Ubuntu's signed shim, the desktop's own install-time
+ setup), the branding, and a launcher that autostarts in the live session.
+ Installed only in the installation ISO's squashfs; it removes itself from the
+ installed system.

@@ -1,0 +1,9 @@
+# shellprocess@loader: from the live system (dontChroot), after the target and its EFI System
+# Partition are mounted and before grubcfg and bootloader overwrite /EFI/ubuntu, keep the
+# system that owned that directory reachable from the new menu (keep-previous-loader's header
+# and docs/7, choice 21). ${ROOT} is the target's mount point.
+---
+dontChroot: true
+timeout: 60
+script:
+    - "/usr/libexec/@DISTRO_ID@/keep-previous-loader ${ROOT}"

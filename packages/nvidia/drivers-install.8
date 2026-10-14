@@ -1,0 +1,64 @@
+.\" Generated from packages/nvidia/drivers-install.8.in by scripts/render.py. Edit the .in file, not this one.
+.TH oaxaca-drivers-install 8 "2026-10-08" "Oaxaca" "System Administration"
+.SH NAME
+oaxaca-drivers-install \- install the drivers for this machine, with the newest NVIDIA open branch that has prebuilt modules
+.SH SYNOPSIS
+.B oaxaca-drivers-install
+.RB [ --show ]
+.RI [ ubuntu-drivers-install-options ]
+.RI [ driver ]
+.SH DESCRIPTION
+.B oaxaca-drivers-install
+runs
+.B "ubuntu-drivers install --no-oem --package-list /var/log/oaxaca/drivers.list"
+as root, after choosing the NVIDIA branch itself.
+.B ubuntu-drivers
+(from the
+.B ubuntu-drivers-common
+package) reads the PCI ids of the running machine under /sys, maps them to driver packages through the apt cache, and installs one list with apt. For an NVIDIA GPU it picks Canonical's prebuilt signed kernel modules
+.RB ( linux-modules-nvidia-* ),
+so Secure Boot needs no MOK enrollment; DKMS modules are considered only with
+.BR --include-dkms .
+.PP
+Left to itself,
+.B ubuntu-drivers
+installs the branch it marks "recommended", and its ranking prefers a Long Term Support Branch (LTSB) over a New Feature Branch (NFB), which on a current GPU is the older branch.
+.B oaxaca-drivers-install
+instead asks the same library for the candidate packages, keeps the
+.B nvidia-driver-<branch>-open
+ones that have a
+.B linux-modules-nvidia-<branch>-open-<flavour>
+package for the installed kernel, takes the highest branch number, and passes it on as
+.BR nvidia:<branch>-open .
+When no such branch fits (no NVIDIA GPU, or a GPU the open modules do not support, Maxwell to Volta),
+.BR ubuntu-drivers '
+own default applies: the recommended closed branch, or nothing.
+.PP
+.B --no-oem
+keeps
+.B ubuntu-drivers
+from adding Canonical's OEM enablement archives to apt's sources.
+.B --package-list
+appends the installed packages to
+.IR /var/log/oaxaca/drivers.list .
+Other arguments are passed on to
+.BR "ubuntu-drivers install" .
+A
+.I driver
+argument (one that does not start with a dash, such as
+.B nvidia:580-open
+or
+.BR nvidia-driver-580 )
+names the driver to install and switches the branch choice off.
+.PP
+The Oaxaca installer runs this command against the target system. After a GPU change, run it again by hand.
+.SH OPTIONS
+.TP
+.B --show
+Print the chosen driver and the packages
+.B ubuntu-drivers
+would install, one line each, and exit without installing. Needs no root.
+.SH FILES
+.I /var/log/oaxaca/drivers.list
+.SH SEE ALSO
+.BR ubuntu-drivers (8)

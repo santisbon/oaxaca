@@ -1,0 +1,8 @@
+# @DISTRO_ID@-archive-keyring
+
+The first source package of every build. It produces two binary packages:
+
+- `@DISTRO_ID@-archive-keyring`: the public half of the archive signing key, in `/etc/apt/keyrings/`.
+- `@DISTRO_ID@-apt-source`: the apt sources entry for the @DISTRO_NAME@ repository, bound to that key. The name ends in `-apt-source` because that is the one form Debian policy (and lintian) allows for a package that installs apt sources.
+
+`archive-keyring.gpg` is written here by `scripts/keygen.sh`; the build is skipped without it. See `docs/build-infra.md`.

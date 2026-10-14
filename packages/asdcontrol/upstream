@@ -1,0 +1,6 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format: the upstream tarball to
+# download as build/<source>_<upstream version>.orig.tar.gz, and its SHA-256. The checksum
+# is the one Omarchy's own recipe records (omacom/omarchy-pkgs, pkgbuilds/asdcontrol/PKGBUILD,
+# 2026-10-10) and was verified against the download on the same day.
+URL=https://github.com/omakasui/asdcontrol/archive/refs/tags/v0.6.0.tar.gz
+SHA256=3112a6d5fc51a204c96ef9d27187577c6efc80b952e37a77969efbd0124e81d3

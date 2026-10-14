@@ -1,0 +1,21 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format: the upstream tarball to
+# download as build/<source>_<upstream version>.orig.tar.gz and its SHA-256, plus the extra
+# orig tarballs (components) the build needs. The program's checksum is the one Omarchy's
+# recipe records (omacom/omarchy-pkgs, pkgbuilds/hyprland-preview-share-picker/PKGBUILD,
+# 2026-10-10) and was verified against the download on the same day. Omarchy's recipe
+# skips the checksum of hyprland-protocols; the one below came out of sha256sum on the
+# download on 2026-10-10.
+URL=https://github.com/WhySoBad/hyprland-preview-share-picker/archive/refs/tags/v0.2.1.tar.gz
+SHA256=dfbd6773884c24bb300d756420cc540dda0c3518e910e20d1538e7dd6c0990da
+
+# hyprland-protocols: the git submodule at lib/hyprland-protocols, which the release
+# tarball ships as an empty directory; the commit is the one Omarchy's recipe pins.
+# build.sh unpacks the tarball into hyprland-protocols/ at the top of the tree, and
+# debian/rules links lib/hyprland-protocols to that directory.
+COMPONENT_NAMES=(hyprland-protocols)
+COMPONENT_URLS=(https://github.com/hyprwm/hyprland-protocols/archive/3a5c2bda1c1a4e55cc1330c782547695a93f05b2.tar.gz)
+COMPONENT_SHA256S=(00b2f15b8f383da4b6d111333c184a599ed5a9f51111243d0a88ddf7d7e498fb)
+
+# The crates from Cargo.lock, fetched on this host with "cargo vendor" and shipped as the
+# component "vendor", so that cargo builds offline in the chroot.
+CARGO_VENDOR=1

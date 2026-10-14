@@ -1,0 +1,240 @@
+# Graphics and session layer (roadmap step 4)
+
+Built 2026-10-08. This document covers what roadmap step 4 of [plan.md](0%20-%20plan.md) asks for: Mesa, the NVIDIA install path (the `restricted` component, `ubuntu-drivers-common`, `oaxaca-nvidia`), Xwayland, the desktop [portals](0%20-%20plan.md#portals), [uwsm](0%20-%20plan.md#display-manager-and-uwsm) and SDDM as the display manager, with the check that an Xwayland application runs under Hyprland. Two new packages carry the step, `oaxaca-session` and `oaxaca-nvidia`; the root filesystem build of step 3 gains a `session` [profile](#profile) that installs them; the boot test of step 3 gains the graphical checks; and a new check asks `ubuntu-drivers`, from inside the root filesystem, what it would install on this laptop.
+
+## Terms
+
+Each entry uses only terms defined above it, in the developer README's [Terms](README.md#terms), in the plan's [Terms](0%20-%20plan.md#terms), in the policy's [Terms](1%20-%20policy.md#terms) or in the rootfs document's [Terms](3%20-%20rootfs.md#terms). The first use of each term in the rest of this document links to its entry.
+
+### Profile
+
+Which set of our packages `scripts/rootfs-create.sh` installs on top of Ubuntu's minbase: `base` is step 3's set (`oaxaca-archive-keyring`, `oaxaca-apt-source`, `oaxaca-base`), `session` is that set plus `oaxaca-nvidia` and `oaxaca-session`. The profile is chosen with `make rootfs PROFILE=base` or `PROFILE=session` (the default, being the newest layer) and names the output: `build/rootfs/oaxaca-26.10-amd64-base.tar` or `-session.tar`, each with its manifest. `make rootfs-test` and `make drivers-check` take the same variable.
+
+### Mesa
+
+The open-source implementation of OpenGL, EGL, Vulkan and VA-API for Intel, AMD and virtual GPUs. In Ubuntu, Mesa's drivers are split across packages: `libgl1-mesa-dri` (OpenGL and EGL drivers, including `virtio_gpu` and the software renderer), `mesa-vulkan-drivers`, `mesa-va-drivers` (video decode) and `libegl-mesa0`. The NVIDIA driver replaces Mesa's role for NVIDIA GPUs with its own libraries.
+
+### Greeter
+
+The program that draws the login screen and asks for the user name and password: SDDM's is `sddm-greeter-qt6`, a Qt program. SDDM runs the greeter as the unprivileged `sddm` user inside a compositor of its own, chosen by `CompositorCommand` in `sddm.conf`. Once the user is authenticated, SDDM stops that compositor and starts the user's session.
+
+### Session file
+
+A `.desktop` file under `/usr/share/wayland-sessions/` (or `xsessions/` for X11) that names a session a display manager can start: `Name=` is what the greeter shows, `Exec=` is the command. Ubuntu's `hyprland` package ships two, `hyprland.desktop` (runs `start-hyprland` directly) and `hyprland-uwsm.desktop` (`uwsm start -e -D Hyprland hyprland.desktop`). Omarchy ships its own, `omarchy.desktop`, with the same uwsm command plus `-g -1` (never time out waiting for `graphical.target`); that file comes with the Omarchy port in step 6.
+
+### User manager
+
+The `systemd --user` instance that logind starts for a user at first login (`user@<uid>.service`) and that runs that user's units: the Wayland session that uwsm sets up (`wayland-wm@<compositor>.service`, `wayland-session@<compositor>.target`, `graphical-session.target`), the portals, and anything started with `systemd-run --user`. A command such as `systemctl --user` or `systemd-run --user` talks to the user manager over the user's session D-Bus socket, `/run/user/<uid>/bus`, which the user manager creates in the user's runtime directory `/run/user/<uid>`. To run such a command on the user's behalf from a root shell, as `scripts/rootfs-boot-test.sh` does, that command must run as the user with `XDG_RUNTIME_DIR=/run/user/<uid>` and `DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/<uid>/bus` in its environment, because `systemctl --user` finds the user manager through those two variables.
+
+### Render node
+
+The `/dev/dri/renderD*` device of a GPU, usable for rendering by any process with read and write access to it, without the display control that `/dev/dri/card*` carries. On this workstation, `renderD128` is the Intel iGPU (`/dev/dri/by-path/pci-0000:00:02.0-render`) and `renderD129` the NVIDIA GPU, and the logged-in user holds an access control list entry on both.
+
+### virtio-gpu and virgl
+
+virtio-gpu is QEMU's paravirtual GPU: the guest kernel's `virtio_gpu` driver exposes it as a DRM device with one connector per QEMU display, named `Virtual-1`. virgl is its 3D mode: the guest's Mesa driver forwards OpenGL to the host, where QEMU renders it on a real GPU. QEMU needs a display backend with a GL context for virgl; `-display egl-headless,rendernode=<render node>` provides one on a host render node with no window.
+
+### Driver branch, LTSB and NFB
+
+NVIDIA publishes its driver in numbered branches (`580`, `615`). Ubuntu packages each as `nvidia-driver-<branch>` (closed kernel modules) and `nvidia-driver-<branch>-open`, and marks each with a `Support:` field in the archive's package index: `LTSB` for a Long Term Support Branch, `NFB` for a New Feature Branch, `PB` and `Legacy`. `ubuntu-drivers` recommends an LTSB branch over an NFB one when both support the GPU. That rule lives in `detect.py`, the Python module `/usr/lib/python3/dist-packages/UbuntuDrivers/detect.py` that the `ubuntu-drivers-common` package ships and that the `ubuntu-drivers` command (`/usr/bin/ubuntu-drivers`, same package) calls for hardware detection, package matching and ranking; its source is [canonical/ubuntu-drivers-common](https://github.com/canonical/ubuntu-drivers-common) on GitHub, and the comment on its `_cmp_gfx_alternatives` function reads "LTSB always sorts before NFB", so on a current GPU its own choice is the older branch. Oaxaca's install command (next section) chooses the newest open branch instead.
+
+### Secret Service and keyring
+
+The Secret Service is the freedesktop.org D-Bus API (`org.freedesktop.secrets` on the user's session bus) through which desktop applications store and fetch credentials: a browser's saved passwords, NetworkManager's Wi-Fi passphrases, a mail client's account password. A keyring is one encrypted store behind that API, held in `~/.local/share/keyrings/<name>.keyring`. GNOME Keyring (`gnome-keyring-daemon`) is the implementation Omarchy and Ubuntu use; applications talk to it through `libsecret`. Its PAM module, `pam_gnome_keyring.so` from `libpam-gnome-keyring`, receives the login password at login, starts the daemon and unlocks the keyring named `login` with that password, and keeps the keyring's password in step when the login password changes.
+
+### Early KMS
+
+Loading the GPU's kernel driver from the initramfs, before the root filesystem is mounted, so the kernel sets the display mode (KMS, kernel mode setting) once, early, and the boot splash and the LUKS prompt draw on it. For NVIDIA that needs the `nvidia`, `nvidia_modeset`, `nvidia_uvm` and `nvidia_drm` modules in the initramfs and the `nvidia_drm modeset=1` option.
+
+## Anatomy
+
+Four `make` targets, each running one script, each script driving one tool:
+
+| You run | Script | Tool underneath | Result |
+|---|---|---|---|
+| `make build PKG="packages/session packages/nvidia"` | `scripts/build.sh` | `sbuild` and `lintian`, as in [build-infra.md](2%20-%20build-infra.md#anatomy) | `build/oaxaca-session_0.1.0_all.deb` (a dependency list plus two SDDM files) and `build/oaxaca-nvidia_0.1.0_all.deb` (an initramfs hook, a command and its man page) |
+| `make rootfs` (`PROFILE=session` is the default) | `scripts/rootfs-create.sh` | `mmdebstrap` in unshare mode, as in [rootfs.md](3%20-%20rootfs.md#anatomy) | `build/rootfs/oaxaca-26.10-amd64-session.tar` and its manifest: step 3's root filesystem plus the two packages above and their dependency closure |
+| `make rootfs-test` | `scripts/rootfs-boot-test.sh` | `qemu-system-x86_64` with KVM and a [virtio-gpu](#virtio-gpu-and-virgl), after `tar` and `mke2fs -d` | step 3's checks, then the graphical ones: SDDM logs a test user in, uwsm's units are active in the [user manager](#user-manager), Hyprland reports the virtual monitor, `xeyes` shows up as an Xwayland client, the portals answer, `ubuntu-drivers` and `oaxaca-drivers-install --show` run |
+| `make drivers-check` | `scripts/drivers-check.sh` | `unshare` and `chroot` into the extracted tarball with the host's `/sys` bind-mounted, then `apt-get update`, `ubuntu-drivers devices`, `oaxaca-drivers-install --show` and `apt-get --simulate install` | which branch `oaxaca-drivers-install` chooses for this machine's GPU and what it would install, and whether that resolves to Canonical's prebuilt signed modules rather than DKMS |
+
+## What the session metapackage pulls in
+
+`oaxaca-session` is a metapackage: a `Depends:` line that names the layer, plus two files of its own (SDDM's Wayland settings and the [greeter](#greeter)'s Hyprland configuration; see [Files this step adds](#files-this-step-adds-to-the-root-filesystem)). The names are Ubuntu's, as in step 3, at the `stonking` versions listed under [Facts checked](#facts-checked-on-2026-10-08).
+
+| Group | Packages | Why these |
+|---|---|---|
+| Base | `oaxaca-base`, `oaxaca-nvidia` | the layer below, and the NVIDIA install path (next section). `apt install oaxaca-session` on a minbase tree therefore yields the whole system up to this step |
+| [Mesa](#mesa) | `libgl1-mesa-dri`, `libegl-mesa0`, `libgl1`, `mesa-vulkan-drivers`, `mesa-va-drivers` | OpenGL and EGL drivers (Hyprland renders through EGL on GBM), Vulkan, and VA-API video decode for AMD GPUs. Intel's own VA-API driver and NVIDIA's are hardware packages, not this layer (see Choices) |
+| Compositor | `hyprland`, `xwayland` | Hyprland 0.56.2 from the archive, above the 0.55.0 minimum the policy records for Omarchy v4.0.4, and the X11 server Hyprland starts for X11 clients. `hyprland` only recommends `xwayland`, and the build installs no Recommends, so `xwayland` is named here |
+| Session | `uwsm`, `sddm`, `qt6-wayland` | uwsm runs the compositor as a unit of the user manager, as the plan says; SDDM is the display manager Omarchy uses; `qt6-wayland` is Qt's Wayland platform plugin, which SDDM's greeter needs to run on Wayland and which `sddm` does not depend on |
+| [Portals](0%20-%20plan.md#portals) | `xdg-desktop-portal`, `xdg-desktop-portal-hyprland`, `xdg-desktop-portal-gtk` | the portal service and the two backends the plan names: Hyprland's for screenshots, screen casting, global shortcuts and input capture (its `hyprland.portal` file lists those four), GTK's for file dialogs and settings. `hyprland` ships `/usr/share/xdg-desktop-portal/hyprland-portals.conf`, which picks `hyprland;gtk` as the default order |
+| [Secret store](#secret-service-and-keyring) | `gnome-keyring`, `libpam-gnome-keyring`, `libsecret-1-0` | the Secret Service daemon, the PAM module that unlocks it with the login password, and the client library. `gnome-keyring` only recommends its PAM module, and the build installs no Recommends, so the module is named here; without it the daemon would start but the keyring would ask for its own password at first use |
+
+Not in this layer, on purpose: a polkit agent, a terminal, fonts, an icon theme, a lock screen. Those five belong to the desktop package (roadmap step 6).
+
+## The NVIDIA install path
+
+The plan's choice: the NVIDIA driver is never inside an image; it is installed on the target machine by Ubuntu's detector, as Canonical's prebuilt signed modules, so Secure Boot works without a MOK. Step 4 makes that path concrete.
+
+**Anatomy of an NVIDIA install on an installed Oaxaca system.** `sudo oaxaca-drivers-install` (a Python script from `oaxaca-nvidia`) runs `ubuntu-drivers install --no-oem --package-list /var/log/oaxaca/drivers.list nvidia:<branch>-open`, choosing `<branch>` first. `ubuntu-drivers` (from `ubuntu-drivers-common`) reads the PCI ids under `/sys`, matches them against the `Modaliases` fields of the driver packages in apt's cache, keeps the packages whose apt release file says `Origin: Ubuntu`, and builds one list: the `nvidia-driver-<branch>[-open]` metapackage plus `linux-modules-nvidia-<branch>[-open]-generic`, the prebuilt modules for Ubuntu's kernel. Given no driver argument, `ubuntu-drivers` takes the branch its ranking marks "recommended", by `Support:` field ([LTSB before NFB](#driver-branch-ltsb-and-nfb)), the older branch on a current GPU. `oaxaca-drivers-install` asks the same library (`system_driver_packages`) for the candidates, keeps the `nvidia-driver-<branch>-open` ones for which `get_linux_modules_metapackage` finds a `linux-modules-nvidia-<branch>-open-<flavour>` package for the installed kernel (the prebuilt modules, not the DKMS fallback), takes the highest branch number, and passes it on as the driver argument. When no such branch fits (no NVIDIA GPU, or a Maxwell to Volta GPU the open modules do not support), the command passes no driver argument and `ubuntu-drivers`' own choice applies: the recommended closed branch, or nothing. A driver argument given by hand (`sudo oaxaca-drivers-install nvidia:580-open`) switches the choice off, and `--show` prints the choice and the package list without installing. Before calling apt it writes `options nvidia-drm modeset=1` to `/lib/modprobe.d/nvidia-kms.conf`; after apt succeeds, `ubuntu-drivers` runs `prime-select on-demand` if `/usr/bin/prime-select` exists, which puts a hybrid laptop's NVIDIA GPU under runtime power management. `prime-select` comes from the `nvidia-prime` package, which the NVIDIA driver metapackages only recommend, and Oaxaca installs no Recommends; so `oaxaca-nvidia` depends on `nvidia-prime` (choice 7 below), and on every Oaxaca system `prime-select` is present and that step always runs. apt then installs the list; `linux-modules-nvidia-*-generic` `Provides: nvidia-dkms-<branch>[-open]`, which is what satisfies the metapackage's DKMS dependency without DKMS. The kernel module package's postinst runs the `/etc/kernel/postinst.d` hooks, and `nvidia-kernel-common-<branch>`'s postinst runs `update-initramfs -u`, so our initramfs hook below runs and the modules land in the initramfs.
+
+What `oaxaca-nvidia` ships, and why each piece is needed:
+
+| Installed path | Purpose |
+|---|---|
+| `/usr/sbin/oaxaca-drivers-install`, with `man 8 oaxaca-drivers-install` | the one command above: picks the newest NVIDIA open branch with prebuilt modules, then runs `ubuntu-drivers install`. The installer (step 7) runs it against the target; after a GPU change the user runs it by hand. `oaxaca-nvidia` depends on `python3` for it |
+| `/usr/share/initramfs-tools/hooks/oaxaca-nvidia` | [early KMS](#early-kms) with the prebuilt modules, only when an NVIDIA GPU drives the firmware's display (`boot_vga`); on hybrid graphics the hook adds nothing, because `nvidia_drm` in the initramfs moved the disk passphrase prompt to the NVIDIA GPU, which drives no screen there (`oaxaca-nvidia 0.1.2`, [docs/7, choice 39](7%20-%20image-installer.md#choices)). Ubuntu's own hook, `framebuffer-nvidia` from `nvidia-kernel-common-*`, copies modules found under `updates/dkms` only; the prebuilt modules live under `kernel/nvidia-<branch>[-open]/` (checked on this workstation: `/lib/modules/7.0.0-34-generic/kernel/nvidia-595-open/nvidia-drm.ko`, and its initramfs holds no NVIDIA module). Our hook names the four modules with `manual_add_modules`, which resolves them for the initramfs' kernel and ignores names that are not installed (`dracut-install -o`), so a machine without the driver gets the same initramfs as before. initramfs-tools copies `/etc/modprobe.d` into the initramfs on its own, which carries `nvidia-kernel-common`'s `options nvidia_drm modeset=1` |
+| dependency on `ubuntu-drivers-common` | the detector, with `gpu-manager` (runs before the display manager, writes PRIME and runtime-PM settings) |
+| dependency on `oaxaca-hybrid-backlight` | hides the phantom backlight device the NVIDIA driver registers on hybrid laptops (docs/7 choice 44); hides nothing elsewhere |
+| `nvidia-vaapi-driver` after the driver | `oaxaca-drivers-install` installs it when `ubuntu-drivers` installed an `nvidia-driver-*` package, from the same source, and logs it (docs/7 choice 44) |
+| dependency on `nvidia-prime` | `prime-select`, which `ubuntu-drivers` calls after the install only when the command exists; the dependency makes sure that on Oaxaca the command always exists. The driver metapackages only recommend `nvidia-prime` |
+
+What the plan listed for `oaxaca-nvidia` and is not here: the `options nvidia_drm modeset=1` line, because `nvidia-kernel-common-615` already ships it in `/etc/modprobe.d/nvidia-graphics-drivers-kms.conf` (the plan said to check first; checked 2026-10-08 in that package's `.deb`), and Omarchy's `nvidia.lua` session variables and `omarchy-hw-nvidia*` detectors, which are session configuration and come with the Omarchy port (step 6).
+
+## Files this step adds to the root filesystem
+
+| Path in the root filesystem | Written by | Content |
+|---|---|---|
+| `/etc/sddm.conf.d/10-oaxaca-wayland.conf` | `oaxaca-session` | `[General] DisplayServer=wayland` and `[Wayland] CompositorCommand=start-hyprland -- --config /usr/share/oaxaca/sddm/hyprland.lua`: the [greeter](#greeter) runs on Wayland under its own Hyprland instance, no X server. SDDM reads every file in `/etc/sddm.conf.d/` in name order (`man 5 sddm.conf`); a later file overrides |
+| `/usr/share/oaxaca/sddm/hyprland.lua` | `oaxaca-session` | that instance's configuration: Hyprland's logo, splash, wallpaper and animations off, the same four settings as Omarchy's `default/sddm/hyprland.lua` (v4.0.4) |
+| `/etc/systemd/system/display-manager.service` | `sddm`'s postinst | symlink to `sddm.service`. `sddm`'s debconf question `shared/default-x-display-manager` has one candidate, so `/etc/X11/default-display-manager` reads `/usr/bin/sddm` and the postinst links the service; `graphical.target` (Ubuntu's default target) pulls `display-manager.service` in |
+| `/usr/share/wayland-sessions/hyprland-uwsm.desktop` | `hyprland` | the [session file](#session-file) SDDM offers: `Exec=uwsm start -e -D Hyprland hyprland.desktop` |
+| `/etc/pam.d/sddm` | `sddm` | SDDM's PAM stack (format: `man 5 pam.d`, one `type control module` line each). Two of its lines are for the [keyring](#secret-service-and-keyring): `-auth optional pam_gnome_keyring.so` hands the password SDDM collected to the module, and `-session optional pam_gnome_keyring.so auto_start` starts the daemon and unlocks the `login` keyring. The leading `-` makes PAM skip a missing module silently, which is why step 4's first build, without `libpam-gnome-keyring`, logged nothing. `/etc/pam.d/sddm-autologin`, the stack SDDM uses for autologin, has neither line: an autologin collects no password |
+| `/etc/pam.d/common-password` | `pam-auth-update`, run by `libpam-gnome-keyring`'s postinst | the line `password optional pam_gnome_keyring.so`, from the profile `/usr/share/pam-configs/gnome-keyring`: when `passwd` or a desktop tool changes the login password, the module changes the `login` keyring's password to match |
+| `/etc/systemd/user/graphical-session-pre.target.wants/gnome-keyring-daemon.service` | `gnome-keyring`'s postinst | enables the daemon's [user manager](#user-manager) unit (`/usr/lib/systemd/user/gnome-keyring-daemon.service`, `--components=pkcs11,secrets`, with a socket unit), so the daemon runs in every graphical session, including the test image's autologin session, where PAM started nothing. In the QEMU test this unit is what brings the Secret Service up |
+| `/usr/share/initramfs-tools/hooks/oaxaca-nvidia`, `/usr/sbin/oaxaca-drivers-install` | `oaxaca-nvidia` | previous section |
+| `/lib/modprobe.d/nvidia-kms.conf`, `/lib/modprobe.d/nvidia-runtimepm.conf`, `/var/log/oaxaca/drivers.list` | `ubuntu-drivers` and `gpu-manager`, on the target machine | not in the tarball: written when the driver is installed |
+
+The test image, and only the test image, also gets a user `tester` with a locked password, `/etc/sddm.conf.d/90-oaxaca-boot-test.conf` with `[Autologin] User=tester` and `Session=hyprland-uwsm.desktop`, and `x11-apps` installed by apt inside the guest for `xeyes`.
+
+## Choices
+
+1. **A second metapackage, `oaxaca-session`, depending on `oaxaca-base`, rather than growing `oaxaca-base`.** Each roadmap step stays a package a system can be checked against (`apt policy oaxaca-session`), the base can be installed alone for servers and tests, and the layers form a chain. Rejected: one metapackage per step without the chain, which would let a system hold `oaxaca-session` without `oaxaca-base`.
+2. **SDDM's greeter runs under Hyprland, as in Omarchy, not under Weston or an X server.** SDDM's default `CompositorCommand` is `weston --shell=kiosk`, which would add a second compositor to every image; `DisplayServer=x11` (SDDM's default) would need an X server and a root-run greeter. Hyprland is already installed, and Omarchy's four-line greeter configuration is all it takes. The file lives at `/usr/share/oaxaca/sddm/hyprland.lua`, under our path from the policy's naming rules, not at Omarchy's `/usr/share/sddm/hyprland.lua`.
+3. **Ubuntu's `hyprland-uwsm.desktop` is the session for now; no session file of ours.** The command in it is Omarchy's apart from `-g -1`. Omarchy's `omarchy.desktop` arrives with the port in step 6, renamed per the policy, and until then there is nothing Oaxaca-specific to put in a session file. Rejected: shipping an `oaxaca.desktop` now that only duplicates Ubuntu's.
+4. **`oaxaca-nvidia` is always installed, the driver never is.** The package is configuration only: with no NVIDIA driver on the machine, the hook adds nothing and the command is unused. Having it in place before the driver lands means the first `update-initramfs` after the install already picks the modules up on a machine whose display the NVIDIA GPU drives (on hybrid graphics the hook leaves them out, choice 39 of docs/7). Rejected: installing `oaxaca-nvidia` only on NVIDIA machines, which would make the installer carry hardware logic the package can carry itself.
+5. **An initramfs hook, not `/etc/initramfs-tools/modules`.** That file is a conffile of `initramfs-tools` that packages must not edit (Omarchy writes its Arch equivalent, `mkinitcpio.conf.d`, from a script). A hook under `/usr/share/initramfs-tools/hooks/` is the package mechanism, `dh_installinitramfs` adds the `update-initramfs` trigger, and `manual_add_modules` tolerates absent modules.
+6. **No modprobe file of ours.** Ubuntu's `nvidia-kernel-common-<branch>` ships `options nvidia_drm modeset=1` (and the `NVreg_PreserveVideoMemoryAllocations=1` suspend setting) and `ubuntu-drivers` writes a second `modeset=1` line; a third would only confuse. Rejected: the plan's provisional `/etc/modprobe.d/` file, written before the check.
+7. **`nvidia-prime` is a dependency of `oaxaca-nvidia`.** `ubuntu-drivers`' post-install hook calls `/usr/bin/prime-select on-demand` only if the command exists, the driver metapackages merely recommend `nvidia-prime`, and this distro installs no Recommends. Without the dependency a hybrid laptop would get the driver but not the runtime power management the plan wants (`power/runtime_status` reading `suspended` at idle). Rejected: turning Recommends on for the driver install, which would also pull `nvidia-settings` and the i386 driver libraries.
+8. **The rootfs script gains profiles and the tarballs a suffix.** `oaxaca-26.10-amd64-base.tar` and `-session.tar` can coexist, step 3's test still runs with `PROFILE=base`, and the default is the newest layer so `make rootfs` always builds the current system. Rejected: a separate script per step, which would duplicate the mmdebstrap call and its hooks.
+9. **The graphical check runs in QEMU with a [virtio-gpu](#virtio-gpu-and-virgl), an autologin test user, and talks to the user manager with `runuser`.** virgl through `-display egl-headless` on the host's Intel [render node](#render-node) gives the guest real OpenGL; when no render node is writable (CI), the script falls back to `virtio-vga` and Mesa's software renderer. The test user and the autologin file are written into the test image only, never into the tarball. `runuser -u tester` with `XDG_RUNTIME_DIR` and the bus address set reaches the user manager without side effects; `systemctl --user -M tester@`, the first attempt, opens a logind session per call and printed fifty status lines on the console. Rejected: `systemd-nspawn`, which cannot host a real DRM device for a compositor, and a screenshot-based check, which would need OCR to decide anything.
+10. **The driver check runs in a chroot on the workstation, not in the VM.** QEMU shows no NVIDIA GPU, so `ubuntu-drivers devices` in the guest only proves the command runs. The policy's question (does `ubuntu-drivers` still work with `ID=oaxaca`) and the plan's verification (which branch it picks on this laptop) need this laptop's PCI ids and the tarball's apt sources together, which a chroot with the host's `/sys` bind-mounted gives, in seconds, without root privileges. `ubuntu-drivers install` has no dry run, so the script calls the library function `command_install` uses (`get_desktop_package_list`) for the exact list and feeds it to `apt-get --simulate`.
+11. **Mesa's VA-API driver is in this layer; Intel's and NVIDIA's are not.** `mesa-va-drivers` covers AMD GPUs and is Mesa. Intel's `intel-media-va-driver` (universe) and `-non-free` (multiverse, the one the plan wants for this laptop) and `nvidia-vaapi-driver` are per-vendor packages that belong with the hardware packages of step 6, where Omarchy's own `video-acceleration.sh` logic is ported.
+12. **`qt6-wayland` is named explicitly.** Ubuntu's `sddm` depends on Qt but not on the Wayland platform plugin, because SDDM's default greeter runs on X11. Without the plugin the greeter would fail to start under the Hyprland instance.
+13. **`oaxaca-drivers-install` picks the newest NVIDIA open branch with prebuilt modules, not the branch `ubuntu-drivers` recommends.** The detector's ranking prefers an [LTSB](#driver-branch-ltsb-and-nfb) branch; on this laptop that means `580-open` while `615-open` is in the same archive with the same prebuilt modules, and NVIDIA itself labels the newer R595 series its Production Branch, the one its download page offers for current GPUs. A newer branch carries the fixes Hyprland and Wayland users wait for (explicit sync, the `linux-drm-syncobj-v1` protocol, arrived with 555.58 in June 2024). The rule is computed on the machine from the detector's own candidate list, so it holds when Ubuntu retires a branch, the way `595` became a transitional package to `615` between the plan and this step. Rejected: the detector's default (an older driver on every current GPU, with no flag the user knows to pass); hardcoding `nvidia:615-open` (breaks on the next branch change); Ubuntu's `/etc/custom_supported_gpus.json` pin, which also names one fixed series. The user's own driver argument still wins, so the long-term branch is one command away.
+14. **GNOME Keyring is in this layer, unlocked by the login password, as Ubuntu does it, not passwordless as Omarchy does it.** Omarchy v4.0.4 installs `gnome-keyring` and `libsecret` too, but its `install/user/default-keyring.sh` writes a keyring with no password (`lock-on-idle=false`, `lock-after=false`) into the user's home and its `install/login/sddm.sh` deletes the `auth` and `password` `pam_gnome_keyring.so` lines from `/etc/pam.d/sddm`, so that no login ever creates an encrypted `login` keyring; the disk encryption is the protection. Oaxaca keeps Ubuntu's stack: `libpam-gnome-keyring` is a dependency, SDDM's PAM file keeps its lines, and the keyring is encrypted with the login password and unlocked at login without a prompt. Reasons: it works on an unencrypted install too; a change of the login password follows into the keyring through `common-password`; and no file has to be written into each user's home at install time. This fits Oaxaca's login rule, set on 2026-10-09 and recorded in the policy ([Password login, no autologin](1%20-%20policy.md#password-login-no-autologin)): a user logs in with a password, and Oaxaca configures no autologin, encrypted install or not (Omarchy's ISO sets autologin for encrypted installs; Oaxaca does not follow it). Fingerprint support, decided the same day, does not change that: as in Omarchy, a built-in fingerprint reader serves `sudo`, polkit and the lock screen, and a FIDO2 key serves `sudo` and polkit, never the login screen (policy, same entry), so the `login` keyring is still unlocked by the typed password at login. Rejected: KDE's `kwallet` (SDDM's PAM file also names `pam_kwallet5.so`), which would pull Qt and KDE frameworks into every session for the same API.
+
+## Running it
+
+```
+make build PKG="packages/session packages/nvidia"   # or make build, for every package
+make rootfs                       # PROFILE=session: build/rootfs/oaxaca-26.10-amd64-session.tar
+make rootfs-test                  # boots the tarball in QEMU, prints the base and session checks
+make drivers-check                # ubuntu-drivers inside the tarball, against this machine's GPU
+make rootfs PROFILE=base          # step 3's tarball, oaxaca-26.10-amd64-base.tar
+```
+
+`make rootfs-test` needs KVM and, for virgl, a writable render node (`QEMU_RENDERNODE`; the default was `/dev/dri/renderD128` until 2026-10-11, when the nodes renumbered on this workstation and the tests started picking the first render node whose driver is not `nvidia`, `docs/7` facts); it takes about three minutes, most of it the two apt operations inside the guest. `KEEP=1` keeps `build/rootfs/boot-test/` with the serial log, where SDDM's and the user's journal excerpts printed at the end of the report help when a check fails. `make drivers-check` needs the network for `apt-get update` inside the chroot and takes seconds; `KEEP=1` keeps the extracted tree.
+
+## Verified on 2026-10-08
+
+All on this workstation (Kubuntu 26.04.1, 24 CPUs, KVM, Intel iGPU render node), the archive mirror delivering around 30 MB/s that morning.
+
+- `make build PKG="packages/session packages/nvidia"`: both build in the clean chroot. lintian reports one warning for `oaxaca-nvidia`, `groff-message` on the man page. The groff warning is an artifact of this workstation: lintian runs `man` with its output captured in a file, and `man-db` here then closes groff's stdout (strace: `write(1, ...) = -1 EBADF`), so every package with a man page fails the check, Ubuntu's `uwsm` and `hyprland` included; the page renders with `man -l`, and CI's lintian on a GitHub runner is the check that counts.
+- `make rootfs`: 1 min 44 s, 2.2 GB tarball, 563 packages in the manifest (step 3's base was 1.6 GB and 325); 591 packages after GNOME Keyring was added on 2026-10-09 (`gnome-keyring`, `libpam-gnome-keyring`, `libsecret-1-0`, and their dependencies `gcr`, `gcr4`, `pinentry-gnome3` among them). Inside: `hyprland 0.56.2+ds-1`, `uwsm 0.26.6+ds-1`, `sddm 0.21.0+git20251101.dfa5315-1ubuntu2`, `xwayland 2:24.1.13-1`, `ubuntu-drivers-common 1:0.10.13`, Mesa `26.2.4-1ubuntu1`.
+- `make rootfs-test`: the base checks print as in step 3, then the session part, in the guest's own words:
+  ```
+  --- session
+  display-manager: sddm.service
+  unit sddm: active
+  gpu-manager result: success
+  drm devices: by-path card0 renderD128
+  session: user=tester id=1 type=wayland desktop=Hyprland
+  user unit wayland-wm@hyprland.desktop.service: active running
+  user unit graphical-session.target: active active
+  user unit wayland-session@hyprland.desktop.target: active active
+  hyprland: Hyprland 0.56.2 built from branch v0.56.2 at commit efb50993780079460b0cbed1363e2166a2de1d9f clean ([gha] Nix: update inputs).
+  monitors: Virtual-1@Red_Hat_Inc._QEMU_Monitor
+  hyprland gpu: 00:02.0 VGA compatible controller [0300]: Red Hat, Inc. Virtio 1.0 GPU [1af4:1050] (rev 01) (prog-if 00 [VGA controller])
+  
+  apt install x11-apps: ok
+  xeyes client: class=XEyes xwayland=true
+  portal ScreenCast: u 5
+  portal FileChooser: u 4
+  user unit xdg-desktop-portal: active
+  user unit xdg-desktop-portal-hyprland: active
+  user unit xdg-desktop-portal-gtk: active
+  user unit gnome-keyring-daemon: active
+  secret service ReadAlias default: o "/"
+  ubuntu-drivers devices: [ERROR:root:aplay command not found]
+  ubuntu-drivers exit: 0
+  drivers-install show: [driver: ubuntu-drivers default (no NVIDIA open branch with prebuilt modules fits)|packages: ]
+  drivers-install exit: 0
+  ```
+  The whole test took 32 s (the guest's apt update and the x11-apps install included). The journal excerpts the test prints show nothing failing: SDDM logs `Session started true` for `hyprland-uwsm.desktop`, and the user's warnings are services not installed yet (RealtimeKit, UPower, BlueZ, AT-SPI; see "Carried to later steps").
+- `make drivers-check`, on this laptop (Lenovo Legion Pro 7 16IAX10H, RTX 5070 Ti Mobile):
+  ```
+  --- ubuntu-drivers devices
+  == /sys/devices/pci0000:00/0000:00:06.0/0000:02:00.0 ==
+  modalias : pci:v000010DEd00002F58sv000017AAsd0000800Ebc03sc00i00
+  vendor   : NVIDIA Corporation
+  model    : GB205M [GeForce RTX 5070 Ti Mobile]
+  driver   : nvidia-driver-615-open - distro non-free
+  driver   : nvidia-driver-580-open - distro non-free recommended
+  driver   : nvidia-driver-580-server-open - distro non-free
+  driver   : nvidia-driver-580 - distro non-free
+  driver   : nvidia-driver-615-server-open - distro non-free
+  driver   : nvidia-driver-580-server - distro non-free
+  driver   : xserver-xorg-video-nouveau - distro free builtin
+  --- end
+  --- oaxaca-drivers-install --show
+  driver: nvidia:615-open (newest NVIDIA open branch with prebuilt modules)
+  packages: nvidia-driver-615-open linux-modules-nvidia-615-open-generic
+  --- end
+  install list: [nvidia-driver-615-open linux-modules-nvidia-615-open-generic]
+  apt simulate: ok, 21 packages would be installed
+  prebuilt modules: [linux-modules-nvidia-615-open-7.3.0-9-generic linux-modules-nvidia-615-open-generic]
+  dkms packages: []
+  driver userspace: [libnvidia-gl-615 nvidia-utils-615 nvidia-driver-615-open]
+  ```
+  So `ubuntu-drivers` works with `ID=oaxaca` (the policy's open question from step 3): its "from the distro" test reads apt's `Origin: Ubuntu` field, not `/etc/os-release`. The detector recommends `nvidia-driver-580-open`, the LTSB branch, over `615-open`, the NFB branch; `oaxaca-drivers-install` chooses `615-open` (choice 13), and the list the command hands apt resolves to `linux-modules-nvidia-615-open-generic` with no DKMS package. The plan's table (2026-09-24) expected `595-open`; in `stonking` today `nvidia-driver-595-open` is a transitional package depending on `nvidia-driver-615-open`, with no `Support:` field, so the detector never lists it and `615-open` is what a user asking for 595 gets. The plan's rule "don't hardcode the branch number" stands; the table is corrected there. In the QEMU guest, with no NVIDIA GPU, the same `--show` prints `driver: ubuntu-drivers default (no NVIDIA open branch with prebuilt modules fits)` and an empty package list, and exits 0.
+- Problems found and fixed on the way: `loginctl list-sessions` has no `--plain` option (the first run never found the test session); `systemctl --user -M tester@` opened a new logind session per call (replaced by `runuser`); a plain `mount --bind /sys` into the chroot is refused in a user namespace because `/sys` carries locked submounts (`--rbind`); `scripts/render.py` wrote its generated-file note as a `#` comment into a Lua file and a man page (it now knows `--` and `.\"`); and `apt-get --simulate install nvidia-driver-580-open` alone resolves to DKMS, because only `ubuntu-drivers` adds the `linux-modules-nvidia` package to the list, which is why the check uses its library call.
+
+## Carried to later steps
+
+- Omarchy's session file (`omarchy.desktop`, renamed), SDDM theme, `NetworkManager-wait-online` mask, `rtkit` (PipeWire's realtime scheduling; the guest's journal shows WirePlumber asking for it), `upower`, `bluez`, AT-SPI, a polkit agent, fonts, terminal, lock screen: the desktop, step 6.
+- Omarchy's `nvidia.lua` session variables (`LIBVA_DRIVER_NAME`, `NVD_BACKEND`, `__GLX_VENDOR_LIBRARY_NAME`), the `omarchy-hw-nvidia*` detectors, `nvidia-vaapi-driver`, `AQ_DRM_DEVICES` for the compositor on the iGPU (since 2026-10-11 through the session package's user environment generator and `/etc/oaxaca/gpu`, `docs/7` choice 17), `intel-media-va-driver-non-free`: step 6's configuration and hardware packages.
+- Running `oaxaca-drivers-install` against the target, creating the real user and choosing the default session: the installer, step 7. No autologin (choice 14); the test image's autologin exists only so the QEMU test needs no greeter interaction.
+- The plan's NVIDIA verification on real hardware (`nvidia-smi`, `modeset` reading `Y`, `glxinfo -B` under Xwayland, suspend and resume) and the Secure Boot pass: once an image exists, step 7.
+- `gcr4`, a dependency of `gnome-keyring`, enables `gcr-ssh-agent.service` in `graphical-session-pre.target.wants` too, an SSH agent that answers on `$XDG_RUNTIME_DIR/gcr/ssh`; whether the desktop uses that agent or another is step 6's call. Also the Secret portal: `gnome-keyring` ships `/usr/share/xdg-desktop-portal/portals/gnome-keyring.portal` for `org.freedesktop.impl.portal.Secret` (what sandboxed applications use instead of the bus name), and Ubuntu's `hyprland-portals.conf` names only `hyprland;gtk`, so that interface has no backend until the desktop's portal configuration (step 6) adds `org.freedesktop.impl.portal.Secret=gnome-keyring`.
+- `ubuntu-drivers devices` prints `ERROR:root:aplay command not found` from its `sl-modem` detector plugin (a Smart Link modem check). Harmless; `alsa-utils` would silence it and is a candidate for the desktop package.
+- SDDM logs `Failed to write utmpx: No such file or directory` on login: systemd 256 and later keep no utmp database, and SDDM 0.21 still tries. Harmless.
+
+## Facts checked on 2026-10-08
+
+| Fact | Value | Source |
+|---|---|---|
+| `stonking` versions | `hyprland 0.56.2+ds-1`, `hyprland-protocols 0.7.0-1`, `xwayland 2:24.1.13-1`, `uwsm 0.26.6+ds-1`, `sddm 0.21.0+git20251101.dfa5315-1ubuntu2`, `qt6-wayland 6.11.2-1`, `xdg-desktop-portal 1.21.1+ds-1ubuntu6`, `xdg-desktop-portal-hyprland 1.4.1-1`, `xdg-desktop-portal-gtk 1.15.3-2ubuntu2`, Mesa `26.2.4-1ubuntu1`, `ubuntu-drivers-common 1:0.10.13`, `nvidia-prime 0.8.17.2build1`, `x11-apps 7.7+11build4` | the archive's `Packages` indexes for `main`, `universe`, `restricted`, `multiverse` |
+| NVIDIA branches in `stonking` `restricted` | `nvidia-driver-{535,570,580,595,610,615}` each with an `-open` twin; prebuilt modules `linux-modules-nvidia-{580,595,610}[-open]-generic` and `615-open-generic`, version `7.3.0-9.9` | same |
+| `Support:` fields | `nvidia-driver-580-open` and `-580`: `LTSB`; `nvidia-driver-615-open`: `NFB`; `nvidia-driver-595-open`: none, transitional to `615-open` (version `615.71.09-0ubuntu1`) | same |
+| `gnome-keyring 51.1-1` ships | `/usr/lib/systemd/user/gnome-keyring-daemon.service` (`WantedBy=graphical-session-pre.target`, `--components=pkcs11,secrets`) and `.socket`; D-Bus activation files for `org.freedesktop.secrets`, `org.gnome.keyring` and `org.freedesktop.impl.portal.Secret`; `/etc/xdg/autostart/gnome-keyring-{secrets,pkcs11}.desktop`; `gnome-keyring.portal`. `Recommends: gnome-keyring-pkcs11, libpam-gnome-keyring` | the `.deb` from `stonking` `main`, and its `Packages` entry |
+| `libpam-gnome-keyring 51.1-1` ships | `pam_gnome_keyring.so` and the `pam-auth-update` profile `gnome-keyring` (`Password-Type: Additional`, `optional pam_gnome_keyring.so`); postinst runs `pam-auth-update --package` | same |
+| Ubuntu's `/etc/pam.d/sddm` | `-auth optional pam_gnome_keyring.so`, `-session optional pam_gnome_keyring.so auto_start`, and the same two for `pam_kwallet5.so`; `/etc/pam.d/sddm-autologin` has none of them | the session tarball |
+| Omarchy v4.0.4 keyring | `install/omarchy-base.packages` lists `gnome-keyring` and `libsecret`; `install/user/default-keyring.sh` writes a passwordless `Default_keyring.keyring`; `install/login/sddm.sh` deletes the `-auth` and `-password` `pam_gnome_keyring.so` lines from `/etc/pam.d/sddm` | the repository at tag v4.0.4 |
+| NVIDIA's own branch labels | the R595 series is NVIDIA's current Production Branch for Linux (595.84 is the stable release of it); driver 555.58 (June 2024) brought Wayland explicit sync (`linux-drm-syncobj-v1`) | [NVIDIA driver 595.84 download page](https://www.nvidia.com/download/driverResults.aspx/265805/en-us), [9to5Linux on 595 as Production Branch](https://www.linux.org/threads/9to5linux-nvidia-595-linux-graphics-driver-released-as-latest-production-branch-version.64261/latest), [Linuxiac on 555.58](https://linuxiac.com/nvidia-555-58-display-driver/) |
+| `ubuntu-drivers install <driver>` | the positional argument is a driver string, `nvidia:<branch>[-open]` or a package name `nvidia-driver-<branch>[-open]`; with it, `gpgpu_install_filter` replaces the "recommended" ranking (`auto_install_filter` in `detect.py`). `nvidia:615` alone matches nothing on a Blackwell GPU, whose candidates are all `-open`; `nvidia:615-open` yields `[nvidia-driver-615-open, linux-modules-nvidia-615-open-generic]` | ubuntu-drivers-common 1:0.10.13, `/usr/bin/ubuntu-drivers` and `detect.py`; `get_desktop_package_list` run inside the tarball with this laptop's `/sys` |
+| `linux-modules-nvidia-615-open-generic` | `Provides: nvidia-dkms-615-open (= 615.71.09-0ubuntu1), nvidia-prebuilt-kernel`; `Depends: linux-modules-nvidia-615-open-7.3.0-9-generic, nvidia-kernel-common-615` | same |
+| `nvidia-kernel-common-615` ships | `/etc/modprobe.d/nvidia-graphics-drivers-kms.conf` (`options nvidia_drm modeset=1`, `NVreg_PreserveVideoMemoryAllocations=1`), `/lib/modprobe.d/nvidia-graphics-drivers.conf` (nouveau and nova blacklist), `nvidia-{suspend,resume,hibernate}.service`, `/usr/share/initramfs-tools/hooks/framebuffer-nvidia` (copies `updates/dkms` modules only; `OPTION=FRAMEBUFFER`) | the `.deb` |
+| Prebuilt module location | `/lib/modules/<kernel>/kernel/nvidia-<branch>[-open]/*.ko`; the host's initramfs holds 0 NVIDIA modules | this workstation, `dpkg -L linux-modules-nvidia-595-open-7.0.0-34-generic`, `lsinitramfs` |
+| `linux-modules-nvidia-*-<kernel>` postinst | `depmod`, then triggers `/etc/kernel/postinst.d` for that kernel (which rebuilds the initramfs); `nvidia-kernel-common-*` postinst runs `update-initramfs -u` | this workstation's `/var/lib/dpkg/info/*.postinst` |
+| `ubuntu-drivers` distro test | `candidate.file_list[0][0].origin == "Ubuntu"` (`_is_package_from_distro`, `detect.py`); no reading of `os-release` or `lsb_release` | the `.deb` |
+| `ubuntu-drivers install` | no dry-run option; package list from `get_desktop_package_list(cache, sys_path, free_only, include_oem, driver_string, include_dkms)`; pre-install hook writes `/lib/modprobe.d/nvidia-kms.conf`; post-install hook runs `/usr/bin/prime-select on-demand` if present | `/usr/bin/ubuntu-drivers` and `detect.py` in the `.deb` |
+| `sddm.conf` | `DisplayServer=` takes `x11` (default), `x11-user`, `wayland`; `[Wayland] CompositorCommand=` default `weston --shell=kiosk`, `SessionDir=` default `/usr/local/share/wayland-sessions,/usr/share/wayland-sessions`, `SessionCommand=` default `/etc/sddm/wayland-session`; `[Autologin] User=`, `Session=`; configuration directories `/usr/lib/sddm/sddm.conf.d`, `/etc/sddm.conf.d`, `/etc/sddm.conf` | `man 5 sddm.conf` in the `.deb` |
+| `sddm` ships | `/etc/pam.d/sddm`, `sddm-autologin`, `sddm-greeter`; `/etc/sddm/wayland-session` (sources the shell's profile, then `exec`s the session command); `sddm.service` with `Alias=display-manager.service` and `ExecStartPre` checking `/etc/X11/default-display-manager`; `Recommends: libpam-systemd, sddm-theme-debian-breeze | sddm-theme`, no dependency on `qt6-wayland` | the `.deb` |
+| `hyprland` ships | `/usr/bin/{Hyprland,hyprctl,hyprpm,start-hyprland}`, `/usr/share/wayland-sessions/{hyprland,hyprland-uwsm}.desktop`, `/usr/share/hypr/hyprland.lua` (the default configuration), `/usr/share/xdg-desktop-portal/hyprland-portals.conf` (`[preferred] default=hyprland;gtk`); `Recommends: libcap2-bin, xwayland, xdg-desktop-portal-hyprland`; on startup runs `systemctl --user import-environment DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP ...` | the `.deb` |
+| `uwsm` | units `wayland-wm@.service` (`Type=notify`, `ExecStart=uwsm aux exec -- %I`), `wayland-session@.target`, `graphical-session.target` binding; plugin `plugins/hyprland.sh` waits for `HYPRLAND_INSTANCE_SIGNATURE`; a compositor that imports `WAYLAND_DISPLAY` into the user manager itself is finalized automatically ("Autoready"), otherwise `uwsm finalize` must run; `-D` names for `XDG_CURRENT_DESKTOP`, `-e` makes them exclusive, `-g S` seconds to wait for `graphical.target` (negative disables) | the `.deb`'s `main.py` and `man uwsm` |
+| Omarchy v4.0.4 | `etc/sddm.conf.d/10-wayland.conf`: `DisplayServer=wayland`, `CompositorCommand=start-hyprland -- --config /usr/share/sddm/hyprland.lua`; `default/sddm/hyprland.lua`: the four settings above; `default/wayland-sessions/omarchy.desktop`: `Exec=uwsm start -g -1 -e -D Hyprland hyprland.desktop`; `install/login/sddm.sh` deletes the `pam_gnome_keyring` lines from `/etc/pam.d/sddm`; `install/config/enable-services.sh` enables `sddm.service` and masks `NetworkManager-wait-online.service`; `install/hardware/nvidia.sh` writes `/etc/modprobe.d/nvidia.conf` (`modeset=1`) and `/etc/mkinitcpio.conf.d/nvidia.conf` (the four modules) | `omacom/omarchy` at tag `v4.0.4` |
+| Omarchy ISO (`omacom/omarchy-iso`, branch `quattro`) | `configure_login` writes `/etc/sddm.conf.d/99-omarchy-login.conf` (theme, remember last user and session), `autologin.conf` only for encrypted installs (`Session=omarchy.desktop`), `/var/lib/sddm/state.conf`, and enables `sddm.service` | `phases_impl.py` |
+| QEMU on this workstation | display backends `none gtk sdl egl-headless curses spice-app dbus`; devices `virtio-vga`, `virtio-vga-gl`, `virtio-gpu-pci`, `virtio-gpu-gl-pci` | `qemu-system-x86_64 -display help`, `-device help` |
+| `initramfs-tools 0.151` | `manual_add_modules` queues names, `apply_add_modules` runs `dracut-install -o -m` (`-o`: optional, missing modules are not errors) | `/usr/share/initramfs-tools/hook-functions` |
+| `debhelper` | `debian/initramfs-hook` is installed by `dh_installinitramfs` to `/usr/share/initramfs-tools/hooks/<package>` with an `activate-noawait update-initramfs` trigger | the built `.deb`'s control archive |

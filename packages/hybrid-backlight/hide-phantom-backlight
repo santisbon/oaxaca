@@ -1,0 +1,109 @@
+#!/bin/bash
+# Generated from packages/hybrid-backlight/hide-phantom-backlight.in by scripts/render.py. Edit the .in file, not this one.
+# hide-phantom-backlight: hide the backlight device the NVIDIA driver registers for a panel
+# it does not drive, so every brightness tool sees one device with one scale.
+#
+# Anatomy: on hybrid laptops whose internal panel is wired to the iGPU, the NVIDIA driver
+# still registers /sys/class/backlight/nvidia_0 (range 0-100) next to the real device
+# (intel_backlight or amdgpu_bl*, under the panel's DRM eDP connector). Tools that take the
+# first backlight device, or rescale one device's value onto another, then set the wrong
+# brightness. This script shadows the phantom device's sysfs directory with an empty
+# read-only tmpfs, so readers find no device there. A udev rule starts it through
+# oaxaca-hybrid-backlight.service every time a backlight device is added: at boot, after
+# every resume from suspend (the driver re-registers nvidia_0 then), and on driver reload.
+#
+# It hides nothing when the NVIDIA GPU drives the panel itself (MUX or dGPU-only mode): then
+# either no backlight device sits under a DRM eDP connector, or the eDP connector on the
+# NVIDIA card reports "connected".
+#
+# Usage: hide-phantom-backlight [--dry-run]
+set -u
+dry_run=0
+[[ ${1:-} == --dry-run ]] && dry_run=1
+sysfs=${SYSFS_ROOT:-/sys}
+
+log() { logger -t hide-phantom-backlight -- "$*" 2>/dev/null; echo "$*"; }
+
+# The PCI device that owns a sysfs path: the nearest ancestor with a vendor file.
+owner_is_nvidia() {
+  local p=$1
+  while [[ $p != "$sysfs" && $p != / ]]; do
+    if [[ -r $p/vendor ]]; then
+      [[ $(cat "$p/vendor") == 0x10de ]]
+      return
+    fi
+    p=$(dirname "$p")
+  done
+  return 1
+}
+
+is_panel_backed() {
+  [[ $1 == */drm/card*/card*-eDP-* || $1 == */drm/card*/card*-LVDS-* || $1 == */drm/card*/card*-DSI-* ]]
+}
+
+scan() {
+  panel_devices=() nvidia_devices=()
+  local link path name
+  for link in "$sysfs"/class/backlight/*; do
+    [[ -e $link ]] || continue
+    path=$(readlink -f "$link")
+    name=${link##*/}
+    if is_panel_backed "$path"; then
+      panel_devices+=("$name")
+    elif owner_is_nvidia "$path"; then
+      nvidia_devices+=("$name:$path")
+    fi
+  done
+}
+
+# At boot the iGPU driver can register its device after the NVIDIA one. Give the
+# panel-backed device up to 20 s to show up before deciding.
+for _ in $(seq 1 20); do
+  scan
+  ((${#nvidia_devices[@]} == 0)) && break
+  ((${#panel_devices[@]} > 0)) && break
+  sleep 1
+done
+
+if ((${#nvidia_devices[@]} == 0)); then
+  log "no NVIDIA backlight device, nothing to hide"
+  exit 0
+fi
+if ((${#panel_devices[@]} == 0)); then
+  log "no panel-backed backlight device, so the NVIDIA GPU may drive the panel; hiding nothing"
+  exit 0
+fi
+
+# A connected eDP connector on the NVIDIA DRM card means the NVIDIA GPU drives the panel.
+for card in "$sysfs"/class/drm/card[0-9]*; do
+  [[ -d $card/device ]] || continue
+  owner_is_nvidia "$(readlink -f "$card/device")" || continue
+  for conn in "$card"/card*-eDP-* "$card"/card*-LVDS-* "$card"/card*-DSI-*; do
+    [[ -r $conn/status ]] || continue
+    if [[ $(cat "$conn/status") == connected ]]; then
+      log "NVIDIA drives the panel (${conn##*/} connected); hiding nothing"
+      exit 0
+    fi
+  done
+done
+
+status=0
+for entry in "${nvidia_devices[@]}"; do
+  name=${entry%%:*}
+  path=${entry#*:}
+  if mountpoint -q "$path"; then
+    log "$name already hidden"
+    continue
+  fi
+  if ((dry_run)); then
+    log "would hide $name at $path (panel device: ${panel_devices[*]})"
+    continue
+  fi
+  if mount -t tmpfs -o ro,nosuid,nodev,noexec,size=4k tmpfs "$path"; then
+    log "hid $name at $path (panel device: ${panel_devices[*]})"
+  else
+    log "failed to hide $name at $path"
+    status=1
+  fi
+done
+exit $status

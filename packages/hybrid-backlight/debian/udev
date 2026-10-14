@@ -1,0 +1,5 @@
+# Generated from packages/hybrid-backlight/debian/udev.in by scripts/render.py. Edit the .in file, not this one.
+# Start the phantom-backlight hide every time a backlight device is added: boot, resume from
+# suspend (the NVIDIA driver re-registers nvidia_0 then), driver reload. The script decides
+# whether anything needs hiding.
+ACTION=="add", SUBSYSTEM=="backlight", TAG+="systemd", ENV{SYSTEMD_WANTS}+="oaxaca-hybrid-backlight.service"

@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+case "$1" in
+  remove|deconfigure)
+    update-alternatives --remove default.plymouth /usr/share/plymouth/themes/@DISTRO_ID@/@DISTRO_ID@.plymouth
+    ;;
+esac
+#DEBHELPER#

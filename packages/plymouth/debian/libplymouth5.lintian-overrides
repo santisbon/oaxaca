@@ -1,0 +1,5 @@
+# Ubuntu's libplymouth5.symbols names four symbols with the full Ubuntu version, revision
+# included, which lintian reports as an error; the symbols file is Ubuntu's and is left as
+# it is (this package changes one source file, see debian/patches). The override keeps
+# scripts/build.sh's "lintian --fail-on error" meaningful for the files we do change.
+libplymouth5: symbols-file-contains-current-version-with-debian-revision *

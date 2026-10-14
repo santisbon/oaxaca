@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+# Generated from packages/nvidia/debian/rules.in by scripts/render.py. Edit the .in file, not this one.
+ID = oaxaca
+# "dest", not "PKG": make passes command-line variables such as "make build PKG=..." down to
+# every sub-make through MAKEFLAGS, and that would override a variable named PKG here.
+dest = debian/$(ID)-nvidia
+
+%:
+	dh $@
+
+# debian/initramfs-hook is picked up by dh_installinitramfs: it lands in
+# /usr/share/initramfs-tools/hooks/$(ID)-nvidia and the maintainer scripts get the
+# update-initramfs trigger, so the initramfs is rebuilt when this package is installed or removed.
+override_dh_auto_install:
+	install -D -m 0755 drivers-install $(dest)/usr/sbin/$(ID)-drivers-install
+	install -D -m 0644 drivers-install.8 $(dest)/usr/share/man/man8/$(ID)-drivers-install.8

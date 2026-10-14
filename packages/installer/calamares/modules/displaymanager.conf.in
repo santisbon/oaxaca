@@ -1,0 +1,13 @@
+# SDDM, already configured for a Wayland greeter under Hyprland by the session package; the
+# installed user's default session is the desktop's own session file. basicSetup off: the
+# session package's configuration is not to be rewritten.
+---
+displaymanagers:
+  - sddm
+defaultDesktopEnvironment:
+    executable: "/usr/bin/uwsm"
+    desktopFile: "@DISTRO_ID@"
+basicSetup: false
+sysconfigSetup: false
+sddm:
+  configuration_file: "/etc/sddm.conf"

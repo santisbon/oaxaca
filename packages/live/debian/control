@@ -1,0 +1,20 @@
+# Generated from packages/live/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: oaxaca-live
+Section: misc
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://github.com/santisbon/oaxaca
+Rules-Requires-Root: no
+
+Package: oaxaca-live
+Architecture: all
+Depends: ${misc:Depends}, casper, mokutil
+Description: live session of the Oaxaca installation image
+ Installed only in the squashfs of the installation ISO, never on an installed
+ system (the installer removes it). It makes casper's live session land in the
+ Oaxaca desktop: a casper-bottom script completes the SDDM autologin casper
+ writes for the live user with the desktop's session name, and a boot test unit,
+ inert unless the kernel command line carries oaxaca.boottest, reports the
+ live session's state on the serial console for the ISO boot test.

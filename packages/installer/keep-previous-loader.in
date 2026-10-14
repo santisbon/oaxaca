@@ -1,0 +1,139 @@
+#!/bin/bash
+# keep-previous-loader: before the installer's bootloader step overwrites /EFI/ubuntu on a
+# shared EFI System Partition, keep the system that owned it reachable from the new menu.
+#
+# Anatomy: Calamares's bootloader module runs grub-install with --bootloader-id=ubuntu,
+# because Ubuntu's signed GRUB image (grubx64.efi.signed) is built with the prefix /EFI/ubuntu
+# and reads its configuration stub, /EFI/ubuntu/grub.cfg, from that directory and nowhere
+# else (GRUB 2.14's normal mode builds the path from $prefix alone; docs/7, choice 21). When
+# the target shares an EFI System Partition with another Ubuntu-family system, that stub is
+# the other system's (its one line, "search.fs_uuid <uuid of its /boot> root", names the
+# partition whose grub/grub.cfg holds its menu), and grub-install replaces it; the firmware
+# entry named "ubuntu" is replaced the same way. The other system then boots only through a
+# GRUB command line, which is what happened on the Legion laptop on 2026-10-12 to Kubuntu.
+#
+# This script runs from the live system (Calamares's shellprocess with dontChroot: true),
+# after the mount module put the target at $1 with its EFI System Partition at $1/boot/efi
+# and before grubcfg and bootloader. It reads the stub that is about to be overwritten,
+# checks that its UUID names a filesystem that exists and is not the target's own /boot, and
+# writes $1/etc/grub.d/45_@DISTRO_ID@_previous: a GRUB script that adds one menu entry which
+# loads that system's own grub/grub.cfg from its partition ("configfile"), the way a user
+# would at the GRUB prompt, so the other system's menu, kernels and encrypted root work as
+# before. grub-mkconfig, in the bootloader step, picks the script up with the rest of
+# /etc/grub.d. Nothing is written when there is no stub (an EFI System Partition of the
+# target's own), when the stub is the target's (a reinstall), or when its UUID matches no
+# filesystem (a stale stub).
+#
+# Usage: keep-previous-loader <target root>
+set -euo pipefail
+root=${1:?target root}
+id=@DISTRO_ID@
+# Every decision goes to the target's /var/log/@DISTRO_ID@/keep-previous-loader.log as well as to
+# Calamares's log: on 2026-10-12 an install wrote no entry and Calamares's log was gone with the
+# live session, so nothing said why.
+install -d "$root/var/log/$id"
+exec > >(tee -a "$root/var/log/$id/keep-previous-loader.log") 2>&1
+echo "$(date -u +%FT%TZ) keep-previous-loader $root"
+# The stub, read from the EFI System Partition the target will use: the mount at
+# $root/boot/efi when there is one, else the device the target's fstab names for /boot/efi
+# (written by Calamares's fstab module before this step), mounted read-only for the read. The
+# stub is read before the bootloader step overwrites it, whatever the mount order.
+stub="$root/boot/efi/EFI/ubuntu/grub.cfg"
+tmpmnt=""
+# The trap must succeed: a failing EXIT trap becomes the script's exit status, and a bare
+# "[[ -n $tmpmnt ]] && ..." returns 1 when nothing was mounted, which failed the install on
+# 2026-10-12 after the entry had been written.
+cleanup() { if [[ -n $tmpmnt ]]; then umount "$tmpmnt" 2>/dev/null || true; rmdir "$tmpmnt" 2>/dev/null || true; fi; return 0; }
+trap cleanup EXIT
+if ! mountpoint -q "$root/boot/efi"; then
+    esp=$(awk '$2 == "/boot/efi" && $1 !~ /^#/ { print $1; exit }' "$root/etc/fstab" 2>/dev/null || true)
+    case $esp in UUID=*) esp=$(blkid -U "${esp#UUID=}" 2>/dev/null || true) ;; PARTUUID=*) esp=$(blkid -t "$esp" -o device 2>/dev/null | head -1 || true) ;; esac
+    echo "$id: $root/boot/efi is not mounted; the target's fstab names ${esp:-no EFI System Partition}"
+    if [[ -b $esp ]]; then
+        tmpmnt=$(mktemp -d /tmp/$id-esp.XXXXXX)
+        mount -o ro "$esp" "$tmpmnt" && stub="$tmpmnt/EFI/ubuntu/grub.cfg"
+    fi
+fi
+echo "$id: stub $stub: $(head -1 "$stub" 2>/dev/null || echo missing)"
+# The systems to keep, in order: first the one the stub names, if it exists here; then every
+# other filesystem whose top holds a GRUB menu (grub/grub.cfg), which is a separate /boot such as
+# Kubuntu's, whose root (often encrypted) os-prober cannot read. Systems without a separate /boot
+# (boot/grub/grub.cfg on a readable root) are os-prober's (grubcfg turns it on), so they are not
+# listed twice. The stub alone was not enough: after a reinstall of this distro the stub names
+# only the previous install's /boot, now reformatted, and the system before it was lost
+# (2026-10-12). Two stub forms exist: grub-install's ("search.fs_uuid <uuid> root", then "set
+# prefix=($root)'<dir>'") and the fallback form loader-fallback writes ("search --no-floppy
+# --fs-uuid --set=root <uuid>" per system).
+target_boot=$(findmnt -no UUID "$root/boot" 2>/dev/null || true)
+target_root=$(findmnt -no UUID "$root" 2>/dev/null || true)
+live_src=$(findmnt -no SOURCE /cdrom 2>/dev/null || true)
+keep_uuid=() keep_prefix=() keep_dev=() keep_name=()
+seen=" "
+add() {  # uuid prefix device name
+    [[ $seen == *" $1 "* ]] && return 0
+    seen="$seen$1 "
+    keep_uuid+=("$1"); keep_prefix+=("$2"); keep_dev+=("$3"); keep_name+=("$4")
+}
+# The first menu entry's title in a grub.cfg ("Kubuntu GNU/Linux"), for the entry's name.
+title_of() { sed -n "s/^menuentry '\([^']*\)'.*/\1/p" "$1" | head -1; }
+# Read a filesystem's grub/grub.cfg without changing it: read-only, no journal replay, in a
+# private mount namespace, so nothing outside this script sees the mount.
+peek() {  # device fstype -> prints the first menu title, exit 1 when there is no grub/grub.cfg
+    local opts=ro
+    case $2 in ext3|ext4) opts=ro,noload ;; xfs) opts=ro,norecovery ;; esac
+    unshare --mount --propagation=private sh -c '
+        m=$(mktemp -d) && mount -o "$2" "$1" "$m" 2>/dev/null || exit 1
+        f="$m/grub/grub.cfg"; [ -f "$f" ] || { umount "$m"; exit 1; }
+        sed -n "s/^menuentry '"'"'\([^'"'"']*\)'"'"'.*/\1/p" "$f" | head -1; umount "$m"; rmdir "$m"' sh "$1" "$opts"
+}
+if [[ -f $stub ]]; then
+    while read -r cand prefix; do
+        [[ -n $cand ]] || continue
+        if [[ $cand == "$target_boot" || $cand == "$target_root" ]]; then echo "$id: stub names $cand, the target's own"; continue; fi
+        d=$(blkid -U "$cand" 2>/dev/null || true)
+        if [[ -z $d ]]; then echo "$id: stub names $cand, not on this machine"; continue; fi
+        t=$(peek "$d" "$(blkid -s TYPE -o value "$d" 2>/dev/null)" || true)
+        add "$cand" "${prefix:-/boot/grub}" "$d" "${t:-Previous system}"
+        echo "$id: stub names $cand ($d)"
+    done < <(awk '
+        /search\.fs_uuid/ { u = $2; next }
+        /search .*--fs-uuid/ { for (i = 1; i <= NF; i++) if ($i ~ /^[0-9A-Fa-f]{8}-/) { u = $i; sub(/;$/, "", u) }; next }
+        /set prefix=/ && u != "" { q = $0; sub(/^[^\x27]*\x27/, "", q); sub(/\x27.*/, "", q); print u, q; u = "" }
+        END { if (u != "") print u }
+    ' "$stub")
+else
+    echo "$id: no stub; scanning only"
+fi
+while read -r dev fstype fsuuid; do
+    [[ -n $fsuuid ]] || continue
+    case $fstype in ext2|ext3|ext4|btrfs|xfs) ;; *) continue ;; esac
+    [[ $fsuuid == "$target_boot" || $fsuuid == "$target_root" ]] && continue
+    [[ -n $live_src && $dev == "$live_src" ]] && continue
+    findmnt -rno TARGET -S "$dev" 2>/dev/null | grep -q "^$root" && continue
+    if t=$(peek "$dev" "$fstype"); then
+        add "$fsuuid" /grub "$dev" "${t:-Linux}"
+        echo "$id: found a GRUB menu on $dev ($fsuuid): ${t:-untitled}"
+    fi
+done < <(lsblk -rpno PATH,FSTYPE,UUID 2>/dev/null)
+if (( ${#keep_uuid[@]} == 0 )); then echo "$id: no other system with its own GRUB menu; nothing kept"; exit 0; fi
+install -d "$root/etc/grub.d"
+{
+    printf '#!/bin/sh\n'
+    printf '# Written by the @DISTRO_NAME@ installer (keep-previous-loader) on %s: the other systems on\n' "$(date -u +%Y-%m-%d)"
+    printf '# this machine with their own GRUB menu, each reached through that menu. Remove this file and\n'
+    printf '# run update-grub to drop the entries.\n'
+    printf 'exec tail -n +6 $0\n'
+    for i in "${!keep_uuid[@]}"; do
+        printf "menuentry '%s (on %s)' --class os \$menuentry_id_option '%s-previous-%s' {\n" "${keep_name[$i]//\'/}" "${keep_dev[$i]}" "$id" "${keep_uuid[$i]}"
+        printf '\tsearch --no-floppy --fs-uuid --set=root %s\n\tconfigfile %s/grub.cfg\n}\n' "${keep_uuid[$i]}" "${keep_prefix[$i]}"
+    done
+} > "$root/etc/grub.d/45_${id}_previous"
+chmod 0755 "$root/etc/grub.d/45_${id}_previous"
+uuid=${keep_uuid[0]} cfgdir=${keep_prefix[0]} dev=${keep_dev[0]} label=${keep_name[0]}
+echo "$id: kept ${#keep_uuid[@]} system(s) in /etc/grub.d/45_${id}_previous: $(for i in "${!keep_uuid[@]}"; do printf '%s on %s; ' "${keep_name[$i]}" "${keep_dev[$i]}"; done)"
+# The previous system for loader-fallback (@DISTRO_ID@-base), which the bootloader step's
+# follow-up and later GRUB upgrades use to keep a fallback to it in the shared stub.
+install -d "$root/etc/$id"
+printf 'UUID=%s\nPREFIX=%s\nDEVICE=%s\nLABEL=%s\n' "$uuid" "$cfgdir" "$dev" "$label" > "$root/etc/$id/previous-loader"
+echo "$id: recorded $label ($uuid, $cfgdir) for loader-fallback"
+exit 0

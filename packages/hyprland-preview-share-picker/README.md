@@ -1,0 +1,38 @@
+<!-- Generated from packages/hyprland-preview-share-picker/README.md.in by scripts/render.py. Edit the .in file, not this one. -->
+# hyprland-preview-share-picker
+
+hyprland-preview-share-picker 0.2.1, the screen-share picker with window and monitor previews that xdg-desktop-portal-hyprland opens on a screen-share request, packaged for Oaxaca's repository: roadmap step 6. Ubuntu's archive has no hyprland-preview-share-picker; Omarchy v4.0.4 installs the program from its own repository (`omacom/omarchy-pkgs`, `pkgbuilds/hyprland-preview-share-picker/PKGBUILD`).
+
+The package keeps the upstream name, as the policy says for third-party software we package from source, and the version `0.2.1-0oaxaca1`: the `-0oaxaca1` revision marks "not in Debian" and sorts below a future Debian `0.2.1-1`.
+
+## What the package installs
+
+| Path | What |
+|---|---|
+| `/usr/bin/hyprland-preview-share-picker` | the program, a Rust binary (GTK4, gtk4-layer-shell) built with `cargo build --frozen --release` |
+| `/usr/share/hyprland-preview-share-picker/schema.json` | the JSON Schema of the program's `config.yaml`, printed by `hyprland-preview-share-picker schema` at build time, for editors that validate the configuration file |
+
+The binary depends on `xdg-desktop-portal-hyprland` (the portal that runs the picker) and suggests `slurp` (the program the picker runs by default to select a region).
+
+## Where the source comes from
+
+| File in this directory | What |
+|---|---|
+| `upstream` | the three sources below; `scripts/build.sh` downloads the first two, checks the SHA-256 of each, runs `cargo vendor` for the third, and unpacks all three around `debian/` before `dpkg-source` |
+| `debian/` | our packaging: `control.in`, `changelog.in`, `rules`, `clean`, `copyright` (MIT, BSD-3-Clause and the licenses of the vendored crates), `patches/build-rs-no-git.patch` |
+
+| Source | Where | SHA-256 |
+|---|---|---|
+| the program, GitHub's archive of the upstream tag `v0.2.1` | https://github.com/WhySoBad/hyprland-preview-share-picker/archive/refs/tags/v0.2.1.tar.gz | `dfbd6773884c24bb300d756420cc540dda0c3518e910e20d1538e7dd6c0990da`, the checksum Omarchy's PKGBUILD records; the same checksum came out of `sha256sum` on the download on 2026-10-10 |
+| `hyprland-protocols`, the git submodule at `lib/hyprland-protocols` (the release tarball ships that directory empty), at commit `3a5c2bda1c1a4e55cc1330c782547695a93f05b2`, the commit Omarchy's PKGBUILD pins | https://github.com/hyprwm/hyprland-protocols/archive/3a5c2bda1c1a4e55cc1330c782547695a93f05b2.tar.gz | `00b2f15b8f383da4b6d111333c184a599ed5a9f51111243d0a88ddf7d7e498fb`, from `sha256sum` on the download on 2026-10-10 (Omarchy's PKGBUILD marks this checksum SKIP) |
+| `vendor`, the 260 crates `Cargo.lock` pins | crates.io, through `cargo vendor --locked` on the build host | none pinned: `cargo` checks every crate against the checksum in `Cargo.lock`, and the vendor tarball changes only when the lockfile does |
+
+`dpkg-source` unpacks the two extra tarballs as `hyprland-protocols/` and `vendor/` at the top of the source tree. `debian/rules` then links `lib/hyprland-protocols` to `../hyprland-protocols`, writes `.cargo/config.toml` (the text `cargo vendor` prints, which replaces the crates.io source with `vendor/`), and builds offline with `CARGO_HOME` under `debian/`, so the chroot build touches neither the network nor `$HOME`. The patch replaces upstream's `build.rs`, which asks `git` for a version string and panics outside a git checkout, with the two-line version Omarchy's recipe writes.
+
+Unlike the `oaxaca-*` packages, this directory holds no upstream source: `make build PKG=packages/hyprland-preview-share-picker` fetches the sources into `build/`.
+
+## What the distro uses the picker for
+
+When an application asks to share the screen (a browser call, OBS), xdg-desktop-portal-hyprland reads its configuration file, Omarchy's `config/hypr/xdph.conf` in the Oaxaca desktop, whose `screencopy` block sets `custom_picker_binary = hyprland-preview-share-picker`. The portal then runs the picker instead of the portal's own plain list of names; the picker shows a live preview of every monitor and every window, captured through Hyprland's toplevel export protocol, plus a region option, and prints the choice back to the portal. Omarchy's `config/hyprland-preview-share-picker/config.yaml` points the picker at the current theme's `hyprland-preview-share-picker.css`, so the window follows the theme.
+
+The `hyprland` and `hyprland-macros` crates the program links are GPL-3.0-or-later while the program's own source is MIT; the binary as a whole is therefore GPL-3, as `debian/copyright` records.

@@ -1,0 +1,11 @@
+# Installed by @DISTRO_ID@-session. SDDM reads every file in /etc/sddm.conf.d/ in name order
+# (man sddm.conf); a later file in that directory overrides these settings.
+#
+# The greeter (SDDM's login screen, a Qt program) runs on Wayland, under its own Hyprland
+# instance started with the minimal configuration below, as the unprivileged sddm user.
+# No X server runs for the login screen.
+[General]
+DisplayServer=wayland
+
+[Wayland]
+CompositorCommand=start-hyprland -- --config /usr/share/@DISTRO_ID@/sddm/hyprland.lua

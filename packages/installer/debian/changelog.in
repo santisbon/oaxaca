@@ -1,0 +1,64 @@
+@DISTRO_ID@-installer (0.1.4) @BASE_SERIES@; urgency=medium
+
+  * hardware-install: describe what the Legion package holds now, its GPU
+    file only (docs/7 choice 44).
+
+ -- @MAINTAINER@  Tue, 13 Oct 2026 21:00:00 -0500
+
+@DISTRO_ID@-installer (0.1.3) @BASE_SERIES@; urgency=medium
+
+  * New shellprocess@hardware step and hardware-install: install the
+    hardware package for this machine's model (@DISTRO_ID@-hw-legion on the
+    Lenovo Legion Pro 7 16IAX10H) from the medium's package pool
+    (docs/7 choice 41).
+
+ -- @MAINTAINER@  Tue, 13 Oct 2026 12:00:00 -0500
+
+@DISTRO_ID@-installer (0.1.2) @BASE_SERIES@; urgency=medium
+
+  * Keep the previous system bootable on a shared EFI System Partition: a new
+    shellprocess@loader step reads the /EFI/ubuntu/grub.cfg stub the bootloader
+    step is about to overwrite and writes /etc/grub.d/45_@DISTRO_ID@_previous in
+    the target, a menu entry that loads that system's own grub.cfg; the
+    bootloader no longer overwrites EFI/BOOT (installEFIFallback: false), and
+    os-prober is on (Legion laptop, 2026-10-12: Kubuntu's loader overwritten).
+  * mount.conf binds /run/systemd/resolve and /cdrom into the target, as
+    Ubuntu's settings do; the welcome page checks internet without requiring
+    it, the hardware scripts' packages being in the image now.
+  * The GRUB menu entry is the distro's name: grubcfg no longer keeps Ubuntu's
+    GRUB_DISTRIBUTOR shell expression, which Calamares wrote back quoted and
+    unevaluated; the branding's bootloaderEntryName names the distro.
+  * Record the created user as SDDM's last user (sddm-last-user, run from the
+    live system against the target: the packages step removes this package
+    from the target first), so the login screen, which has no user field,
+    logs that user in on first boot.
+  * keep-previous-loader reads the stub from the EFI System Partition the
+    target's fstab names when /boot/efi is not mounted, and logs every
+    decision to /var/log/@DISTRO_ID@/keep-previous-loader.log in the target
+    (an install on 2026-10-12 wrote no entry and left no reason).
+  * Encryption by default: partition.conf sets preCheckEncryption, so the
+    Encrypt box comes up checked for Erase disk and Replace a partition.
+  * Branding: windowExpanding noexpand at 1100x720, so the Summary page scrolls
+    inside the window instead of growing past it and hiding the Install button.
+  * Record the previous system in /etc/@DISTRO_ID@/previous-loader and run
+    loader-fallback after the bootloader step (shellprocess@fallback), so the
+    shared stub falls back to the previous system when this one is removed.
+
+ -- @MAINTAINER@  Mon, 12 Oct 2026 13:00:00 -0500
+
+@DISTRO_ID@-installer (0.1.1) @BASE_SERIES@; urgency=medium
+
+  * Depend on rsync, btrfs-progs and xfsprogs: Calamares's unpackfs module
+    copies the squashfs with rsync, which Ubuntu's calamares package does not
+    depend on, so the first install on the Legion laptop failed with "rsync
+    failed with error code 127" (2026-10-11); the partition page offers btrfs
+    and xfs, whose mkfs tools were missing too.
+
+ -- @MAINTAINER@  Sun, 11 Oct 2026 16:00:00 -0500
+
+@DISTRO_ID@-installer (0.1.0) @BASE_SERIES@; urgency=medium
+
+  * Initial release: Calamares settings, module configuration and branding for
+    the installation ISO (roadmap step 7).
+
+ -- @MAINTAINER@  Sat, 10 Oct 2026 20:00:00 +0000

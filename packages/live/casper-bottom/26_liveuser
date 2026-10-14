@@ -1,0 +1,26 @@
+#!/bin/sh
+# Generated from packages/live/casper-bottom/26_liveuser.in by scripts/render.py. Edit the .in file, not this one.
+# casper-bottom script (initramfs-tools, runs inside the initramfs with the live root at
+# /root, after casper's 25adduser has created the live user through user-setup). user-setup's
+# default groups (adm cdrom dip lpadmin plugdev sambashare debian-tor libvirtd users) do not
+# include "video", which the session package's backlight udev rule grants write access to the
+# backlights, so brightness keys did nothing in the live session (Legion laptop, 2026-10-11).
+# The installer's users.conf gives installed users the same group.
+PREREQ="25adduser"
+DESCRIPTION="Adding the live user to the video group..."
+prereqs()
+{
+       echo "$PREREQ"
+}
+case $1 in
+prereqs)
+       prereqs
+       exit 0
+       ;;
+esac
+. /scripts/casper-functions
+log_begin_msg "$DESCRIPTION"
+if [ -n "$USERNAME" ] && chroot /root getent group video >/dev/null 2>&1; then
+    chroot /root adduser "$USERNAME" video >/dev/null 2>&1 || chroot /root usermod -aG video "$USERNAME"
+fi
+log_end_msg

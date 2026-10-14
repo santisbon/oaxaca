@@ -1,0 +1,26 @@
+#!/bin/sh
+# Generated from packages/live/casper-bottom/16_autologin.in by scripts/render.py. Edit the .in file, not this one.
+# casper-bottom script (initramfs-tools, runs inside the initramfs with the live root at
+# /root, after casper's own 15autologin). casper's 15autologin appends an [Autologin] block
+# to /root/etc/sddm.conf naming the live user, but it knows only the session files of
+# Kubuntu, Plasma, Lubuntu and Budgie, so for this desktop it leaves "Session=" empty, and
+# /etc/sddm.conf is the file SDDM reads last with the highest precedence (sddm.conf(5)).
+# This fills the session in with the desktop's own session file.
+PREREQ=""
+DESCRIPTION="Pointing the live autologin at the Oaxaca session..."
+prereqs()
+{
+       echo "$PREREQ"
+}
+case $1 in
+prereqs)
+       prereqs
+       exit 0
+       ;;
+esac
+. /scripts/casper-functions
+log_begin_msg "$DESCRIPTION"
+if [ -f /root/etc/sddm.conf ] && [ -f /root/usr/share/wayland-sessions/oaxaca.desktop ]; then
+    sed -i 's/^Session=$/Session=oaxaca.desktop/' /root/etc/sddm.conf
+fi
+log_end_msg

@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+ID = @DISTRO_ID@
+# "dest", not "PKG": make passes command-line variables such as "make build PKG=..." down to
+# every sub-make through MAKEFLAGS, and that would override a variable named PKG here.
+dest = debian/$(ID)-fonts/usr/share/fonts/truetype/$(ID)
+# The four "basic" faces of the Nerd Fonts zip, the ones Omarchy installs.
+faces = Regular Bold Italic BoldItalic
+jetbrains = $(foreach f,$(faces),nerd/JetBrainsMonoNerdFont-$(f).ttf)
+
+%:
+	dh $@
+
+# The orig tarball holds the Nerd Fonts release zip whole (98 files, every weight and the
+# NL and Propo variants); this step takes the four faces out of the zip into nerd/.
+override_dh_auto_build:
+	unzip -o -q -d nerd JetBrainsMono.zip $(notdir $(jetbrains))
+
+# The iA Writer TTFs sit at the top of the orig tarball, so they need no unpacking.
+override_dh_auto_install:
+	install -D -m 0644 -t $(dest) $(jetbrains) iAWriter*.ttf
+
+override_dh_auto_clean:
+	rm -rf nerd

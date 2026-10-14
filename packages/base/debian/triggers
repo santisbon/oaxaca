@@ -1,0 +1,6 @@
+# Generated from packages/base/debian/triggers.in by scripts/render.py. Edit the .in file, not this one.
+# Ubuntu's GRUB and shim packages run grub-install in their maintainer scripts, which rewrites
+# the EFI System Partition's /EFI/ubuntu/grub.cfg stub; re-apply the fallback to the previous
+# system afterwards (/usr/libexec/oaxaca/loader-fallback). noawait: nothing waits on it.
+interest-noawait /usr/lib/grub/x86_64-efi-signed
+interest-noawait /usr/lib/shim

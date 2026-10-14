@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/architecture.mk
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh $@ --buildsystem=cmake+ninja
+
+# NO_PCH works around non-deterministic DWARF (GCC bug 124811, #1131840).
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+		-DDISTRIBUTOR="@DISTRO_NAME@" \
+		-DNO_PCH=ON \
+		-DINSTALL_QML_PREFIX=lib/$(DEB_HOST_MULTIARCH)/qt6/qml
+
+# No tests are built; skip ctest's empty-suite failure.
+override_dh_auto_test:

@@ -1,0 +1,8 @@
+# Generated from packages/fonts/debian/lintian-overrides.in by scripts/render.py. Edit the .in file, not this one.
+# The 16 iA Writer TTF files carry fsType = 8 ("editable embedding") in their OS/2 table,
+# set by Information Architects when the fonts were built; lintian reads that flag as a
+# restriction on embedding. The SIL Open Font License the files ship under permits
+# embedding, and clearing the flag would make a Modified Version that still carries the
+# Reserved Font Name "iA Writer", which the license forbids, so the files stay as upstream
+# built them.
+oaxaca-fonts: truetype-font-prohibits-installable-embedding (edit only) [usr/share/fonts/truetype/oaxaca/iAWriter*.ttf]

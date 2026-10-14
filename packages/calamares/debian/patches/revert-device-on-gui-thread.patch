@@ -1,0 +1,199 @@
+Description: Revert the device and apply the layout on the GUI thread
+ ChoicePage ran PartitionCoreModule::revertDevice() (and revertAllDevices())
+ on a worker thread under a ScanningDialog, in the device choice, in every
+ install choice, and in "Replace a partition" before laying out the new
+ partitions. revertDevice() rescans the device, deletes the old Device and
+ re-initializes the PartitionModel and the BootLoaderModel, while the GUI
+ thread's preview views paint from those models. In "Replace a partition" with encryption checked, choosing
+ the free space and then confirming the passphrase reverts the device in that
+ worker, and Calamares crashed with a segfault in PartitionModel::data()
+ (Lenovo Legion Pro 7, 2026-10-13; in QEMU, confirming the passphrase again
+ and again after choosing the space crashed it on the third round, "segfault
+ at 0 ... in libcalamares_viewmodule_partition.so[8a38d]", which addr2line
+ resolves to PartitionModel::data). Choosing the space after confirming the
+ passphrase did not crash, because nothing had changed the device yet, so
+ nothing was reverted.
+ .
+ The patch runs those reverts, and the replace step's layout, on the GUI
+ thread, in the order the worker and its continuation ran them. Reverting is a
+ rescan of the chosen device and the layout is in-memory, so the page pauses
+ briefly instead of showing the scanning dialog. Applies on top of
+ replace-read-selection-before-revert.patch.
+Author: santisbon <santisbon@users.noreply.github.com>
+Origin: vendor
+Bug: https://codeberg.org/Calamares/calamares/issues/2535
+Forwarded: no
+Last-Update: 2026-10-13
+---
+--- a/src/modules/partition/gui/ChoicePage.cpp
++++ b/src/modules/partition/gui/ChoicePage.cpp
+@@ -407,22 +407,14 @@
+         return;
+     }
+ 
++    // On the GUI thread: reverting rescans the devices and resets the models the preview views
++    // draw from, and on a worker thread that raced the views (see doReplaceSelectedPartition).
+     if ( m_core->isDirty() )
+     {
+-        ScanningDialog::run(
+-            QtConcurrent::run(
+-                [ = ]
+-                {
+-                    QMutexLocker locker( &m_coreMutex );
+-                    m_core->revertAllDevices();
+-                } ),
+-            [ this ] { continueApplyDeviceChoice(); },
+-            this );
+-    }
+-    else
+-    {
+-        continueApplyDeviceChoice();
++        QMutexLocker locker( &m_coreMutex );
++        m_core->revertAllDevices();
+     }
++    continueApplyDeviceChoice();
+ }
+ 
+ void
+@@ -515,19 +507,13 @@
+ 
+         if ( m_core->isDirty() )
+         {
+-            ScanningDialog::run(
+-                QtConcurrent::run(
+-                    [ = ]
+-                    {
+-                        QMutexLocker locker( &m_coreMutex );
+-                        m_core->revertDevice( selectedDevice() );
+-                    } ),
+-                [ = ]
+-                {
+-                    PartitionActions::doAutopartition( m_core, selectedDevice(), options );
+-                    Q_EMIT deviceChosen();
+-                },
+-                this );
++            // On the GUI thread, as in applyDeviceChoice.
++            {
++                QMutexLocker locker( &m_coreMutex );
++                m_core->revertDevice( selectedDevice() );
++            }
++            PartitionActions::doAutopartition( m_core, selectedDevice(), options );
++            Q_EMIT deviceChosen();
+         }
+         else
+         {
+@@ -539,15 +525,11 @@
+     case InstallChoice::Replace:
+         if ( m_core->isDirty() )
+         {
+-            ScanningDialog::run(
+-                QtConcurrent::run(
+-                    [ = ]
+-                    {
+-                        QMutexLocker locker( &m_coreMutex );
+-                        m_core->revertDevice( selectedDevice() );
+-                    } ),
+-                [] {},
+-                this );
++            // On the GUI thread, as in applyDeviceChoice.
++            {
++                QMutexLocker locker( &m_coreMutex );
++                m_core->revertDevice( selectedDevice() );
++            }
+         }
+         connect( m_beforePartitionBarsView->selectionModel(),
+                  &QItemSelectionModel::currentRowChanged,
+@@ -565,21 +547,15 @@
+     case InstallChoice::Alongside:
+         if ( m_core->isDirty() )
+         {
+-            ScanningDialog::run(
+-                QtConcurrent::run(
+-                    [ = ]
+-                    {
+-                        QMutexLocker locker( &m_coreMutex );
+-                        m_core->revertDevice( selectedDevice() );
+-                    } ),
+-                [ this ]
+-                {
+-                    // We need to reupdate after reverting because the splitter widget is
+-                    // not a true view.
+-                    updateActionChoicePreview( m_config->installChoice() );
+-                    updateNextEnabled();
+-                },
+-                this );
++            // On the GUI thread, as in applyDeviceChoice.
++            {
++                QMutexLocker locker( &m_coreMutex );
++                m_core->revertDevice( selectedDevice() );
++            }
++            // We need to reupdate after reverting because the splitter widget is
++            // not a true view.
++            updateActionChoicePreview( m_config->installChoice() );
++            updateNextEnabled();
+         }
+ 
+         connect( m_beforePartitionBarsView->selectionModel(),
+@@ -591,15 +567,11 @@
+     case InstallChoice::Manual:
+         if ( m_core->isDirty() )
+         {
+-            ScanningDialog::run(
+-                QtConcurrent::run(
+-                    [ = ]
+-                    {
+-                        QMutexLocker locker( &m_coreMutex );
+-                        m_core->revertDevice( selectedDevice() );
+-                    } ),
+-                [] {},
+-                this );
++            // On the GUI thread, as in applyDeviceChoice.
++            {
++                QMutexLocker locker( &m_coreMutex );
++                m_core->revertDevice( selectedDevice() );
++            }
+         }
+         break;
+     case InstallChoice::NoChoice:
+@@ -849,8 +821,15 @@
+     // This will be deleted by the second lambda, below.
+     QString* homePartitionPath = new QString();
+ 
+-    ScanningDialog::run(
+-        QtConcurrent::run(
++    // Both lambdas run here, on the GUI thread, one after the other. The first used to run on a
++    // worker thread (QtConcurrent::run under a ScanningDialog), where revertDevice() deletes the
++    // device and re-initializes the PartitionModel and BootLoaderModel while the GUI thread's
++    // views paint from them: confirming the encryption passphrase after a partition had been
++    // selected crashed Calamares with a segfault in PartitionModel::data() (Lenovo Legion Pro 7,
++    // 2026-10-13; reproduced in QEMU by re-confirming the passphrase, crash on the third round).
++    // Reverting and applying a layout are a rescan of one device and in-memory changes, so the
++    // page pauses briefly instead.
++    auto applyReplace =
+             [ this,
+               selectedPath,
+               selectedIsFreeSpace,
+@@ -936,9 +915,8 @@
+                         }
+                     }
+                 }
+-            },
+-            m_reuseHomeCheckBox->isChecked() ),
+-        [ this, homePartitionPath ]
++            };
++    auto finishReplace = [ this, homePartitionPath ]
+         {
+             m_reuseHomeCheckBox->setVisible( !homePartitionPath->isEmpty() );
+             if ( !homePartitionPath->isEmpty() )
+@@ -959,8 +937,9 @@
+             {
+                 m_bootloaderComboBox->setCurrentIndex( m_lastSelectedDeviceIndex );
+             }
+-        },
+-        this );
++        };
++    applyReplace( m_reuseHomeCheckBox->isChecked() );
++    finishReplace();
+ }
+ 
+ /**

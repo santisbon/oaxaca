@@ -1,0 +1,8 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format. DSC= names Ubuntu's own source
+# package for calamares in stonking (3.3.14-0ubuntu30, universe), which build.sh downloads into
+# build/dsc/calamares/ with the orig and debian tarballs the .dsc lists, unpacks with
+# dpkg-source -x, and lays this directory's debian/ over: one patch, its series line and one
+# changelog entry. The SHA-256 is of the .dsc file and came out of sha256sum on the download
+# on 2026-10-12; the .dsc's own checksums cover the tarballs.
+DSC=https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/calamares/3.3.14-0ubuntu30/calamares_3.3.14-0ubuntu30.dsc
+SHA256=801bd329cbcc144df5edefc753a02b3e76827012a11196f983c90aab29c911a9

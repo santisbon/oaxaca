@@ -1,0 +1,26 @@
+Source: @DISTRO_ID@-archive-keyring
+Section: misc
+Priority: important
+Maintainer: @MAINTAINER@
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: @DISTRO_HOME_URL@
+Rules-Requires-Root: no
+
+Package: @DISTRO_ID@-archive-keyring
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}
+Description: @DISTRO_NAME@ apt repository signing key
+ The public key that signs the @DISTRO_NAME@ apt repository, installed to
+ /etc/apt/keyrings/ so a sources entry can bind the repository to it.
+
+Package: @DISTRO_ID@-apt-source
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, @DISTRO_ID@-archive-keyring
+Description: @DISTRO_NAME@ apt repository sources entry
+ The deb822 sources entry that points apt at the @DISTRO_NAME@ repository and
+ binds it to the key from @DISTRO_ID@-archive-keyring. Installed by the
+ @DISTRO_NAME@ image builder; it is what makes the repository's own updates,
+ including a changed repository location, reach installed systems.

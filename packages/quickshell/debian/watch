@@ -1,0 +1,6 @@
+Version: 5
+
+Source: https://git.outfoxxed.me/quickshell/quickshell.git
+Mode: git
+Pgp-Mode: gittag
+Matching-Pattern: refs/tags/v@ANY_VERSION@

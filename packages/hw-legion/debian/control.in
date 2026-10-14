@@ -1,0 +1,17 @@
+Source: @DISTRO_ID@-hw-legion
+Section: misc
+Priority: optional
+Maintainer: @MAINTAINER@
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: @DISTRO_HOME_URL@
+Rules-Requires-Root: no
+
+Package: @DISTRO_ID@-hw-legion
+Architecture: all
+Depends: ${misc:Depends}
+Description: hardware support for the Lenovo Legion Pro 7 16IAX10H
+ What only this laptop model needs: /etc/@DISTRO_ID@/gpu names the Intel GPU,
+ to which every display output of this model is wired, as the one GPU
+ Hyprland renders on, so the NVIDIA GPU can power down while nothing uses it.
+ The installer installs this package when the firmware names this model.

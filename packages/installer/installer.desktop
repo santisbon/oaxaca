@@ -1,0 +1,9 @@
+# Generated from packages/installer/installer.desktop.in by scripts/render.py. Edit the .in file, not this one.
+[Desktop Entry]
+Type=Application
+Name=Install Oaxaca
+Comment=Install Oaxaca on this computer
+Exec=oaxaca-installer
+Icon=oaxaca
+Terminal=false
+Categories=System;

@@ -1,0 +1,10 @@
+#!/usr/bin/make -f
+# Generated from packages/hw-legion/debian/rules.in by scripts/render.py. Edit the .in file, not this one.
+ID = oaxaca
+dest = debian/$(ID)-hw-legion
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	install -D -m 0644 gpu $(dest)/etc/$(ID)/gpu

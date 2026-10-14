@@ -1,0 +1,9 @@
+#!/bin/sh
+# Generated from packages/desktop/debian/config.prerm.in by scripts/render.py. Edit the .in file, not this one.
+set -e
+case "$1" in
+  remove|deconfigure)
+    update-alternatives --remove default.plymouth /usr/share/plymouth/themes/oaxaca/oaxaca.plymouth
+    ;;
+esac
+#DEBHELPER#
