@@ -1,5 +1,19 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Depend on rfkill: the bar's Bluetooth switch lifts the radio's rfkill
+    block with it, and Ubuntu ships the command in its own package, so the
+    switch could not turn Bluetooth on.
+  * The launcher rescans after a Flatpak install or removal: it watched only
+    the application folders that existed when the shell started, so the
+    first Flatpak app did not appear.
+  * The Snap picker asks for its search term with bash's prompt (gum's drew
+    twice on the first window resize) and wraps the classic-confinement
+    explanation.
+
+ -- @MAINTAINER@  Wed, 14 Oct 2026 18:00:00 -0500
+
+@DISTRO_ID@-desktop (@OMARCHY_VERSION@+git20261014.25.92b6de53-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Install > Package and Remove > Package show Ubuntu's logo (Nerd Font
     linux-ubuntu) instead of Arch's (md-arch): the entries install from
     Ubuntu's archive.
