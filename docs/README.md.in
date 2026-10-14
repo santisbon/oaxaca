@@ -157,7 +157,6 @@ Next: the roadmap's eight steps are done. Pending, as of 2026-10-13 (details in 
 - the iPad in Files through usbmuxd, to confirm;
 - the `GDK_BACKEND` warning from Files, not investigated;
 - the menu's Install > Gaming > Xbox Controllers (`xpadneo-dkms` needs a Secure Boot key enrolled), after the Bluetooth controller test (docs/6, choice 18);
-- the fork's PORT.md "The Applications" table: move Chromium to the Preinstalled row (docs/6, choice 3);
 - and the older items each step carried, listed at the end of each document.
 
 ## Repository map

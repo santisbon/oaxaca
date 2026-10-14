@@ -60,7 +60,22 @@ tar -xOf "$tarball" "./boot/initrd.img-$kver" > "$tree/casper/initrd"
 echo "   kernel $kver, initrd $(du -h "$tree/casper/initrd" | cut -f1)"
 
 echo "== squashfs"
-mksquashfs - "$tree/casper/filesystem.squashfs" -tar -comp zstd -Xcompression-level 15 -noappend -quiet < "$tarball"
+# mmdebstrap's tarball has the right entry for "./" (drwxr-xr-x 0/0), but mksquashfs -tar skips
+# it ("Empty tar filename after skipping leading /, ./, or ../, ignoring") and makes the root
+# directory up: mode 0777, owned by the user running this script (mksquashfs 4.7.5 -help-all:
+# "Default root mode is ugo=rwx or 0777"). Calamares copies the squashfs onto the disk, so every installed
+# system got a / owned by uid 1000 and writable by everyone, and systemd-tmpfiles then refused to
+# create anything under it ("Detected unsafe path transition / (owned by <user>) -> /var",
+# tpm-udev's postinst, 2026-10-14). The root directory is set to root:root 0755 here, and the
+# build stops if the result says otherwise.
+mksquashfs - "$tree/casper/filesystem.squashfs" -tar -comp zstd -Xcompression-level 15 -noappend -quiet \
+  -root-mode 0755 -root-uid 0 -root-gid 0 < "$tarball"
+# sed reads the whole listing; head would close the pipe early and pipefail would stop the build.
+root_entry=$(unsquashfs -lln -d / "$tree/casper/filesystem.squashfs" 2>/dev/null | sed -n 1p)
+if [[ $root_entry != "drwxr-xr-x 0/0 "* ]]; then
+  echo "!! the squashfs root directory is not root:root 0755: $root_entry" >&2; exit 1
+fi
+echo "   root directory: ${root_entry%% *} 0/0"
 cp "$manifest" "$tree/casper/filesystem.manifest"
 tar -tvf "$tarball" | awk '{s+=$3} END {print s}' > "$tree/casper/filesystem.size"
 echo "   $(du -h "$tree/casper/filesystem.squashfs" | cut -f1)"
