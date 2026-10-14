@@ -1,3 +1,13 @@
+oaxaca-desktop (4.0.4+git20261013-0oaxaca2) stonking; urgency=medium
+
+  * oaxaca-desktop depends on ffmpegthumbnailer, so Files shows video
+    thumbnails out of the box; it moved from the optional
+    oaxaca-desktop-apps, which keeps evince and gnome-disk-utility.
+  * Drop the Suggests on intel-media-va-driver-non-free:
+    oaxaca-session depends on it since 0.1.4.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 00:00:00 -0500
+
 oaxaca-desktop (4.0.4+git20261013-0oaxaca1) stonking; urgency=medium
 
   * Version scheme: the upstream version is the Omarchy tag plus the date of

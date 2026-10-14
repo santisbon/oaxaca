@@ -20,8 +20,9 @@ Depends: ${misc:Depends},
  asdcontrol,
  hyprland-preview-share-picker,
  nwg-displays (>= 0.4.3),
+ ffmpegthumbnailer,
  ${port:Depends}
-Suggests: oaxaca-desktop-apps, oaxaca-hw-legion, nvtop, intel-media-va-driver-non-free
+Suggests: oaxaca-desktop-apps, oaxaca-hw-legion, nvtop
 Description: Oaxaca desktop (metapackage)
  The whole desktop: the session layer, the shell, the themes, the
  configuration, the command-line tools and the fonts, plus every
@@ -103,7 +104,7 @@ Description: Oaxaca configuration and defaults
 
 Package: oaxaca-desktop-apps
 Architecture: all
-Depends: ${misc:Depends}, evince, gnome-disk-utility, ffmpegthumbnailer
+Depends: ${misc:Depends}, evince, gnome-disk-utility
 Description: optional applications for the Oaxaca desktop
  The applications a desktop usually has that nothing in the desktop's own
  scripts or shell needs: a PDF viewer (Evince, the mimeapps default), GNOME Disks,

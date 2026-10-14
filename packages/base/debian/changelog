@@ -1,3 +1,14 @@
+oaxaca-base (0.1.5) stonking; urgency=medium
+
+  * Depend on what stonking's systemd and udev recommend and a stock Ubuntu
+    therefore installs, skipped here because Recommends are off: the TPM
+    tools (systemd-cryptsetup, which carries systemd-cryptenroll;
+    systemd-tpm, tpm-udev, libtss2-rc0t64), systemd-hwe-hwdb (Ubuntu's
+    updated hardware database), libnss-systemd and linux-sysctl-defaults.
+    TPM unlock of the disk is not turned on by this (docs/7 choice 47).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Tue, 13 Oct 2026 23:30:00 -0500
+
 oaxaca-base (0.1.4) stonking; urgency=medium
 
   * Depend on fwupd and fwupd-signed, so every machine gets firmware

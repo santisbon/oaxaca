@@ -1,3 +1,17 @@
+@DISTRO_ID@-session (0.1.6) @BASE_SERIES@; urgency=medium
+
+  * Depend on packages a stock Ubuntu gets through Recommends, skipped here
+    because Recommends are off (docs/7 choice 47): rtkit (PipeWire's
+    realtime priority), steam-devices (udev rules giving the user access to
+    game controllers' raw devices, for Steam Input; steam-installer does not
+    pull it in at all), libmtp-runtime (udev rules for MTP phones and
+    players), libimobiledevice-utils (idevicepair and friends, for iPhones
+    and iPads), and printing: ipp-usb (driverless USB printers),
+    cups-browsed (network printer discovery), system-config-printer-udev
+    (set-up on plug-in).
+
+ -- @MAINTAINER@  Tue, 13 Oct 2026 23:30:00 -0500
+
 @DISTRO_ID@-session (0.1.5) @BASE_SERIES@; urgency=medium
 
   * Depend on usbmuxd, the service through which Linux talks to iPhones and

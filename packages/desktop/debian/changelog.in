@@ -1,3 +1,13 @@
+@DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@2) @BASE_SERIES@; urgency=medium
+
+  * @DISTRO_ID@-desktop depends on ffmpegthumbnailer, so Files shows video
+    thumbnails out of the box; it moved from the optional
+    @DISTRO_ID@-desktop-apps, which keeps evince and gnome-disk-utility.
+  * Drop the Suggests on intel-media-va-driver-non-free:
+    @DISTRO_ID@-session depends on it since 0.1.4.
+
+ -- @MAINTAINER@  Wed, 14 Oct 2026 00:00:00 -0500
+
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
   * Version scheme: the upstream version is the Omarchy tag plus the date of

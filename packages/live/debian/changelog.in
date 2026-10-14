@@ -1,3 +1,11 @@
+@DISTRO_ID@-live (0.1.3) @BASE_SERIES@; urgency=medium
+
+  * live-boot-test: report which of the packages our metapackages name in
+    place of skipped Recommends are missing from the image (docs/7
+    choice 47).
+
+ -- @MAINTAINER@  Tue, 13 Oct 2026 23:30:00 -0500
+
 @DISTRO_ID@-live (0.1.2) @BASE_SERIES@; urgency=medium
 
   * live-boot-test: report whether @DISTRO_ID@-volume-monitors.service ran

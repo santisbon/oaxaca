@@ -4,6 +4,44 @@
 
 Nothing is ever installed and then stripped out: the root filesystem is assembled from Ubuntu's archive one package at a time, and the parts Ubuntu doesn't have come from a small apt repository of our own. This document, the developer README (`docs/README.md`; the repository's top-level `README.md` is the short introduction), explains the tools that produce that repository and how those tools fit together. The reasoning behind each decision lives in the numbered documents next to this one in `docs/`.
 
+## Contents
+
+- [Terms](#terms)
+  - [Package](#package)
+  - [Source package](#source-package)
+  - [Suite and pocket](#suite-and-pocket)
+  - [Component](#component)
+  - [Archive](#archive)
+  - [Essential and Priority](#essential-and-priority)
+  - [Recommends](#recommends)
+  - [Metapackage](#metapackage)
+  - [Build dependencies](#build-dependencies)
+  - [Chroot](#chroot)
+- [Status](#status)
+- [Repository map](#repository-map)
+- [The tools](#the-tools)
+  - [`distro.conf` and `scripts/render.py` (`make render`)](#distroconf-and-scriptsrenderpy-make-render)
+  - [`mmdebstrap` (`make chroot`)](#mmdebstrap-make-chroot)
+  - [`sbuild` with `dpkg-buildpackage` and `debhelper` (`make build`)](#sbuild-with-dpkg-buildpackage-and-debhelper-make-build)
+  - [`lintian` (runs inside `make build`)](#lintian-runs-inside-make-build)
+  - [`gpg` (`scripts/keygen.sh`, once)](#gpg-scriptskeygensh-once)
+  - [`aptly` (`make publish`)](#aptly-make-publish)
+  - [`mmdebstrap` again (`make rootfs`)](#mmdebstrap-again-make-rootfs)
+  - [`qemu-system-x86_64` with `mke2fs` (`make rootfs-test`)](#qemu-system-x86_64-with-mke2fs-make-rootfs-test)
+  - [`mksquashfs`, `mkfs.vfat` with `mtools`, and `xorriso` (`make iso`)](#mksquashfs-mkfsvfat-with-mtools-and-xorriso-make-iso)
+  - [`qemu-system-x86_64` with OVMF (`make iso-test`)](#qemu-system-x86_64-with-ovmf-make-iso-test)
+  - [`unshare` with `chroot` (`make drivers-check`)](#unshare-with-chroot-make-drivers-check)
+  - [`git` with `dpkg --compare-versions` (`make check-versions`)](#git-with-dpkg---compare-versions-make-check-versions)
+  - [`mmdebstrap` with `dpkg-scanpackages` (`make upgrade-test`)](#mmdebstrap-with-dpkg-scanpackages-make-upgrade-test)
+  - [GitHub Actions (`.github/workflows/build.yml`)](#github-actions-githubworkflowsbuildyml)
+  - [`scripts/suspend-baseline.sh` (measurement, not build)](#scriptssuspend-baselinesh-measurement-not-build)
+- [How the pieces fit together](#how-the-pieces-fit-together)
+- [Building the distro from source](#building-the-distro-from-source)
+- [Day-to-day](#day-to-day)
+- [Shipping a change: the apt repository or a new ISO](#shipping-a-change-the-apt-repository-or-a-new-iso)
+- [Conventions](#conventions)
+- [Documents](#documents)
+
 ## Terms
 
 Each entry uses only terms defined above it. The first use of each term in the rest of this file links to its entry here.
@@ -112,12 +150,12 @@ Next: the roadmap's eight steps are done. Pending, as of 2026-10-13 (details in 
 - the NVIDIA GPU never powers down on the Legion laptop (`Runtime D3 status: Not supported`); next test, the driver's default power mode;
 - the plan's verification list on the laptop: Secure Boot on, suspend and resume, the hardware checklist (test scripts written, not run);
 - the Apple Studio Display sometimes staying dark after boot (a capture script is ready for the next time);
-- TPM unlock of the encrypted disk, not set up;
+- TPM unlock of the encrypted disk: the tools are installed (choice 47 of docs/7), the enrollment is to be designed;
+- an Xbox controller over Bluetooth and an iPhone in Files, to verify on the laptop (choice 47);
 - a separate EFI System Partition for the distro, a design decision;
 - user units enabled by a package start only with a new user manager; the next such package also starts them in running sessions;
 - the iPad in Files through usbmuxd, to confirm;
 - the `GDK_BACKEND` warning from Files, not investigated;
-- `oaxaca-desktop`'s redundant `Suggests`, with the next fork change;
 - and the older items each step carried, listed at the end of each document.
 
 ## Repository map

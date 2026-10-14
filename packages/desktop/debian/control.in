@@ -19,8 +19,9 @@ Depends: ${misc:Depends},
  asdcontrol,
  hyprland-preview-share-picker,
  nwg-displays (>= 0.4.3),
+ ffmpegthumbnailer,
  ${port:Depends}
-Suggests: @DISTRO_ID@-desktop-apps, @DISTRO_ID@-hw-legion, nvtop, intel-media-va-driver-non-free
+Suggests: @DISTRO_ID@-desktop-apps, @DISTRO_ID@-hw-legion, nvtop
 Description: @DISTRO_NAME@ desktop (metapackage)
  The whole desktop: the session layer, the shell, the themes, the
  configuration, the command-line tools and the fonts, plus every
@@ -102,7 +103,7 @@ Description: @DISTRO_NAME@ configuration and defaults
 
 Package: @DISTRO_ID@-desktop-apps
 Architecture: all
-Depends: ${misc:Depends}, evince, gnome-disk-utility, ffmpegthumbnailer
+Depends: ${misc:Depends}, evince, gnome-disk-utility
 Description: optional applications for the @DISTRO_NAME@ desktop
  The applications a desktop usually has that nothing in the desktop's own
  scripts or shell needs: a PDF viewer (Evince, the mimeapps default), GNOME Disks,

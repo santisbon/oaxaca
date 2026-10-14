@@ -183,7 +183,8 @@ for pkg in "${pkgs[@]}"; do
         tar "${TAR_OPTS[@]}" --exclude-vcs --transform "s,^\./,$prefix/," -cf - -C "$UPSTREAM_DIR" . | gzip -n > "$orig.part"
       else
         cache="$out/git/$src"
-        if [[ ! -d $cache/.git ]]; then
+        # A bare clone has no .git directory; ask git whether the cache is already a repository.
+        if ! git -C "$cache" rev-parse --git-dir >/dev/null 2>&1; then
           echo "-- cloning $GIT into $cache"
           mkdir -p "$(dirname "$cache")"
           git clone -q --bare "$GIT" "$cache"
