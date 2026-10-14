@@ -33,7 +33,7 @@
 #                                      checked, and together they form the orig tarball
 #                                      (fonts)
 #   DSC=<.dsc url> SHA256=<hex>        an Ubuntu (or Debian) source package rebuilt with our
-#                                      additions (kpmcore). The .dsc is downloaded into
+#                                      additions (plymouth). The .dsc is downloaded into
 #                                      build/dsc/<source>/ and checked against the SHA-256; the
 #                                      tarballs the .dsc lists (orig and debian) are downloaded
 #                                      next to it, and dpkg-source -x checks them against the
@@ -44,8 +44,8 @@
 #                                      debian/patches/series are appended to theirs, every
 #                                      other file replaces or adds one, .in files are skipped.
 #                                      The package directory holds only what we change: for
-#                                      kpmcore one patch, its series line and one changelog
-#                                      entry. No fork of the source: the orig tarball stays
+#                                      plymouth its patches, their series lines and one
+#                                      changelog entry. No fork of the source: the orig tarball stays
 #                                      theirs and dpkg-source -b applies the added patch
 # and may add:
 #   COMPONENT_NAMES=(<n> ...)          extra orig tarballs, one per name, fetched from

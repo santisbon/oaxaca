@@ -15,4 +15,4 @@ The package keeps Ubuntu's source and binary names and the version `24.004.60+gi
 | `debian/patches/script-check-console-viewer.patch` | the upstream commit, with DEP-3 headers naming its origin |
 | `debian/libplymouth5.lintian-overrides` | silences lintian's error about Ubuntu's own symbols file (it names symbols with the Ubuntu revision), so the build's `lintian --fail-on error` still gates what this package changes |
 
-No fork of Plymouth: the orig tarball and `debian/` stay Ubuntu's apart from the three files above (the same arrangement as `packages/kpmcore`).
+No fork of Plymouth: the orig tarball and `debian/` stay Ubuntu's apart from the three files above.
