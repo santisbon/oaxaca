@@ -92,14 +92,15 @@ done
 [[ -n $best ]] || { echo "no NVIDIA open branch with prebuilt modules for $kver"; exit 1; }
 echo "branch: $best (nvidia-driver-$best-open, linux-modules-nvidia-$best-open-$kver)"
 # --download-only with Dir::Cache::archives set: the closure relative to the installed set lands
-# in /pool, nothing is installed; --no-install-recommends matches the base image's apt.conf.
+# in /pool, nothing is installed. Recommends are in, as on the installed system (<id>-base 0.1.6
+# and later), so the medium carries what an online install would add (nvidia-settings).
 # The flavour metapackage too (linux-modules-nvidia-<branch>-open-generic): ubuntu-drivers takes
 # the prebuilt modules only when that metapackage is among the kernel-specific package's reverse
 # dependencies (get_linux_modules_metapackage in UbuntuDrivers/detect.py), and falls back to DKMS
 # otherwise. Without it in the pool the drivers step installed nothing and nouveau drove the GPU
 # (Legion laptop, 2026-10-12, docs/7 choice 36).
 flavour=${kver#*-*-}
-apt-get -q -y --no-install-recommends --download-only -o Dir::Cache::archives=/pool \
+apt-get -q -y --install-recommends --download-only -o Dir::Cache::archives=/pool \
     install "nvidia-driver-$best-open" "linux-modules-nvidia-$best-open-$flavour" "linux-modules-nvidia-$best-open-$kver" nvidia-vaapi-driver /local/*.deb >/tmp/apt-download.log 2>&1 \
     || { echo "apt download: FAILED"; tail -20 /tmp/apt-download.log; exit 1; }
 echo "$best" > /pool/branch

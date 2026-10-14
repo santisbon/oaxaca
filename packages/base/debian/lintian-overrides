@@ -2,3 +2,6 @@
 # netplan reads its YAML files as root only and warns when they are readable by
 # other users, so this file is installed 0600 on purpose.
 oaxaca-base: non-standard-file-perm 0600 != 0644 [etc/netplan/01-oaxaca-network-manager.yaml]
+# The distro's base package sets apt's policy for the whole system: these pins keep two
+# Recommends out (xdg-desktop-portal-gnome, sudo-rs; docs/3 - rootfs.md, choice 4).
+oaxaca-base: package-installs-apt-preferences [etc/apt/preferences.d/oaxaca-blocked-recommends]

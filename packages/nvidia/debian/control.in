@@ -33,5 +33,5 @@ Description: NVIDIA install path for @DISTRO_NAME@ (detector and early KMS)
     ubuntu-drivers runs "prime-select on-demand" when that command exists,
     which puts a hybrid laptop's NVIDIA GPU into runtime power management
     (gpu-manager then writes /lib/modprobe.d/nvidia-runtimepm.conf). The
-    driver packages only recommend nvidia-prime, and @DISTRO_NAME@ installs
-    no Recommends, so the dependency is explicit here.
+    driver packages only recommend nvidia-prime, and the dependency makes
+    sure prime-select is present even where Recommends are turned off.

@@ -66,6 +66,7 @@ Description: @DISTRO_NAME@ base system (metapackage)
  updates), and the @DISTRO_NAME@ apt repository.
  .
  This package also sets the system's identity and apt behaviour: it diverts
- /usr/lib/os-release so the system identifies as @DISTRO_NAME@, turns apt's
- Install-Recommends off, and hands every network interface to NetworkManager
- through netplan.
+ /usr/lib/os-release so the system identifies as @DISTRO_NAME@, keeps two
+ Recommends out with apt pins (xdg-desktop-portal-gnome, which would bring
+ GNOME Shell and gdm3, and sudo-rs, which would replace classic sudo), and
+ hands every network interface to NetworkManager through netplan.

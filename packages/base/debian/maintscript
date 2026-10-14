@@ -1,0 +1,2 @@
+# Generated from packages/base/debian/maintscript.in by scripts/render.py. Edit the .in file, not this one.
+rm_conffile /etc/apt/apt.conf.d/50oaxaca-no-recommends 0.1.6~

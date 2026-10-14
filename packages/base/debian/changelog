@@ -1,3 +1,19 @@
+oaxaca-base (0.1.6) stonking; urgency=medium
+
+  * apt installs Recommends again, as a stock Ubuntu does: drop
+    /etc/apt/apt.conf.d/50oaxaca-no-recommends (removed from existing
+    systems through dpkg-maintscript-helper rm_conffile). Every test round
+    found another package a stock Ubuntu gets through Recommends; turning
+    them on costs about 1 GB installed.
+  * Ship /etc/apt/preferences.d/oaxaca-blocked-recommends, apt pins
+    that keep out two Recommends: xdg-desktop-portal-gnome (Files
+    recommends it, and it recommends gnome-shell, which would bring GNOME
+    Shell, gdm3, the Ubuntu GNOME session and IBus) and sudo-rs (sudo
+    recommends it, and its /usr/bin/sudo alternative outranks classic
+    sudo's, whose regular-expression sudoers rules the menus use).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 21:00:00 -0500
+
 oaxaca-base (0.1.5) stonking; urgency=medium
 
   * Depend on what stonking's systemd and udev recommend and a stock Ubuntu

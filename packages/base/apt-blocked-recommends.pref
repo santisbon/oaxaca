@@ -1,0 +1,18 @@
+Explanation: Installed by the base metapackage. apt installs Recommends, as on a stock Ubuntu,
+Explanation: except the two packages below, which would change how the system behaves.
+Explanation: Delete a stanza (or this file) to allow that package.
+Explanation:
+Explanation: Files (nautilus) recommends xdg-desktop-portal-gnome, which recommends gnome-shell,
+Explanation: and that brings GNOME Shell, gdm3 (a second login screen next to SDDM), the Ubuntu
+Explanation: GNOME session and IBus. Hyprland's sessions use xdg-desktop-portal-hyprland and
+Explanation: xdg-desktop-portal-gtk instead.
+Package: xdg-desktop-portal-gnome
+Pin: release *
+Pin-Priority: -1
+
+Explanation: sudo recommends sudo-rs, whose alternative for /usr/bin/sudo (priority 50) outranks
+Explanation: classic sudo's (40). The menus' sudoers rules use regular-expression command
+Explanation: patterns, which sudo-rs does not support, so the system keeps classic sudo.
+Package: sudo-rs
+Pin: release *
+Pin-Priority: -1

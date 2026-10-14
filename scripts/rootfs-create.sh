@@ -14,7 +14,12 @@
 #            packages built with it, <id>-fonts, and the third-party packages it depends on
 #            (asdcontrol, hyprland-preview-share-picker, nwg-displays); the metapackage's
 #            dependency list then pulls the applications from the Ubuntu archive.
-# Hooks then set the hostname, the locale, the time zone, apt's sources file and the resolver
+# apt installs Recommends, as on a stock Ubuntu, except xdg-desktop-portal-gnome (it would bring
+# GNOME Shell and gdm3) and sudo-rs (it would take over /usr/bin/sudo): a setup hook puts the base
+# package's pins (packages/base/apt-blocked-recommends.pref) in place before apt resolves
+# anything, since the base package's own copy lands only when the base package installs; a
+# customize hook removes the build copy and fails the build if any of gnome-shell, gdm3, the
+# GNOME portal or sudo-rs got in anyway. Hooks then set the hostname, the locale, the time zone, apt's sources file and the resolver
 # symlink. The manifest is written inside the chroot and fetched with mmdebstrap's "download"
 # hook, because a plain redirect from a hook to a file under the home directory is denied in
 # unshare mode. The result is build/rootfs/<id>-<version>-<arch>-<profile>.tar plus a
@@ -179,7 +184,8 @@ mmdebstrap \
   --variant=minbase \
   --architectures="$arch" \
   --keyring="$keyring" \
-  --aptopt='APT::Install-Recommends "false"' \
+  --aptopt='APT::Install-Recommends "true"' \
+  --setup-hook="upload $here/packages/base/apt-blocked-recommends.pref /etc/apt/preferences.d/zz-build-blocked-recommends" \
   --hook-dir=/usr/share/mmdebstrap/hooks/file-mirror-automount \
   "${includes[@]}" \
   "${browser_args[@]}" \
@@ -188,6 +194,8 @@ mmdebstrap \
   --customize-hook='printf "127.0.0.1\tlocalhost\n127.0.1.1\t%s\n::1\tlocalhost ip6-localhost ip6-loopback\n" "$DISTRO_ID" > "$1/etc/hosts"' \
   --customize-hook='rm -f "$1/etc/resolv.conf" && ln -s ../run/systemd/resolve/stub-resolv.conf "$1/etc/resolv.conf"' \
   --customize-hook='rm -f "$1/etc/apt/sources.list" "$1/etc/apt/apt.conf.d/99mmdebstrap" && printf "%s\n" "$UBUNTU_SOURCES" > "$1/etc/apt/sources.list.d/ubuntu.sources"' \
+  --customize-hook='rm "$1/etc/apt/preferences.d/zz-build-blocked-recommends"' \
+  --customize-hook='for p in gnome-shell gdm3 xdg-desktop-portal-gnome sudo-rs; do if grep -qx "Package: $p" "$1/var/lib/dpkg/status"; then echo "$p got in through Recommends: check apt-blocked-recommends.pref" >&2; exit 1; fi; done' \
   "${extra_hooks[@]}" \
   --customize-hook='chroot "$1" dpkg-query -W -f="\${Package}\t\${Version}\n" > "$1/manifest.tmp"' \
   --customize-hook="download /manifest.tmp $manifest" \

@@ -7,19 +7,23 @@ Oaxaca is a Linux distribution: Ubuntu underneath, and on top the Omarchy deskto
 
 Oaxaca is Ubuntu 26.10 (`stonking`), installed from Ubuntu's own package archive: the same kernel, systemd, Mesa, drivers and security updates, managed with apt. Both app stores are ready out of the box: Ubuntu's snapd (the Snap Store) and Flatpak with Flathub. Nothing is installed and then stripped out; the system is assembled from Ubuntu's archive one package at a time, and the few parts Ubuntu lacks (the desktop, its fonts, a handful of tools) come from Oaxaca's own apt repository at <https://oaxaca-apt.s3.us-east-1.amazonaws.com>. The installer is a live USB image running Calamares, a graphical installer from Ubuntu's archive (rebuilt with two fixes), and it installs onto an encrypted disk by default.
 
-## Installing software: Recommends are off
+## Installing software: Recommends are on, with two exceptions
 
-apt on Oaxaca installs a package's required dependencies (`Depends`) but not the packages it only recommends (`Recommends`), unlike a stock Ubuntu. The setting is `APT::Install-Recommends "false";` in `/etc/apt/apt.conf.d/50oaxaca-no-recommends`, installed by `oaxaca-base`, and it keeps an application install from pulling in GNOME or KDE pieces as side effects; what Oaxaca itself needs from Ubuntu's Recommends is named in its own packages, among them the TPM tools, Ubuntu's updated hardware database, PipeWire's realtime priority, game controller access for Steam, iPhone and Android phone support, and printer discovery. An application can now and then lack an optional piece its packager expected, such as a plugin or a helper. To see what a package recommends, and to install it with its recommendations once:
+apt on Oaxaca installs a package's required dependencies (`Depends`) and the packages it recommends (`Recommends`), as on a stock Ubuntu, with two exceptions. `oaxaca-base` ships apt pins in `/etc/apt/preferences.d/oaxaca-blocked-recommends` (an apt preferences file: one stanza per package, `Pin-Priority: -1` meaning "never install") that keep out:
+
+- `xdg-desktop-portal-gnome`: Files recommends it, and it recommends `gnome-shell`, which would bring GNOME Shell, `gdm3` (a second login screen next to SDDM), the Ubuntu GNOME session and IBus.
+- `sudo-rs`: `sudo` recommends it, and it would take over the `sudo` command from classic sudo, whose sudoers rules Oaxaca's menus use.
+
+To allow one of them, delete its stanza from that file (dpkg asks about the edit when a new `oaxaca-base` changes the file). To install a single package without its Recommends:
 
 ```sh
-apt-cache depends <package> | grep Recommends
-sudo apt install --install-recommends <package>
+sudo apt install --no-install-recommends <package>
 ```
 
-To turn Recommends back on for good, add a file of your own that apt reads after Oaxaca's (apt reads `/etc/apt/apt.conf.d/` in alphanumeric order, so its value wins), rather than editing or deleting Oaxaca's file, a configuration file of `oaxaca-base` that dpkg would ask about when a new version changes it:
+Oaxaca systems installed before `oaxaca-base` 0.1.6 were built with Recommends off. Updating removes that setting, but apt does not go back and add the Recommends it skipped; this command does, once (`--solver internal` selects apt's classic solver: with apt 3.3's default solver, `--fix-policy` added nothing when tried on 2026-10-14):
 
 ```sh
-echo 'APT::Install-Recommends "true";' | sudo tee /etc/apt/apt.conf.d/99recommends
+sudo apt-get --solver internal --fix-policy install
 ```
 
 ## Secure Boot

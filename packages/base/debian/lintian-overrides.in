@@ -1,3 +1,6 @@
 # netplan reads its YAML files as root only and warns when they are readable by
 # other users, so this file is installed 0600 on purpose.
 @DISTRO_ID@-base: non-standard-file-perm 0600 != 0644 [etc/netplan/01-@DISTRO_ID@-network-manager.yaml]
+# The distro's base package sets apt's policy for the whole system: these pins keep two
+# Recommends out (xdg-desktop-portal-gnome, sudo-rs; docs/3 - rootfs.md, choice 4).
+@DISTRO_ID@-base: package-installs-apt-preferences [etc/apt/preferences.d/@DISTRO_ID@-blocked-recommends]

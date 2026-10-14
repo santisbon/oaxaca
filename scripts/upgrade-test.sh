@@ -8,7 +8,7 @@
 # "N+1" is build/.
 #   1. mmdebstrap installs the minbase variant of the base series (release, -updates and
 #      -security pockets; main, restricted, universe and multiverse; Recommends off, as in the
-#      image) and, from the published archive, every package name that is both published and
+#      images built before <id>-base 0.1.6, which is what the installed systems have) and, from the published archive, every package name that is both published and
 #      present in build/. That installed set is N.
 #   2. Customize hooks run a script inside the chroot. The script records N's versions, creates a
 #      user whose home is /etc/skel as N shipped it and appends a marker line to one of that
