@@ -157,6 +157,7 @@ Next: the roadmap's eight steps are done. Pending, as of 2026-10-13 (details in 
 - user units enabled by a package start only with a new user manager; the next such package also starts them in running sessions;
 - the iPad in Files through usbmuxd, to confirm;
 - the `GDK_BACKEND` warning from Files, not investigated;
+- the fork's test suite: `test/shell` in `~/Projects/omarchy` ends with 62 failures, upstream Omarchy tests for what the port replaced (Limine, pacman packages, deleted migrations, `lua`), and nothing runs it; each test is to be ported or deleted, then the suite run in CI (docs/6, choice 21);
 - the menu's Install > Gaming > Xbox Controllers (`xpadneo-dkms` needs a Secure Boot key enrolled), after the Bluetooth controller test (docs/6, choice 18);
 - and the older items each step carried, listed at the end of each document.
 

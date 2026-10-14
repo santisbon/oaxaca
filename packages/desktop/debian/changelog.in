@@ -1,5 +1,14 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * The menu answers its "is this package installed" tests from dpkg
+    instead of pacman. With no pacman the menu took every package for
+    absent: Install entries showed for installed programs (Chromium) and
+    every Remove entry was hidden.
+
+ -- @MAINTAINER@  Wed, 14 Oct 2026 12:00:00 -0500
+
+@DISTRO_ID@-desktop (@OMARCHY_VERSION@+git20261014.22.8a7a6b3a-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * @DISTRO_ID@-desktop depends on localsend, as Omarchy preinstalls it:
     the Share menu and Files' "Send via LocalSend" have it to call. The
     package comes from this distro's repository (packages/localsend).

@@ -1,3 +1,12 @@
+oaxaca-desktop (4.0.4+git20261014.23.d1c146fc-0oaxaca1) stonking; urgency=medium
+
+  * The menu answers its "is this package installed" tests from dpkg
+    instead of pacman. With no pacman the menu took every package for
+    absent: Install entries showed for installed programs (Chromium) and
+    every Remove entry was hidden.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 12:00:00 -0500
+
 oaxaca-desktop (4.0.4+git20261014.22.8a7a6b3a-0oaxaca1) stonking; urgency=medium
 
   * oaxaca-desktop depends on localsend, as Omarchy preinstalls it:
