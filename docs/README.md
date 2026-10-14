@@ -108,7 +108,18 @@ The roadmap is in [docs/0 - plan.md](0%20-%20plan.md). Done so far:
 | 8. Update path | `oaxaca-update` (Omarchy's update pipeline on apt) and unattended security updates from Ubuntu, the migrations runner with the port's own `migrations/`, the N to N+1 upgrade test in a chroot (`make upgrade-test`, also a CI job), the version-bump check (`make check-versions`) and the publish guard; the step also found and fixed two silent bugs: unattended-upgrades matched no origin on Oaxaca, and the migrations runner waited forever on Ubuntu's unattended-upgrades shutdown helper | [docs/8 - update-path.md](8%20-%20update-path.md) |
 | Baseline | suspend/resume measured on the Legion laptop before building anything | [docs/suspend-baseline.md](suspend-baseline.md) |
 
-Next: the roadmap's eight steps are done; what remains is the plan's verification list on the Legion laptop and the items each step carried (listed at the end of each document).
+Next: the roadmap's eight steps are done. Pending, as of 2026-10-13 (details in [docs/7, "Carried to later steps"](7%20-%20image-installer.md#carried-to-later-steps)):
+
+- the NVIDIA GPU never powers down on the Legion laptop (`Runtime D3 status: Not supported`); next test, the driver's default power mode;
+- the plan's verification list on the laptop: Secure Boot on, suspend and resume, the hardware checklist (test scripts written, not run);
+- the Apple Studio Display sometimes staying dark after boot (a capture script is ready for the next time);
+- TPM unlock of the encrypted disk, not set up;
+- a separate EFI System Partition for the distro, a design decision;
+- user units enabled by a package start only with a new user manager; the next such package also starts them in running sessions;
+- the iPad in Files through usbmuxd, to confirm;
+- the `GDK_BACKEND` warning from Files, not investigated;
+- `oaxaca-desktop`'s redundant `Suggests`, with the next fork change;
+- and the older items each step carried, listed at the end of each document.
 
 ## Repository map
 
