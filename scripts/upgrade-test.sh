@@ -243,7 +243,10 @@ check "^lsb_release: \($DISTRO_NAME $BASE_SERIES\|not installed\)$"
 check "^unattended origins: Ubuntu:$BASE_SERIES Ubuntu:$BASE_SERIES-security UbuntuESMApps:$BASE_SERIES-apps-security UbuntuESM:$BASE_SERIES-infra-security$"
 check "^user config kept: 1$"
 if grep -q '^migrate exit:' <<< "$reportc"; then
-  check "^migrations pending before: 1$"
+  # Pending before the run: every migration the port ships (a user created from N's /etc/skel
+  # has run none) plus the synthetic one.
+  shipped=$(sed -n 's/^migrations shipped: //p' <<< "$reportc")
+  check "^migrations pending before: $((shipped + 1))$"
   check "^migrate exit: 0$"
   check "^migration ran: ran$"
   check "^migrations pending after: 0$"
