@@ -42,6 +42,7 @@ unset LOCPATH
 arch=amd64
 profile=${PROFILE:-live}
 extra_hooks=()
+browser=0
 case $profile in
   base) parts="archive-keyring apt-source base"; debs="" ;;
   session) parts="archive-keyring apt-source base hybrid-backlight nvidia session"; debs="quickshell" ;;
@@ -49,7 +50,8 @@ case $profile in
   # upstream patch (packages/plymouth: the script plugin no longer crashes without a console
   # viewer); the three depend on each other at the exact version, so they travel together.
   desktop) parts="archive-keyring apt-source base hybrid-backlight nvidia session fonts desktop tools shell themes config"
-           debs="quickshell asdcontrol hyprland-preview-share-picker nwg-displays plymouth libplymouth5 plymouth-label" ;;
+           debs="quickshell asdcontrol hyprland-preview-share-picker nwg-displays plymouth libplymouth5 plymouth-label"
+           browser=1 ;;
   # live: the desktop plus casper's live session and the installer, the tree the ISO's squashfs
   # is made from (scripts/iso-create.sh). The initramfs is rebuilt at the end so that casper's
   # hooks, installed in the same run as the kernel, are in the image the ISO boots.
@@ -60,6 +62,7 @@ case $profile in
   # (packages/kpmcore: one patch so encrypted installs work in every partitioning mode).
   live) parts="archive-keyring apt-source base hybrid-backlight nvidia session fonts desktop tools shell themes config live installer"
         debs="quickshell asdcontrol hyprland-preview-share-picker nwg-displays plymouth libplymouth5 plymouth-label libkpmcore13 calamares calamares-data libcalamares3.3 libcalamaresui3.3"
+        browser=1
         extra_hooks=(--customize-hook='chroot "$1" update-initramfs -u -k all') ;;
   *) echo "unknown PROFILE '$profile' (base, session, desktop or live)" >&2; exit 1 ;;
 esac
@@ -133,6 +136,41 @@ EOF
 
 export UBUNTU_SOURCES="$ubuntu_sources"
 
+# The desktop and live profiles carry Chromium, as Omarchy does (docs/6, choice 3), from the
+# xtradeb PPA, the same source the menu's Install > Browser > Chromium uses. The image gets the
+# three files that menu entry's oaxaca-pkg-repo-add writes, byte for byte, so the menu's Remove >
+# Browser > Chromium and a later reinstall find what they expect: the PPA's signing key
+# (scripts/keys/xtradeb.gpg, fetched from keyserver.ubuntu.com, fingerprint
+# 5301FA4FD93244FBC6F6149982BB6851C64F6880), its deb822 sources entry, and the pin at 400 that
+# keeps Ubuntu's archive ahead for every package both carry. The pin is written by a setup hook,
+# before apt first runs, so the build resolves packages the way the installed system will.
+# Chromium is installed by name, not as a dependency of the desktop metapackage, so that
+# removing it from the menu leaves the metapackage installed. The rest is the system half of
+# the menu entry: the managed-policy directory the theme switch writes color.json into, and
+# the first-run preferences (follow the system's light or dark setting, no terms dialog).
+browser_args=() browser_sources=()
+if ((browser)); then
+  ppa_uri=https://ppa.launchpadcontent.net/xtradeb/apps/ubuntu
+  install -m 0644 "$here/scripts/keys/xtradeb.gpg" "$stage/xtradeb.gpg"
+  export PPA_SOURCES="Types: deb
+URIs: $ppa_uri
+Suites: $BASE_SERIES
+Components: main
+Architectures: $arch
+Signed-By: /etc/apt/keyrings/xtradeb.gpg"
+  browser_args=(
+    --keyring="$stage/xtradeb.gpg"
+    --setup-hook='mkdir -p "$1/etc/apt/preferences.d" && printf "Package: *\nPin: origin ppa.launchpadcontent.net\nPin-Priority: 400\n" > "$1/etc/apt/preferences.d/xtradeb"'
+    --include=chromium
+    --customize-hook='mkdir -p "$1/etc/apt/keyrings"'
+    --customize-hook="upload $stage/xtradeb.gpg /etc/apt/keyrings/xtradeb.gpg"
+    --customize-hook='chmod 0644 "$1/etc/apt/keyrings/xtradeb.gpg" && printf "%s\n" "$PPA_SOURCES" > "$1/etc/apt/sources.list.d/xtradeb.sources"'
+    --customize-hook='install -d -m 0755 "$1/etc/chromium/policies/managed" "$1/usr/lib/chromium"'
+    --customize-hook='echo '"'"'{"distribution":{"require_eula":false},"browser":{"theme":{"color_scheme":0,"color_scheme2":0}}}'"'"' > "$1/usr/lib/chromium/initial_preferences"'
+  )
+  browser_sources=("deb $ppa_uri $BASE_SERIES main")
+fi
+
 mkdir -p "$out_dir"
 rm -f "$tmp"
 echo "creating $out (profile $profile) from $mirror ($BASE_SERIES, $BASE_SERIES-updates, $BASE_SERIES-security; $components)"
@@ -144,6 +182,7 @@ mmdebstrap \
   --aptopt='APT::Install-Recommends "false"' \
   --hook-dir=/usr/share/mmdebstrap/hooks/file-mirror-automount \
   "${includes[@]}" \
+  "${browser_args[@]}" \
   --essential-hook='printf "%s\n" "locales locales/default_environment_locale select en_US.UTF-8" "locales locales/locales_to_be_generated multiselect en_US.UTF-8 UTF-8" "tzdata tzdata/Areas select Etc" "tzdata tzdata/Zones/Etc select UTC" | chroot "$1" debconf-set-selections' \
   --customize-hook='echo "$DISTRO_ID" > "$1/etc/hostname"' \
   --customize-hook='printf "127.0.0.1\tlocalhost\n127.0.1.1\t%s\n::1\tlocalhost ip6-localhost ip6-loopback\n" "$DISTRO_ID" > "$1/etc/hosts"' \
@@ -156,6 +195,7 @@ mmdebstrap \
   "$BASE_SERIES" "$tmp" \
   "deb $mirror $BASE_SERIES $components" \
   "deb $mirror $BASE_SERIES-updates $components" \
-  "deb $security $BASE_SERIES-security $components"
+  "deb $security $BASE_SERIES-security $components" \
+  "${browser_sources[@]}"
 mv "$tmp" "$out"
 echo "done: $(du -h "$out" | cut -f1) $out ($(wc -l < "$manifest") packages, list in $manifest)"

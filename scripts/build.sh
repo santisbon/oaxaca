@@ -19,9 +19,10 @@
 #                                      build/<source>_<upstream version>.orig.tar.gz and
 #                                      checked against the SHA-256 (quickshell)
 #   GIT=<repository url> REF=<ref>     a git tree: the repository is cloned once under
-#   [DATE=<YYYYMMDD>]                  (optional DATE: the commit's date in UTC, which the
+#   [DATE= COUNT= COMMIT= TAG=]        (optional: the commit's UTC date, its count of
+#                                      commits since TAG and its 8-digit hash, which the
 #                                      upstream version carries; the build fails when the
-#                                      commit has another date)
+#                                      commit does not match them)
 #                                      build/git/<source>/ and "git archive <ref>" makes the
 #                                      orig tarball; with UPSTREAM_DIR=<dir> in the
 #                                      environment, that local working tree (uncommitted
@@ -122,7 +123,7 @@ for pkg in "${pkgs[@]}"; do
   if [[ -f $pkg/upstream ]]; then
     TAR_OPTS=(--sort=name --owner=0 --group=0 --numeric-owner)
     uver=${ver#*:}; uver=${uver%-*}
-    URL= SHA256= GIT= REF= DATE= FILES= DSC= CARGO_VENDOR=
+    URL= SHA256= GIT= REF= DATE= COUNT= COMMIT= TAG= FILES= DSC= CARGO_VENDOR=
     COMPONENT_NAMES=() COMPONENT_URLS=() COMPONENT_SHA256S=()
     # shellcheck source=/dev/null
     source "$pkg/upstream"
@@ -162,12 +163,18 @@ for pkg in "${pkgs[@]}"; do
     elif [[ -n $URL ]]; then
       fetch "$URL" "$orig" "$SHA256"
     elif [[ -n $GIT ]]; then
-      # DATE: the upstream version names the commit by its date (the desktop's +git<date>), so
-      # a build from any other commit would put different contents under that version.
-      check_date() { # check_date <git dir> <commit>
-        local got; got=$(TZ=UTC git -C "$1" log -1 --format=%cd --date=format-local:%Y%m%d "$2")
-        if [[ -n $DATE && $got != "$DATE" ]]; then
-          echo "!! $name: the commit is dated $got (UTC) but the version says $DATE: set OMARCHY_PORT_DATE=$got in distro.conf, add a changelog entry, and run make render" >&2
+      # DATE, COUNT, COMMIT: the upstream version names the commit (the desktop's
+      # +git<date>.<count>.<commit>), so a build from any other commit would put different
+      # contents under that version.
+      check_commit() { # check_commit <git dir> <commit>
+        [[ -n $DATE ]] || return 0
+        local date count commit
+        date=$(TZ=UTC git -C "$1" log -1 --format=%cd --date=format-local:%Y%m%d "$2")
+        count=$(git -C "$1" rev-list --count "$TAG..$2")
+        commit=$(git -C "$1" rev-parse --short=8 "$2")
+        if [[ $date != "$DATE" || $count != "$COUNT" || $commit != "$COMMIT" ]]; then
+          echo "!! $name: the commit is $date.$count.$commit (date.count.commit) but the version says $DATE.$COUNT.$COMMIT:" >&2
+          echo "   set OMARCHY_PORT_DATE=$date OMARCHY_PORT_COUNT=$count OMARCHY_PORT_COMMIT=$commit in distro.conf, add a changelog entry, and run make render" >&2
           exit 1
         fi
       }
@@ -177,7 +184,7 @@ for pkg in "${pkgs[@]}"; do
           if [[ -n $(git -C "$UPSTREAM_DIR" status --porcelain 2>/dev/null) ]]; then
             echo "-- warning: $UPSTREAM_DIR has uncommitted changes, so version $uver names no commit; do not publish this build"
           else
-            check_date "$UPSTREAM_DIR" HEAD
+            check_commit "$UPSTREAM_DIR" HEAD
           fi
         fi
         tar "${TAR_OPTS[@]}" --exclude-vcs --transform "s,^\./,$prefix/," -cf - -C "$UPSTREAM_DIR" . | gzip -n > "$orig.part"
@@ -190,8 +197,9 @@ for pkg in "${pkgs[@]}"; do
           git clone -q --bare "$GIT" "$cache"
         fi
         echo "-- fetching $REF from $GIT"
-        git -C "$cache" fetch -q "$GIT" "$REF"
-        check_date "$cache" FETCH_HEAD
+        # The tag too, which the commit count is counted from.
+        git -C "$cache" fetch -q "$GIT" "$REF" ${TAG:+"refs/tags/$TAG:refs/tags/$TAG"}
+        check_commit "$cache" FETCH_HEAD
         git -C "$cache" archive --format=tar --prefix="$prefix/" FETCH_HEAD | gzip -n > "$orig.part"
         echo "   $src $uver = commit $(git -C "$cache" rev-parse FETCH_HEAD)"
       fi

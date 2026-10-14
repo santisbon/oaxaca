@@ -1,3 +1,16 @@
+oaxaca-desktop (4.0.4+git20261014.20.0559194c-0oaxaca1) stonking; urgency=medium
+
+  * Upstream version +git<date>.<count>.<commit> instead of +git<date>:
+    the fork's commit count since the Omarchy tag orders several fork
+    changes in one day, and the hash names the commit. Same fork commit
+    as 4.0.4+git20261014-0oaxaca1.
+  * oaxaca-config installs /etc/chromium.d/zz-oaxaca-user-flags,
+    which makes the Debian Chromium launcher read the user's
+    ~/.config/chromium-flags.conf, as Arch's wrapper does: Omarchy's flags
+    and its three bundled extensions now apply to Chromium.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 00:45:00 -0500
+
 oaxaca-desktop (4.0.4+git20261014-0oaxaca1) stonking; urgency=medium
 
   * Install > Development installs build-essential (and unzip for OCaml)

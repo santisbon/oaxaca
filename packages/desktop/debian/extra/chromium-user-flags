@@ -1,0 +1,19 @@
+# Generated from packages/desktop/debian/extra/chromium-user-flags.in by scripts/render.py. Edit the .in file, not this one.
+# Oaxaca: read the user's ~/.config/chromium-flags.conf, one flag per line, "#" for
+# comments, the file Omarchy's config ships (Wayland, the GNOME keyring as password store, the
+# bundled Copy URL, yt-dlp and WhatsApp extensions). Arch's chromium wrapper reads that file;
+# the Debian launcher of the xtradeb PPA's chromium package (/usr/bin/chromium, POSIX sh) reads
+# none, and instead sources every file in /etc/chromium.d/ in name order before it starts the
+# browser with "$CHROMIUM_FLAGS". This file is one of those. Its name starts with zz- so it is
+# sourced after the package's own "extensions" file: both pass --load-extension, and Chromium
+# keeps the last value of a repeated switch. Like Arch's wrapper, a flag cannot contain spaces,
+# because the launcher splits $CHROMIUM_FLAGS on them.
+chromium_user_flags="${XDG_CONFIG_HOME:-$HOME/.config}/chromium-flags.conf"
+if [ -r "$chromium_user_flags" ]; then
+  while IFS= read -r chromium_flag || [ -n "$chromium_flag" ]; do
+    case $chromium_flag in '' | '#'*) continue ;; esac
+    CHROMIUM_FLAGS="$CHROMIUM_FLAGS $chromium_flag"
+  done < "$chromium_user_flags"
+  export CHROMIUM_FLAGS
+fi
+unset chromium_user_flags chromium_flag

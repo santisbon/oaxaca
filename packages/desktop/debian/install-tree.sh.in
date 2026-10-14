@@ -66,6 +66,8 @@ install -d "$config/usr/lib/tmpfiles.d"
 mv "$config"/etc/tmpfiles.d/*.conf "$config/usr/lib/tmpfiles.d/"
 rmdir "$config/etc/tmpfiles.d"
 install -D -m 0644 debian/extra/apt-periodic.conf "$config/etc/apt/apt.conf.d/20$id-periodic"
+# Makes the Debian Chromium launcher read ~/.config/chromium-flags.conf (the file says why).
+install -D -m 0644 debian/extra/chromium-user-flags "$config/etc/chromium.d/zz-$id-user-flags"
 # Package-owned defaults at their XDG and systemd locations; user files override them.
 install -D -m 0644 "$R/default/uwsm/env.d/10-$id" "$config/usr/share/uwsm/env.d/10-$id"
 install -D -m 0644 "$R/default/environment.d/10-$id-fcitx.conf" "$config/usr/lib/environment.d/10-$id-fcitx.conf"

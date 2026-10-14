@@ -1,5 +1,18 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Upstream version +git<date>.<count>.<commit> instead of +git<date>:
+    the fork's commit count since the Omarchy tag orders several fork
+    changes in one day, and the hash names the commit. Same fork commit
+    as 4.0.4+git20261014-0@DISTRO_ID@1.
+  * @DISTRO_ID@-config installs /etc/chromium.d/zz-@DISTRO_ID@-user-flags,
+    which makes the Debian Chromium launcher read the user's
+    ~/.config/chromium-flags.conf, as Arch's wrapper does: Omarchy's flags
+    and its three bundled extensions now apply to Chromium.
+
+ -- @MAINTAINER@  Wed, 14 Oct 2026 00:45:00 -0500
+
+@DISTRO_ID@-desktop (@OMARCHY_VERSION@+git20261014-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Install > Development installs build-essential (and unzip for OCaml)
     before building a toolchain: the image has no compiler.
   * Agents and mise tools from npm install Node.js first: the image has

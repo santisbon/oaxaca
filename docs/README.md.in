@@ -156,6 +156,8 @@ Next: the roadmap's eight steps are done. Pending, as of 2026-10-13 (details in 
 - user units enabled by a package start only with a new user manager; the next such package also starts them in running sessions;
 - the iPad in Files through usbmuxd, to confirm;
 - the `GDK_BACKEND` warning from Files, not investigated;
+- the menu's Install > Gaming > Xbox Controllers (`xpadneo-dkms` needs a Secure Boot key enrolled), after the Bluetooth controller test (docs/6, choice 18);
+- the fork's PORT.md "The Applications" table: move Chromium to the Preinstalled row (docs/6, choice 3);
 - and the older items each step carried, listed at the end of each document.
 
 ## Repository map
@@ -173,6 +175,7 @@ scripts/
   version-check.sh   fails when a package directory changed since the last v* tag without a version bump (step 8)
   upgrade-test.sh    upgrades the published packages to build/ in a throwaway chroot and runs the migrations (step 8)
   rootfs-create.sh   builds the root filesystem tarball with mmdebstrap (steps 3, 4, 6 and 7; PROFILE=base|session|desktop|live)
+  keys/xtradeb.gpg   the xtradeb PPA's signing key, for the Chromium the desktop and live profiles install (docs/6, choice 3)
   rootfs-boot-test.sh  boots that tarball in QEMU and checks the base system, the graphical session and, for desktop, the ported desktop
   drivers-check.sh   runs ubuntu-drivers inside the tarball against this machine's GPU (step 4)
   iso-create.sh      turns the live tarball into the installation ISO: squashfs, signed shim and GRUB in an EFI image, xorriso (step 7)

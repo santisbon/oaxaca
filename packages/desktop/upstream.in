@@ -2,5 +2,9 @@
 # in the environment builds from a local working tree instead, uncommitted changes included.
 GIT=@OMARCHY_FORK@
 REF=@OMARCHY_PORT_REF@
-# The commit's date (UTC, YYYYMMDD), the +git part of the upstream version; build.sh checks it.
+# The +git<date>.<count>.<commit> part of the upstream version; build.sh checks the fetched
+# commit against all three. TAG is what the count is counted from.
 DATE=@OMARCHY_PORT_DATE@
+COUNT=@OMARCHY_PORT_COUNT@
+COMMIT=@OMARCHY_PORT_COMMIT@
+TAG=@OMARCHY_TAG@
