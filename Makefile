@@ -1,5 +1,5 @@
 # Entry points for the build. See docs/2 - build-infra.md, docs/3 - rootfs.md and docs/4 - session.md.
-.PHONY: render check-render check-versions chroot build lint publish apt-infra apt-infra-check rootfs rootfs-test drivers-check iso iso-test upgrade-test clean
+.PHONY: render check-render check-versions upstream-check chroot build lint publish apt-infra apt-infra-check rootfs rootfs-test drivers-check iso iso-test upgrade-test clean
 
 # Root filesystem profile for rootfs, rootfs-test and drivers-check: base (step 3), session (step 4),
 # desktop (step 6) or live (step 7, the desktop plus casper and the installer: what the ISO ships).
@@ -15,6 +15,9 @@ check-render: render   ## Fail if committed rendered files don't match distro.co
 
 check-versions:    ## Fail if a package directory changed since the last v* tag without a version bump (CI)
 	scripts/version-check.sh
+
+upstream-check:    ## Fail if a repackaged program (RELEASES= in packages/*/upstream) has a newer GitHub release
+	scripts/upstream-check.sh
 
 chroot:            ## Create or refresh the clean build chroot (~/.cache/sbuild)
 	scripts/chroot-create.sh

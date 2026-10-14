@@ -1,0 +1,4 @@
+# The Flutter engine (libflutter_linux_gtk.so, from the release) links Skia's copies of
+# libjpeg and FreeType statically; the engine is a prebuilt binary and cannot use the system's.
+localsend: embedded-library libjpeg [usr/lib/localsend/lib/libflutter_linux_gtk.so]
+localsend: embedded-library freetype [usr/lib/localsend/lib/libflutter_linux_gtk.so]

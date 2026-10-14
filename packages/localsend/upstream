@@ -1,0 +1,16 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format. LocalSend's own release
+# builds, not its source: Omarchy compiles LocalSend from source (omacom/omarchy-pkgs,
+# pkgbuilds/localsend/PKGBUILD: Flutter through fvm plus Rust, fetched over the network
+# during the build), and this package takes the prebuilt app and CLI from the GitHub release
+# instead (docs/6, choice 19). The orig tarball is the app; the component "cli" is the
+# command-line tool. Both checksums came out of sha256sum on the downloads on 2026-10-14 and
+# match the digests GitHub records for the release's files.
+URL=https://github.com/localsend/localsend/releases/download/v1.18.2/LocalSend-1.18.2-linux-x86-64.tar.gz
+SHA256=287690a9a8eb6da9c83cc97b3e3030ac67daf32a7331fcf307d0939300658d16
+COMPONENT_NAMES=(cli)
+COMPONENT_URLS=(https://github.com/localsend/localsend/releases/download/v1.18.2/LocalSend-CLI-1.18.2-linux-x86-64.tar.gz)
+COMPONENT_SHA256S=(f5a986e0b4701b9aafeb9747225a2f3e314e97aba61b3dd7c9d076226f512b08)
+# Both tarballs hold their files at the top (data/, lib/, localsend_app; localsend-cli).
+NO_TOP_DIR=1
+# make upstream-check compares this repository's latest release with debian/changelog.
+RELEASES=localsend/localsend

@@ -1,0 +1,8 @@
+localsend (1.18.2-0oaxaca1) stonking; urgency=medium
+
+  * LocalSend 1.18.2 for Oaxaca, from LocalSend's own release builds
+    of the app and the CLI (LocalSend-1.18.2-linux-x86-64.tar.gz and
+    LocalSend-CLI-1.18.2-linux-x86-64.tar.gz). Omarchy v4.0.4 ships
+    LocalSend 1.18.2 from its own repository; Ubuntu's archive has none.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 09:00:00 -0500

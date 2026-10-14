@@ -53,6 +53,14 @@
 #   COMPONENT_SHA256S=(<hex> ...)      stored as build/<source>_<ver>.orig-<n>.tar.gz and
 #                                      unpacked into <n>/ inside the tree, which is where
 #                                      dpkg-source puts them when the source is unpacked
+#   NO_TOP_DIR=1                       the tarballs hold their files at the top, with no
+#                                      <name>-<version>/ directory around them (a release's
+#                                      prebuilt binaries: localsend), so they are unpacked as
+#                                      they are instead of with --strip-components=1;
+#                                      dpkg-source accepts such an orig tarball as it is
+#   RELEASES=<owner>/<repo>            the GitHub repository whose latest release
+#                                      scripts/upstream-check.sh compares with the version in
+#                                      debian/changelog (make upstream-check)
 #   CARGO_VENDOR=1                     run "cargo vendor" in the tree on this host (network)
 #                                      and ship the result as the component "vendor", so the
 #                                      chroot can build a Rust program offline
@@ -123,7 +131,7 @@ for pkg in "${pkgs[@]}"; do
   if [[ -f $pkg/upstream ]]; then
     TAR_OPTS=(--sort=name --owner=0 --group=0 --numeric-owner)
     uver=${ver#*:}; uver=${uver%-*}
-    URL= SHA256= GIT= REF= DATE= COUNT= COMMIT= TAG= FILES= DSC= CARGO_VENDOR=
+    URL= SHA256= GIT= REF= DATE= COUNT= COMMIT= TAG= FILES= DSC= CARGO_VENDOR= NO_TOP_DIR= RELEASES=
     COMPONENT_NAMES=() COMPONENT_URLS=() COMPONENT_SHA256S=()
     # shellcheck source=/dev/null
     source "$pkg/upstream"
@@ -219,13 +227,14 @@ for pkg in "${pkgs[@]}"; do
     if [[ -z $DSC ]]; then
     tree="$out/$prefix"
     rm -rf "$tree"; mkdir -p "$tree"
-    tar -xzf "$orig" --strip-components=1 -C "$tree"
+    strip=(--strip-components=1); [[ ${NO_TOP_DIR:-} == 1 ]] && strip=()
+    tar -xzf "$orig" "${strip[@]}" -C "$tree"
     for i in "${!COMPONENT_NAMES[@]}"; do
       comp=${COMPONENT_NAMES[$i]}
       ctar="$out/${src}_${uver}.orig-${comp}.tar.gz"
       fetch "${COMPONENT_URLS[$i]}" "$ctar" "${COMPONENT_SHA256S[$i]}"
       mkdir -p "$tree/$comp"
-      tar -xzf "$ctar" --strip-components=1 -C "$tree/$comp"
+      tar -xzf "$ctar" "${strip[@]}" -C "$tree/$comp"
     done
     if [[ ${CARGO_VENDOR:-} == 1 ]]; then
       echo "-- cargo vendor (network) in $tree"

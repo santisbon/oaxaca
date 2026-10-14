@@ -33,6 +33,7 @@ Nothing is ever installed and then stripped out: the root filesystem is assemble
   - [`unshare` with `chroot` (`make drivers-check`)](#unshare-with-chroot-make-drivers-check)
   - [`git` with `dpkg --compare-versions` (`make check-versions`)](#git-with-dpkg---compare-versions-make-check-versions)
   - [`mmdebstrap` with `dpkg-scanpackages` (`make upgrade-test`)](#mmdebstrap-with-dpkg-scanpackages-make-upgrade-test)
+  - [`curl` with GitHub's API (`make upstream-check`)](#curl-with-githubs-api-make-upstream-check)
   - [GitHub Actions (`.github/workflows/build.yml`)](#github-actions-githubworkflowsbuildyml)
   - [`scripts/suspend-baseline.sh` (measurement, not build)](#scriptssuspend-baselinesh-measurement-not-build)
 - [How the pieces fit together](#how-the-pieces-fit-together)
@@ -163,7 +164,7 @@ Next: the roadmap's eight steps are done. Pending, as of 2026-10-13 (details in 
 
 ```
 distro.conf          the only place the distro's name and identity live
-Makefile             entry points: render, check-versions, chroot, build, publish, rootfs, rootfs-test, drivers-check, iso, iso-test, upgrade-test
+Makefile             entry points: render, check-versions, upstream-check, chroot, build, publish, rootfs, rootfs-test, drivers-check, iso, iso-test, upgrade-test
 sbuild.conf          sbuild settings for this repo (loaded through SBUILD_CONFIG)
 scripts/
   render.py          fills @@TOKEN@@ templates (*.in) from distro.conf
@@ -173,6 +174,7 @@ scripts/
   repo-publish.sh    publishes build/ into the apt repository with aptly; refuses a published version with different content
   version-check.sh   fails when a package directory changed since the last v* tag without a version bump (step 8)
   upgrade-test.sh    upgrades the published packages to build/ in a throwaway chroot and runs the migrations (step 8)
+  upstream-check.sh  fails when a program repackaged from its GitHub release (RELEASES= in packages/*/upstream) has a newer release (make upstream-check)
   rootfs-create.sh   builds the root filesystem tarball with mmdebstrap (steps 3, 4, 6 and 7; PROFILE=base|session|desktop|live)
   keys/xtradeb.gpg   the xtradeb PPA's signing key, for the Chromium the desktop and live profiles install (docs/6, choice 3)
   rootfs-boot-test.sh  boots that tarball in QEMU and checks the base system, the graphical session and, for desktop, the ported desktop
@@ -190,6 +192,7 @@ packages/
   desktop/           @DISTRO_ID@-desktop, -tools, -shell, -themes, -config: the Omarchy port, built from the fork's branch ("upstream" names the git ref; step 6)
   fonts/             @DISTRO_ID@-fonts: JetBrains Mono Nerd Font and iA Writer, fetched from a file list
   asdcontrol/        asdcontrol (Apple Studio Display brightness), from its release tarball
+  localsend/         localsend 1.18.2 (file sharing, Omarchy's Share menu), LocalSend's prebuilt app and CLI from its GitHub release; @DISTRO_ID@-desktop depends on it
   hyprland-preview-share-picker/  the screen-share picker, Rust, with its crates vendored at build time
   nwg-displays/      nwg-displays 0.4.4 on Debian's packaging (monitor layout GUI)
   hw-legion/         @DISTRO_ID@-hw-legion, the Lenovo Legion Pro 7 hardware set (its /etc/@DISTRO_ID@/gpu names the Intel GPU for Hyprland)
@@ -199,6 +202,7 @@ packages/
   calamares/         calamares 3.3.14, the installer framework, rebuilt from Ubuntu's source package with two patches for the partition page's crashes ("upstream" names the .dsc; step 7)
   plymouth/          plymouth 24.004.60, the boot splash, rebuilt from Ubuntu's source package with one upstream patch so its script plugin survives a missing console viewer ("upstream" names the .dsc; step 7)
 .github/workflows/build.yml   CI: the same make targets on an Ubuntu runner
+.github/workflows/upstream-check.yml   CI, weekly: make upstream-check
 docs/                the developer README (this file), plan, policy, build infrastructure, root filesystem, session layer, Hyprland and Quickshell, the Omarchy port, image and installer, update path, suspend baseline
 tests/
   iso-drive/<name>/    driven installer and live-session checks: DRIVE=tests/iso-drive/<name> make iso-test puts the folder's run.sh on a disk the guest runs (docs/7, choices 26, 38, 41, 42)
@@ -340,6 +344,17 @@ VERSION_CHECK_TAG=<ref> scripts/version-check.sh   # compare against any ref
 ```
 make upgrade-test                  # needs build/*.deb and network access to the published archive
 ```
+
+### `curl` with GitHub's API (`make upstream-check`)
+
+`scripts/upstream-check.sh` covers the packages that repackage a program's GitHub release, the ones whose `upstream` file sets `RELEASES=<owner>/<repo>` (today `packages/localsend`). For each one it asks GitHub's API for the repository's latest release (drafts and pre-releases skipped), drops a leading `v` from the release's tag and compares it with the upstream part of the version in the package's `debian/changelog`. A newer release fails the check and names the file to update; a package can sit behind its upstream unnoticed otherwise, and LocalSend receives files over the network. The weekly workflow `.github/workflows/upstream-check.yml` (Mondays 14:00 UTC, plus a "Run workflow" button) runs the same target, so a new release turns up as GitHub's failed-workflow notification. Exit status: 0 current, 1 a newer release, 2 GitHub could not be asked.
+
+```
+make upstream-check
+-- localsend: 1.18.2 is current (localsend/localsend's latest release is 1.18.2)
+```
+
+A new LocalSend release: in `packages/localsend/upstream`, change the version in both URLs and both SHA-256s (GitHub shows each file's SHA-256 on the release page), add a changelog entry, `make build PKG=packages/localsend`, then publish.
 
 ### GitHub Actions (`.github/workflows/build.yml`)
 

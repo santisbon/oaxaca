@@ -1,0 +1,35 @@
+# Generated from packages/localsend/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: localsend
+Section: net
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ patchelf,
+# Nothing is compiled; dpkg-shlibdeps needs the libraries the prebuilt app links to
+# installed in the build chroot to work out ${shlibs:Depends}.
+ libgtk-3-0t64,
+ libayatana-appindicator3-1,
+ libayatana-indicator3-7,
+ libayatana-ido3-0.4-0,
+ libdbusmenu-glib4,
+ libepoxy0,
+ libfontconfig1,
+ libharfbuzz0b
+Standards-Version: 4.7.4
+Homepage: https://localsend.org/
+Rules-Requires-Root: no
+
+Package: localsend
+Architecture: amd64
+Depends: ${misc:Depends}, ${shlibs:Depends},
+ hicolor-icon-theme,
+ xdg-user-dirs
+Description: share files and text with nearby devices over the local network
+ LocalSend sends files and messages between devices on the same network,
+ without an internet connection or an account: an open-source alternative
+ to AirDrop with apps for Linux, Windows, macOS, Android and iOS.
+ .
+ This package holds LocalSend's own release builds of the desktop app
+ (the localsend command) and of the command-line tool (localsend-cli),
+ installed under /usr/lib/localsend.

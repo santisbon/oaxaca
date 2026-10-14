@@ -19,6 +19,7 @@ Depends: ${misc:Depends},
  oaxaca-fonts,
  asdcontrol,
  hyprland-preview-share-picker,
+ localsend,
  nwg-displays (>= 0.4.3),
  ffmpegthumbnailer,
  ${port:Depends}

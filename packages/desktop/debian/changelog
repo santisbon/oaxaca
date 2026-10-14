@@ -1,3 +1,19 @@
+oaxaca-desktop (4.0.4+git20261014.22.8a7a6b3a-0oaxaca1) stonking; urgency=medium
+
+  * oaxaca-desktop depends on localsend, as Omarchy preinstalls it:
+    the Share menu and Files' "Send via LocalSend" have it to call. The
+    package comes from this distro's repository (packages/localsend).
+  * LocalSend's window rule and Files' "Send via LocalSend" extension are
+    back; oaxaca-config seeds the extension for new users and the
+    port's first migration copies it for existing ones.
+  * yt-dlp is back in the package list, with the native messaging host
+    Chromium's Download Video extension calls; the migration registers
+    the host for an existing user who has Chromium.
+  * d/rules: copy migrations/ into the renamed tree, so the port's
+    migrations reach the package (none was shipped before this one).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 10:00:00 -0500
+
 oaxaca-desktop (4.0.4+git20261014.20.0559194c-0oaxaca1) stonking; urgency=medium
 
   * Upstream version +git<date>.<count>.<commit> instead of +git<date>:

@@ -1,0 +1,14 @@
+<!-- Generated from packages/localsend/README.md.in by scripts/render.py. Edit the .in file, not this one. -->
+# localsend
+
+LocalSend, the file sharing app Omarchy v4.0.4 preinstalls, packaged for Oaxaca's repository (docs/6, choice 19). Omarchy ships LocalSend from its own repository and Ubuntu's archive has none; `oaxaca-desktop` depends on this package, so the menu's Share entries (clipboard, file, folder) and Files' "Send via LocalSend" have it to call.
+
+The package keeps the upstream name, as the policy says for third-party software we rebuild, with the version `1.18.2-0oaxaca1`. It holds LocalSend's own release builds, not a build from source: the app tarball and the CLI tarball from the GitHub release, unpacked under `/usr/lib/localsend` with `/usr/bin/localsend` and `/usr/bin/localsend-cli` as symlinks, the layout of Omarchy's package.
+
+| Path | What |
+|---|---|
+| `upstream` | the two release tarballs' URLs and SHA-256s (the CLI as the component `cli`), `NO_TOP_DIR=1` because neither tarball has a top-level directory, and `RELEASES=localsend/localsend` for `make upstream-check` |
+| `debian/rules` | copies the app's directory and the CLI into place, leaves out `lib/libdartjni.so` (it needs a Java runtime), installs the desktop entry and the release's logos as icons, and strips nothing |
+| `debian/localsend.desktop` | the launcher, `Exec=localsend %F` |
+
+A new LocalSend release: `make upstream-check` reports it; update the version in the two URLs and both SHA-256s in `upstream` (GitHub shows each file's SHA-256 on the release page), add a changelog entry, then `make build PKG=packages/localsend`.

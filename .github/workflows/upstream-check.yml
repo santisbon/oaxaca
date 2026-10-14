@@ -1,0 +1,30 @@
+# Weekly check for new upstream releases of the programs this repository repackages from their
+# GitHub releases (packages whose upstream file sets RELEASES=<owner>/<repo>; today localsend).
+# Anatomy, one job: checks out the repository and runs make upstream-check, which is
+# scripts/upstream-check.sh. A newer release fails the job, and GitHub sends its usual
+# failed-workflow notification to the repository's owner; the job's log names the package, the
+# new version and the files to update. workflow_dispatch adds a "Run workflow" button.
+# Why: nothing else notices a new release of a repackaged program, and LocalSend receives files
+# over the network, so a fix release should not wait for someone to look.
+name: upstream-check
+
+on:
+  schedule:
+    # Mondays 14:00 UTC.
+    - cron: '0 14 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Compare repackaged programs with their latest releases
+        env:
+          # Authenticated requests to GitHub's API: the unauthenticated limit is 60 an hour per address.
+          GITHUB_TOKEN: ${{ github.token }}
+        run: make upstream-check

@@ -1,0 +1,25 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: LocalSend
+Upstream-Contact: https://github.com/localsend/localsend/issues
+Source: https://github.com/localsend/localsend/releases
+Comment:
+ This package repackages LocalSend's prebuilt release files. The app bundles
+ the Flutter engine, Dart packages and Flutter plugins, each under its own
+ license; their notices ship inside the app at
+ /usr/lib/localsend/data/flutter_assets/NOTICES.Z (zlib-compressed text),
+ which the app also shows under its own license screen.
+
+Files: *
+Copyright: LocalSend contributors (Tien Do Nam and others)
+License: Apache-2.0
+
+Files: debian/*
+Copyright: 2026 Oaxaca
+License: Apache-2.0
+
+License: Apache-2.0
+ Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ use this file except in compliance with the License.
+ .
+ On Debian systems, the complete text of the Apache License, Version 2.0 can
+ be found in "/usr/share/common-licenses/Apache-2.0".

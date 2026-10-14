@@ -1,5 +1,21 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * @DISTRO_ID@-desktop depends on localsend, as Omarchy preinstalls it:
+    the Share menu and Files' "Send via LocalSend" have it to call. The
+    package comes from this distro's repository (packages/localsend).
+  * LocalSend's window rule and Files' "Send via LocalSend" extension are
+    back; @DISTRO_ID@-config seeds the extension for new users and the
+    port's first migration copies it for existing ones.
+  * yt-dlp is back in the package list, with the native messaging host
+    Chromium's Download Video extension calls; the migration registers
+    the host for an existing user who has Chromium.
+  * d/rules: copy migrations/ into the renamed tree, so the port's
+    migrations reach the package (none was shipped before this one).
+
+ -- @MAINTAINER@  Wed, 14 Oct 2026 10:00:00 -0500
+
+@DISTRO_ID@-desktop (@OMARCHY_VERSION@+git20261014.20.0559194c-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Upstream version +git<date>.<count>.<commit> instead of +git<date>:
     the fork's commit count since the Omarchy tag orders several fork
     changes in one day, and the hash names the commit. Same fork commit

@@ -21,7 +21,9 @@ export DISTRO_BUG_URL = https://github.com/santisbon/oaxaca/issues
 override_dh_auto_build:
 	rm -rf $(R)
 	mkdir -p $(R)
-	cp -a bin config default applications themes shell install etc port logo.svg logo.txt icon.png icon.txt $(R)/
+	# migrations/ too: install-tree.sh ships $(R)/migrations/*.sh. It was missing from this list until
+	# 2026-10-14, when the port's first migration came out of the package unshipped.
+	cp -a bin config default applications themes shell install etc port migrations logo.svg logo.txt icon.png icon.txt $(R)/
 	bash $(R)/port/rename.sh --tree $(R)
 	# Omarchy's "version" file is not maintained (policy, section 3); the package version is.
 	printf '%s\n' '$(UPSTREAM_VERSION)' > $(R)/version

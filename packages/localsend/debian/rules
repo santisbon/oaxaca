@@ -1,0 +1,47 @@
+#!/usr/bin/make -f
+
+# The tree is LocalSend's release build, not source: nothing is compiled. The app's
+# directory goes to /usr/lib/localsend as it is, because localsend_app finds its libraries
+# through RUNPATH $ORIGIN/lib and Flutter finds data/ next to the executable; /usr/bin gets
+# symlinks, the layout of Omarchy's package (localsend 1.18.2-1 in pkgs.omarchy.org).
+
+L = debian/localsend/usr/lib/localsend
+
+%:
+	dh $@
+
+override_dh_auto_build:
+override_dh_auto_test:
+
+# lib/libdartjni.so is left out: it links against libjvm.so (Java), which nothing on the
+# system provides, and Omarchy's package leaves it out too.
+override_dh_auto_install:
+	install -d $(L)/lib debian/localsend/usr/bin
+	cp -a data $(L)/
+	install -m 0755 localsend_app $(L)/
+	install -m 0644 $(filter-out lib/libdartjni.so,$(wildcard lib/*.so)) $(L)/lib/
+	install -m 0755 cli/localsend-cli $(L)/
+	ln -s ../lib/localsend/localsend_app debian/localsend/usr/bin/localsend
+	ln -s ../lib/localsend/localsend-cli debian/localsend/usr/bin/localsend-cli
+	install -D -m 0644 debian/localsend.desktop debian/localsend/usr/share/applications/localsend.desktop
+	for size in 32 128 256 512; do \
+	  install -D -m 0644 data/flutter_assets/assets/img/logo-$$size.png \
+	    debian/localsend/usr/share/icons/hicolor/$${size}x$${size}/apps/localsend.png; \
+	done
+
+# The plugins carry the release builder's RUNPATH
+# (/home/runner/work/localsend/localsend/app/linux/flutter/ephemeral:/usr/lib/x86_64-linux-gnu);
+# they live next to libflutter_linux_gtk.so, so $ORIGIN is the one path they need.
+execute_after_dh_install:
+	for f in $(L)/lib/lib*_plugin.so; do patchelf --set-rpath '$$ORIGIN' $$f; done
+
+# Stripping keeps the dynamic symbols the Flutter engine looks up in libapp.so; Omarchy's
+# Arch package is stripped too (makepkg strips by default). The release has no debug
+# information to put in a -dbgsym package.
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+override_dh_dwz:
+
+# The bundled plugins and the Flutter engine are private libraries of the app.
+override_dh_shlibdeps:
+	dh_shlibdeps -l$(CURDIR)/$(L)/lib

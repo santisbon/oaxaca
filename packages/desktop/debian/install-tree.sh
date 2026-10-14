@@ -118,4 +118,7 @@ install -D -m 0644 "$R/icon.txt" "$config/etc/skel/.config/$id/branding/about.tx
 # Static per-user defaults outside ~/.config.
 install -D -m 0644 "$R/default/hypr/toggles/flags.lua" "$config/etc/skel/.local/state/$id/toggles/hypr/flags.lua"
 install -D -m 0644 "$R/default/nautilus-python/extensions/transcode.py" "$config/etc/skel/.local/share/nautilus-python/extensions/transcode.py"
+# Files' "Send via LocalSend": the extension offers itself only when a localsend command (the
+# localsend package, a dependency of the desktop) or LocalSend's Flatpak is installed.
+install -D -m 0644 "$R/default/nautilus-python/extensions/localsend.py" "$config/etc/skel/.local/share/nautilus-python/extensions/localsend.py"
 install -D -m 0644 "$R/default/tensaku/state.toml" "$config/etc/skel/.local/state/tensaku/state.toml"
