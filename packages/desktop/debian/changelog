@@ -1,3 +1,18 @@
+oaxaca-desktop (4.0.4+git20261014.30.bca7233b-0oaxaca1) stonking; urgency=medium
+
+  * New Productivity category: Install > Productivity > LibreOffice
+    installs LibreOffice from Flathub (org.libreoffice.LibreOffice,
+    published by The Document Foundation); Remove > Productivity >
+    LibreOffice removes it. The app launcher hides the
+    Start Center and XSLT filter entries (the Flatpak's and the archive
+    package's) and now shows Base, Draw and Math, which Omarchy hides.
+  * tldr preinstalled again, as Ubuntu's tealdeer package (a Rust client
+    that installs the same tldr command as Omarchy's Python client), with
+    ~/.config/tealdeer/config.toml turning on auto_update so the pages
+    download on first use; a migration copies that file for existing users.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 22:00:00 -0500
+
 oaxaca-desktop (4.0.4+git20261014.28.963b196e-0oaxaca1) stonking; urgency=medium
 
   * tmux preinstalled again, with Omarchy's configuration, theme sync,
