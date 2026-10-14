@@ -4,4 +4,4 @@
 GIT=https://github.com/santisbon/omarchy
 REF=oaxaca
 # The commit's date (UTC, YYYYMMDD), the +git part of the upstream version; build.sh checks it.
-DATE=20261013
+DATE=20261014

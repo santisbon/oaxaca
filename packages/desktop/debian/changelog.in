@@ -1,4 +1,18 @@
-@DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@2) @BASE_SERIES@; urgency=medium
+@DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
+  * Install > Development installs build-essential (and unzip for OCaml)
+    before building a toolchain: the image has no compiler.
+  * Agents and mise tools from npm install Node.js first: the image has
+    no Node.js.
+  * Web apps use the first installed Chromium-based browser, and show a
+    notification naming Install > Browser when there is none.
+  * Steam and Lutris install the 32-bit Mesa and NVIDIA graphics drivers
+    through the new hidden @DISTRO_ID@-install-32bit-graphics, since apt
+    here installs no Recommends.
+
+ -- @MAINTAINER@  Wed, 14 Oct 2026 00:30:00 -0500
+
+@DISTRO_ID@-desktop (@OMARCHY_VERSION@+git20261013-0@DISTRO_ID@2) @BASE_SERIES@; urgency=medium
 
   * @DISTRO_ID@-desktop depends on ffmpegthumbnailer, so Files shows video
     thumbnails out of the box; it moved from the optional
@@ -8,7 +22,7 @@
 
  -- @MAINTAINER@  Wed, 14 Oct 2026 00:00:00 -0500
 
-@DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+@DISTRO_ID@-desktop (@OMARCHY_VERSION@+git20261013-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
   * Version scheme: the upstream version is the Omarchy tag plus the date of
     the fork commit the packages are built from (+git<YYYYMMDD>), so every
