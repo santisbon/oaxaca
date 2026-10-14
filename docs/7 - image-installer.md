@@ -213,7 +213,6 @@ All on this workstation (Kubuntu 26.04.1, 24 CPUs, KVM, Intel iGPU render node f
 - A user unit that a package enables (`dh_installsystemduser`, for example `oaxaca-volume-monitors.service`, choice 46) starts only when the user's systemd manager starts again: on 2026-10-13 the first session after the upgrade to `oaxaca-session 0.1.5` ran without it (not known whether that login followed a reboot). The next package that adds a user unit should also start it in running sessions from its postinst.
 - Whether Files lists an iPad through usbmuxd (choice 46): on 2026-10-13 the iPad's "Trust This Computer?" was answered "Don't Allow" by accident; to retry after re-plugging and trusting.
 - Files logs `GDK backend forced via env var, portal dialogs will not work properly` and `Unsupported or missing session type 'wayland'`: something in the session sets `GDK_BACKEND`, which can break the file chooser's portal dialog. Not investigated.
-- The fork's `install/omarchy-base.packages` (line 180) still has the comment `# evince, gnome-disk-utility, ffmpegthumbnailer: the optional omarchy-desktop-apps package`; since `oaxaca-desktop 4.0.4+git20261013-0oaxaca2`, `ffmpegthumbnailer` is a dependency of `oaxaca-desktop` (docs/6, "Core and apps"). To fix with the next fork change.
 
 ## Facts checked on 2026-10-10
 
