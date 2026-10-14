@@ -1,0 +1,14 @@
+<!-- Generated from packages/voxtype/README.md.in by scripts/render.py. Edit the .in file, not this one. -->
+# voxtype
+
+Voxtype, the dictation tool behind Omarchy v4.0.4's Install > AI > Dictation, packaged for Oaxaca's repository (docs/6, choice 30). Omarchy installs it from the AUR and Ubuntu's archive has none. Nothing depends on this package: the menu's Install > AI > Dictation installs it, downloads a speech model into the user's home and turns the user service on; the bar's Dictation indicator opens that installer while Voxtype is missing.
+
+The package keeps the upstream name, as the policy says for third-party software we rebuild, with the version `1.1.0-0oaxaca1`. It holds Voxtype's own release package, unpacked: the CPU builds (AVX2, AVX-512, baseline), the Vulkan build, the CPU builds of the ONNX engine and the on-screen display under `/usr/lib/voxtype`, the `/usr/bin/voxtype` wrapper that picks one (Vulkan when `VOXTYPE_GPU=1`, else the best CPU build), the user service and the shell completions. The ONNX GPU builds (CUDA 12, CUDA 13, MIGraphX: 472 MB of the release's 700 MB) are left out, because they load NVIDIA's CUDA runtime and cuDNN or AMD's MIGraphX and HIP, which the image does not have.
+
+| Path | What |
+|---|---|
+| `upstream` | `FILES=sources.list` and `RELEASES=peteonrails/voxtype` for `make upstream-check` |
+| `sources.list` | the release `.deb`'s URL and SHA-256 |
+| `debian/rules` | unpacks the `.deb` with `dpkg-deb -x` and installs every file but the ONNX GPU builds |
+
+A new Voxtype release: `make upstream-check` reports it; update the version and the SHA-256 in `sources.list` (GitHub shows each file's SHA-256 on the release page), add a changelog entry, then `make build PKG=packages/voxtype`.

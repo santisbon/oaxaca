@@ -194,6 +194,7 @@ packages/
   fonts/             @DISTRO_ID@-fonts: JetBrains Mono Nerd Font and iA Writer, fetched from a file list
   asdcontrol/        asdcontrol (Apple Studio Display brightness), from its release tarball
   localsend/         localsend 1.18.2 (file sharing, Omarchy's Share menu), LocalSend's prebuilt app and CLI from its GitHub release; @DISTRO_ID@-desktop depends on it
+  voxtype/           voxtype 1.1.0 (dictation, Install > AI > Dictation), Voxtype's release .deb without its ONNX GPU builds; installed from the menu, nothing depends on it
   hyprland-preview-share-picker/  the screen-share picker, Rust, with its crates vendored at build time
   nwg-displays/      nwg-displays 0.4.4 on Debian's packaging (monitor layout GUI)
   hw-legion/         @DISTRO_ID@-hw-legion, the Lenovo Legion Pro 7 hardware set (its /etc/@DISTRO_ID@/gpu names the Intel GPU for Hyprland)
@@ -348,14 +349,15 @@ make upgrade-test                  # needs build/*.deb and network access to the
 
 ### `curl` with GitHub's API (`make upstream-check`)
 
-`scripts/upstream-check.sh` covers the packages that repackage a program's GitHub release, the ones whose `upstream` file sets `RELEASES=<owner>/<repo>` (today `packages/localsend`). For each one it asks GitHub's API for the repository's latest release (drafts and pre-releases skipped), drops a leading `v` from the release's tag and compares it with the upstream part of the version in the package's `debian/changelog`. A newer release fails the check and names the file to update; a package can sit behind its upstream unnoticed otherwise, and LocalSend receives files over the network. The weekly workflow `.github/workflows/upstream-check.yml` (Mondays 14:00 UTC, plus a "Run workflow" button) runs the same target, so a new release turns up as GitHub's failed-workflow notification. Exit status: 0 current, 1 a newer release, 2 GitHub could not be asked.
+`scripts/upstream-check.sh` covers the packages that repackage a program's GitHub release, the ones whose `upstream` file sets `RELEASES=<owner>/<repo>` (today `packages/localsend` and `packages/voxtype`). For each one it asks GitHub's API for the repository's latest release (drafts and pre-releases skipped), drops a leading `v` from the release's tag and compares it with the upstream part of the version in the package's `debian/changelog`. A newer release fails the check and names the file to update; a package can sit behind its upstream unnoticed otherwise, and LocalSend receives files over the network. The weekly workflow `.github/workflows/upstream-check.yml` (Mondays 14:00 UTC, plus a "Run workflow" button) runs the same target, so a new release turns up as GitHub's failed-workflow notification. Exit status: 0 current, 1 a newer release, 2 GitHub could not be asked.
 
 ```
 make upstream-check
 -- localsend: 1.18.2 is current (localsend/localsend's latest release is 1.18.2)
+-- voxtype: 1.1.0 is current (peteonrails/voxtype's latest release is 1.1.0)
 ```
 
-A new LocalSend release: in `packages/localsend/upstream`, change the version in both URLs and both SHA-256s (GitHub shows each file's SHA-256 on the release page), add a changelog entry, `make build PKG=packages/localsend`, then publish.
+A new LocalSend release: in `packages/localsend/upstream`, change the version in both URLs and both SHA-256s (GitHub shows each file's SHA-256 on the release page), add a changelog entry, `make build PKG=packages/localsend`, then publish. A new Voxtype release: in `packages/voxtype/sources.list`, change the version in the URL and the SHA-256, add a changelog entry, `make build PKG=packages/voxtype`, then publish.
 
 ### GitHub Actions (`.github/workflows/build.yml`)
 

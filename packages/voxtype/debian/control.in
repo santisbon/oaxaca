@@ -1,0 +1,35 @@
+Source: voxtype
+Section: sound
+Priority: optional
+Maintainer: @MAINTAINER@
+Build-Depends:
+ debhelper-compat (= 13),
+# Nothing is compiled; dpkg-shlibdeps needs the libraries the prebuilt binaries link to
+# installed in the build chroot to work out ${shlibs:Depends}.
+ libasound2t64,
+ libvulkan1,
+ libgtk-4-1,
+ libgtk4-layer-shell0,
+ libcairo2,
+ libglib2.0-0t64
+Standards-Version: 4.7.4
+Homepage: https://voxtype.io
+Rules-Requires-Root: no
+
+Package: voxtype
+Architecture: amd64
+Depends: ${misc:Depends}, ${shlibs:Depends},
+ curl
+Recommends: pipewire-alsa, wtype, wl-clipboard
+Suggests: libnotify-bin
+Description: push-to-talk voice-to-text for Wayland
+ Voxtype records while a key is held (or between two presses), transcribes
+ the speech on this machine with a Whisper or Parakeet model, and types the
+ text into the focused window. No audio leaves the machine.
+ .
+ This package holds Voxtype's own release builds: the CPU builds (AVX2,
+ AVX-512 and baseline), the Vulkan build for GPUs from NVIDIA, AMD and
+ Intel, the CPU builds of the ONNX (Parakeet) engine, and the on-screen
+ display. /usr/bin/voxtype picks the build: the Vulkan one when VOXTYPE_GPU=1,
+ otherwise the best CPU build. Voxtype's ONNX GPU builds (CUDA and MIGraphX)
+ are left out: they need NVIDIA's CUDA or AMD's ROCm runtime.

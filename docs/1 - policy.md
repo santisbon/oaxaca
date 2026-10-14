@@ -159,7 +159,7 @@ The distro's name is not "Omarchy" or a play on that name. Omarchy's code is MIT
 | What | Rule | Examples |
 |---|---|---|
 | Our binary and [source packages](README.md#source-package) | `oaxaca-<part>` | `oaxaca-desktop`, `oaxaca-shell`, `oaxaca-config`, `oaxaca-themes`, `oaxaca-fonts`, `oaxaca-tools`, `oaxaca-nvidia`, `oaxaca-hw-legion`, `oaxaca-apparmor` |
-| Third-party software we package or rebuild | keep the upstream source and binary names | `nwg-displays`, `asdcontrol`, `localsend`, `quickshell` (backported in step 5), and `hyprland` if we ever backport it |
+| Third-party software we package or rebuild | keep the upstream source and binary names | `nwg-displays`, `asdcontrol`, `localsend`, `voxtype`, `quickshell` (backported in step 5), and `hyprland` if we ever backport it |
 | System paths | `/usr/share/oaxaca/`, `/etc/oaxaca/`, `/var/log/oaxaca/` | themes and templates under `/usr/share/oaxaca/` (plan, step 6) |
 | User paths | `~/.config/oaxaca/`, `~/.local/state/oaxaca/` | the migrations' state files; the suspend baseline logs already use the state directory |
 | Commands | every `omarchy-*` script becomes `oaxaca-*`, and every reference to that script (the [Omarchy shell](#omarchy-shell)'s QML and JavaScript, the Hyprland Lua config, the menu JSON, systemd units) is rewritten by the same rename script | `omarchy-theme-set` becomes `oaxaca-theme-set` |

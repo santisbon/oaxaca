@@ -1,0 +1,44 @@
+#!/usr/bin/make -f
+
+# The orig tarball holds Voxtype's release .deb whole (FILES= in upstream): nothing is
+# compiled. The .deb is unpacked into deb/, and its files are installed at the paths Voxtype's
+# own package uses, except the ONNX GPU builds: usr/lib/voxtype/cuda-12, cuda-13 and migraphx
+# (472 MB of the 700 MB) and the voxtype-onnx-cuda-*, -migraphx and -rocm links to them. They
+# load NVIDIA's CUDA 12 or 13 libraries with cuDNN, or AMD's MIGraphX and HIP, which the
+# image does not have (docs/6, choice 30).
+
+D = debian/voxtype
+V = usr/lib/voxtype
+KEEP = voxtype-avx2 voxtype-avx512 voxtype-baseline voxtype-vulkan \
+       voxtype-onnx-avx2 voxtype-onnx-avx512 voxtype-osd voxtype-osd-gtk4 voxtype-osd-quickshell
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	rm -rf deb
+	dpkg-deb -x $(wildcard voxtype_*_amd64.deb) deb
+
+override_dh_auto_test:
+
+override_dh_auto_clean:
+	rm -rf deb
+
+override_dh_auto_install:
+	install -d $(D)/$(V) $(D)/usr/bin
+	for f in $(KEEP); do install -m 0755 deb/$(V)/$$f $(D)/$(V)/; done
+	install -m 0755 deb/usr/bin/voxtype deb/usr/bin/voxtype-audio-bridge $(D)/usr/bin/
+	ln -s ../lib/voxtype/voxtype-osd $(D)/usr/bin/voxtype-osd
+	install -D -m 0644 deb/etc/voxtype/config.toml $(D)/etc/voxtype/config.toml
+	install -D -m 0644 deb/usr/lib/systemd/user/voxtype.service $(D)/usr/lib/systemd/user/voxtype.service
+	cp -a deb/usr/share/voxtype $(D)/usr/share/
+	install -D -m 0644 deb/usr/share/bash-completion/completions/voxtype $(D)/usr/share/bash-completion/completions/voxtype
+	install -D -m 0644 deb/usr/share/zsh/site-functions/_voxtype $(D)/usr/share/zsh/vendor-completions/_voxtype
+	install -D -m 0644 deb/usr/share/fish/vendor_completions.d/voxtype.fish $(D)/usr/share/fish/vendor_completions.d/voxtype.fish
+	install -D -m 0644 deb/usr/share/doc/voxtype/README.md $(D)/usr/share/doc/voxtype/README.md
+
+# The release's binaries are already stripped Rust builds with no debug information to put
+# in a -dbgsym package.
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+override_dh_dwz:

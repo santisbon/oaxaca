@@ -1,0 +1,9 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format. Voxtype's own Debian package
+# from its GitHub release, not its source: Omarchy installs Voxtype from the AUR (voxtype-bin,
+# the same prebuilt binaries), and Voxtype publishes a .deb with each release. FILES= packs that
+# .deb whole into the orig tarball, and debian/rules unpacks it and keeps all but the ONNX GPU
+# builds (docs/6, choice 30). The SHA-256 in sources.list came out of sha256sum on the
+# download on 2026-10-14 and matches the digest GitHub records for the release's file.
+FILES=sources.list
+# make upstream-check compares this repository's latest release with debian/changelog.
+RELEASES=peteonrails/voxtype

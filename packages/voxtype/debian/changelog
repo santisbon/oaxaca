@@ -1,0 +1,9 @@
+voxtype (1.1.0-0oaxaca1) stonking; urgency=medium
+
+  * Voxtype 1.1.0 for Oaxaca, from Voxtype's own release package
+    (voxtype_1.1.0-1_amd64.deb), without its ONNX GPU builds (CUDA 12,
+    CUDA 13, MIGraphX), which need runtimes the image does not have.
+    Omarchy v4.0.4 installs Voxtype from the AUR; Ubuntu's archive
+    has none.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 20:00:00 -0500

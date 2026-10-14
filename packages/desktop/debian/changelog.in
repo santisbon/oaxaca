@@ -1,5 +1,32 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * tmux preinstalled again, with Omarchy's configuration, theme sync,
+    Super+Alt+Return (the Work session), Super+Alt+K (its keybindings) and
+    the Learn and Update > Config menu entries.
+  * nano preinstalled as the default editor: the editor fallback named it,
+    and the image had no terminal editor at all.
+  * Neovim preinstalled again, without Omarchy's LazyVim configuration;
+    Learn > Neovim opens Neovim's quick reference.
+  * HEY and Basecamp removed: the HEY key bindings (Super+Shift+C, E,
+    Alt+E) and HEY as the email link handler, which named a launcher the
+    port never shipped; a migration drops that handler from existing users.
+  * Super+Shift+E opens Thunderbird, bound only while its snap is
+    installed; the Thunderbird install and remove entries reload Hyprland.
+  * Papers preinstalled as the document viewer and the PDF default, in
+    place of Evince, which only the optional desktop-apps package had;
+    desktop-apps keeps GNOME Disks.
+  * swappy preinstalled as the screenshot editor that the screenshot
+    notification opens, in place of Omarchy's Tensaku, which has no Ubuntu
+    build; Ctrl+S saves the annotations over the screenshot.
+  * Install > AI > Dictation and Remove > Dictation are back: Voxtype from
+    this distro's repository, with GPU mode set per user on the discrete
+    GPU, isolated between dictations. The bar's Dictation indicator opens
+    the installer while Voxtype is missing.
+
+ -- @MAINTAINER@  Wed, 14 Oct 2026 19:00:00 -0500
+
+@DISTRO_ID@-desktop (@OMARCHY_VERSION@+git20261014.26.87da7b10-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Depend on rfkill: the bar's Bluetooth switch lifts the radio's rfkill
     block with it, and Ubuntu ships the command in its own package, so the
     switch could not turn Bluetooth on.

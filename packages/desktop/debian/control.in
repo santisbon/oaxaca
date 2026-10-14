@@ -104,9 +104,9 @@ Description: @DISTRO_NAME@ configuration and defaults
 
 Package: @DISTRO_ID@-desktop-apps
 Architecture: all
-Depends: ${misc:Depends}, evince, gnome-disk-utility
+Depends: ${misc:Depends}, gnome-disk-utility
 Description: optional applications for the @DISTRO_NAME@ desktop
  The applications a desktop usually has that nothing in the desktop's own
- scripts or shell needs: a PDF viewer (Evince, the mimeapps default), GNOME Disks,
- and video thumbnails in the file manager. Installed on request, not by
- @DISTRO_ID@-desktop, which only suggests it.
+ scripts or shell needs: GNOME Disks. Installed on request, not by
+ @DISTRO_ID@-desktop, which only suggests it. The document viewer, Papers,
+ is part of the desktop itself.
