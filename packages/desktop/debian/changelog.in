@@ -1,5 +1,17 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Install > Package and Remove > Package show Ubuntu's logo (Nerd Font
+    linux-ubuntu) instead of Arch's (md-arch): the entries install from
+    Ubuntu's archive.
+  * Install > Snap and Install > Flatpak pick apps from the Snap Store and
+    Flathub in fzf, as Install > Package does from Ubuntu's archive; the
+    Snap picker searches first and asks before installing a classic snap.
+    Remove > Snap and Remove > Flatpak list the installed apps.
+
+ -- @MAINTAINER@  Wed, 14 Oct 2026 13:00:00 -0500
+
+@DISTRO_ID@-desktop (@OMARCHY_VERSION@+git20261014.23.d1c146fc-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * The menu answers its "is this package installed" tests from dpkg
     instead of pacman. With no pacman the menu took every package for
     absent: Install entries showed for installed programs (Chromium) and

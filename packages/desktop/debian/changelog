@@ -1,3 +1,15 @@
+oaxaca-desktop (4.0.4+git20261014.25.92b6de53-0oaxaca1) stonking; urgency=medium
+
+  * Install > Package and Remove > Package show Ubuntu's logo (Nerd Font
+    linux-ubuntu) instead of Arch's (md-arch): the entries install from
+    Ubuntu's archive.
+  * Install > Snap and Install > Flatpak pick apps from the Snap Store and
+    Flathub in fzf, as Install > Package does from Ubuntu's archive; the
+    Snap picker searches first and asks before installing a classic snap.
+    Remove > Snap and Remove > Flatpak list the installed apps.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 13:00:00 -0500
+
 oaxaca-desktop (4.0.4+git20261014.23.d1c146fc-0oaxaca1) stonking; urgency=medium
 
   * The menu answers its "is this package installed" tests from dpkg
