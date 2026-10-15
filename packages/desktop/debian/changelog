@@ -1,3 +1,16 @@
+oaxaca-desktop (4.0.4+git20261015.39.7a4a96b4-0oaxaca1) stonking; urgency=medium
+
+  * LibreOffice's launchers are named Writer, Calc, Impress, Draw, Base and
+    Math: the snap names them "LibreOffice <version> Writer" and so on, which
+    the launcher cut off. Install > Productivity > LibreOffice writes
+    per-user copies with the short names (new
+    oaxaca-libreoffice-snap-launchers), Remove deletes them, and a
+    migration writes them for a snap installed before.
+  * Depend on quickshell (>= 0.3.2-0oaxaca2), whose lock screen works
+    more than once per login.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 15 Oct 2026 15:00:00 -0500
+
 oaxaca-desktop (4.0.4+git20261015.38.846f58d7-0oaxaca1) stonking; urgency=medium
 
   * Install > Productivity > LibreOffice installs the Snap Store's

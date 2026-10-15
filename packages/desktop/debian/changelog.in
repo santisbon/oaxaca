@@ -1,5 +1,18 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * LibreOffice's launchers are named Writer, Calc, Impress, Draw, Base and
+    Math: the snap names them "LibreOffice <version> Writer" and so on, which
+    the launcher cut off. Install > Productivity > LibreOffice writes
+    per-user copies with the short names (new
+    @DISTRO_ID@-libreoffice-snap-launchers), Remove deletes them, and a
+    migration writes them for a snap installed before.
+  * Depend on quickshell (>= 0.3.2-0@DISTRO_ID@2), whose lock screen works
+    more than once per login.
+
+ -- @MAINTAINER@  Thu, 15 Oct 2026 15:00:00 -0500
+
+@DISTRO_ID@-desktop (@OMARCHY_VERSION@+git20261015.38.846f58d7-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Install > Productivity > LibreOffice installs the Snap Store's
     libreoffice (Canonical) instead of Flathub's, whose build drew its
     toolbar icons nearly invisible on the dark theme and its Save dialog

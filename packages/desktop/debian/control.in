@@ -59,7 +59,7 @@ Description: @DISTRO_NAME@ command-line tools
 Package: @DISTRO_ID@-shell
 Architecture: all
 Depends: ${misc:Depends},
- quickshell (>= 0.3.2),
+ quickshell (>= 0.3.2-0@DISTRO_ID@2),
  qml6-module-qtquick, qml6-module-qtquick-controls, qml6-module-qtquick-layouts,
  qml6-module-qtquick-shapes, qml6-module-qtquick-effects, qml6-module-qtquick-window,
  qml6-module-qtqml-models,

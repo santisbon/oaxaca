@@ -60,7 +60,7 @@ Description: Oaxaca command-line tools
 Package: oaxaca-shell
 Architecture: all
 Depends: ${misc:Depends},
- quickshell (>= 0.3.2),
+ quickshell (>= 0.3.2-0oaxaca2),
  qml6-module-qtquick, qml6-module-qtquick-controls, qml6-module-qtquick-layouts,
  qml6-module-qtquick-shapes, qml6-module-qtquick-effects, qml6-module-qtquick-window,
  qml6-module-qtqml-models,
