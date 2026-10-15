@@ -1,0 +1,11 @@
+# Installed by the base metapackage as /usr/lib/modprobe.d/@DISTRO_ID@-thunderbolt.conf; mkinitramfs
+# copies it into the initramfs, where the thunderbolt driver loads.
+#
+# When the driver sets up a DisplayPort tunnel to a Thunderbolt display, it waits for the DPRX
+# capability read, which only the GPU driver (i915 here) can complete, and by default gives up
+# after 12 s (TB_DPRX_TIMEOUT in drivers/thunderbolt/tunnel.c), tears the tunnel down and does not
+# retry. i915 loads from the root filesystem, after the disk encryption passphrase, so a
+# passphrase typed 12 s or more after the driver started left the display dark until it was
+# replugged (Apple Studio Display on the Legion laptop, 2026-10-15). -1 waits until the GPU
+# driver answers; the wait runs as delayed work and holds nothing else up.
+options thunderbolt dprx_timeout=-1

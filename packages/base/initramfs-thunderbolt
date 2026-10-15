@@ -1,9 +1,0 @@
-# Generated from packages/base/initramfs-thunderbolt.in by scripts/render.py. Edit the .in file, not this one.
-# Installed by the base metapackage as /usr/share/initramfs-tools/modules.d/oaxaca-thunderbolt.
-# The initramfs loads the modules listed here at its start, before the disk encryption passphrase
-# prompt. Without this the thunderbolt driver started only once the disk was unlocked; when that
-# took 20 s or more (11 s was still fine), the driver found the firmware's DisplayPort tunnel to a Thunderbolt
-# display inactive, tore it down and built no new one, and the display stayed dark until replugged
-# (Apple Studio Display on the Legion laptop, 2026-10-15). Harmless on a machine without
-# Thunderbolt: the driver loads and finds nothing.
-thunderbolt

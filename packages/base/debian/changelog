@@ -1,3 +1,17 @@
+oaxaca-base (0.1.8) stonking; urgency=medium
+
+  * The thunderbolt driver waits for the GPU driver's DPRX capability read
+    without a time limit (/usr/lib/modprobe.d/oaxaca-thunderbolt.conf,
+    options thunderbolt dprx_timeout=-1, copied into the initramfs). By
+    default it gives up after 12 s and tears the DisplayPort tunnel down;
+    i915 loads only after the disk encryption passphrase, so a slow
+    passphrase left a Thunderbolt display dark until replugged.
+  * Drop 0.1.7's initramfs module list: loading the thunderbolt driver
+    early did not change the timeout, which starts when the driver sets up
+    the tunnel.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 15 Oct 2026 18:30:00 -0500
+
 oaxaca-base (0.1.7) stonking; urgency=medium
 
   * The initramfs loads the thunderbolt driver at its start
