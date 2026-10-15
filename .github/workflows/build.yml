@@ -162,6 +162,10 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: packages-${{ matrix.package }}
+          # Only this run's upgrade-test and release jobs read the packages, so one day is enough;
+          # the repository is private and artifacts count against the account's Actions storage
+          # (500 MB on GitHub Free), which 90 days of 230 MB desktop builds filled on 2026-10-14.
+          retention-days: 1
           path: |
             build/*.deb
             build/*.ddeb
@@ -201,6 +205,7 @@ jobs:
         with:
           name: upgrade-test
           path: build/upgrade-test/*.txt
+          retention-days: 1
           if-no-files-found: warn
 
   release:
