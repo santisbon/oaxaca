@@ -1,3 +1,23 @@
+oaxaca-desktop (4.0.4+git20261015.35.c94677d3-0oaxaca1) stonking; urgency=medium
+
+  * Natural scrolling on touchpads (Hyprland's input.touchpad.natural_scroll);
+    mouse wheels keep the classic direction.
+  * Screenshots: swappy's Ctrl+S saves the annotated image next to the
+    screenshot as screenshot-<date>-edited.png and closes swappy; the
+    screenshot stays as captured. It had saved a second copy in the home
+    folder and written the drawing over the screenshot on close. New users
+    get ~/.config/swappy/config; a migration copies it for existing ones.
+  * Removing a Flatpak app no longer fails with "failed to execute child
+    process dbus-launch", and now deletes the app's data: root uninstalls
+    the app, the user deletes ~/.var/app/<id> and resets its permissions.
+  * The notification after a shell restart (the Dictation installer's
+    "Voxtype Dictation Ready") no longer fails with "Call failed: The name
+    is not activatable": the restart waits for the notification service.
+  * Setup > Defaults > Editor lists nano; Learn > Ubuntu, Thunderbird's
+    entries and Install > Development > mise have icons again.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 15 Oct 2026 12:00:00 -0500
+
 oaxaca-desktop (4.0.4+git20261014.30.bca7233b-0oaxaca1) stonking; urgency=medium
 
   * New Productivity category: Install > Productivity > LibreOffice
