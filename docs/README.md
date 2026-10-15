@@ -150,8 +150,7 @@ The roadmap is in [docs/0 - plan.md](0%20-%20plan.md). Done so far:
 Next: the roadmap's eight steps are done. Pending, as of 2026-10-15 (details in [docs/7, "Carried to later steps"](7%20-%20image-installer.md#carried-to-later-steps)):
 
 - the NVIDIA GPU never powers down on the Legion laptop: the driver's default power mode (`DynamicPowerManagement: 3`) did not change it, and the ACPI power resources of the bridge above the GPU match Kubuntu's, which reports `Enabled (fine-grained)`; next, compare with Kubuntu upgraded to stonking, on the same kernel and driver as Oaxaca;
-- on the laptop: the hardware checklist with the FIDO2 key registered, and the suspend runs on AC and on battery, since the lock fix (Secure Boot on, the Xbox controller over USB and Bluetooth, an iPhone or iPad in Files, and suspend docked with the lock were verified on 2026-10-15);
-- the Apple Studio Display sometimes staying dark after boot (a capture script is ready for the next time);
+- on the laptop: the hardware checklist with the FIDO2 key registered, and the suspend runs on AC and on battery, since the lock fix (Secure Boot on, the Xbox controller over USB and Bluetooth, an iPhone or iPad in Files, and suspend docked with the lock were verified on 2026-10-15; the Apple Studio Display staying dark after a slow disk encryption passphrase was fixed the same day, docs/7 choice 49);
 - TPM unlock of the encrypted disk: the tools are installed (choice 47 of docs/7), the enrollment is to be designed;
 - a separate EFI System Partition for the distro, a design decision;
 - user units enabled by a package start only with a new user manager; the next such package also starts them in running sessions;
