@@ -1,3 +1,16 @@
+oaxaca-desktop (4.0.4+git20261015.38.846f58d7-0oaxaca1) stonking; urgency=medium
+
+  * Install > Productivity > LibreOffice installs the Snap Store's
+    libreoffice (Canonical) instead of Flathub's, whose build drew its
+    toolbar icons nearly invisible on the dark theme and its Save dialog
+    larger than the screen; the launcher hides the snap's Start Center.
+  * Menu > System > Suspend shows "Suspending" on screen first, as Reboot
+    and Shutdown show their messages (new oaxaca-system-suspend).
+  * About (fastfetch): the OS line reads /etc/os-release ("Oaxaca 26.10")
+    instead of the desktop package's version.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 15 Oct 2026 14:00:00 -0500
+
 oaxaca-desktop (4.0.4+git20261015.35.c94677d3-0oaxaca1) stonking; urgency=medium
 
   * Natural scrolling on touchpads (Hyprland's input.touchpad.natural_scroll);

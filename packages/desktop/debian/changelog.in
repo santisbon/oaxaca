@@ -1,5 +1,18 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Install > Productivity > LibreOffice installs the Snap Store's
+    libreoffice (Canonical) instead of Flathub's, whose build drew its
+    toolbar icons nearly invisible on the dark theme and its Save dialog
+    larger than the screen; the launcher hides the snap's Start Center.
+  * Menu > System > Suspend shows "Suspending" on screen first, as Reboot
+    and Shutdown show their messages (new @DISTRO_ID@-system-suspend).
+  * About (fastfetch): the OS line reads /etc/os-release ("Oaxaca 26.10")
+    instead of the desktop package's version.
+
+ -- @MAINTAINER@  Thu, 15 Oct 2026 14:00:00 -0500
+
+@DISTRO_ID@-desktop (@OMARCHY_VERSION@+git20261015.35.c94677d3-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Natural scrolling on touchpads (Hyprland's input.touchpad.natural_scroll);
     mouse wheels keep the classic direction.
   * Screenshots: swappy's Ctrl+S saves the annotated image next to the
