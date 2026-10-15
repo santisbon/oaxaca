@@ -8,6 +8,7 @@ The package keeps the upstream name, as the policy says for third-party software
 | Path | What |
 |---|---|
 | `debian/` | Debian's `quickshell` 0.3.1-1 packaging (Michael Lloyd), with our changelog entry, Maintainer, and `DISTRIBUTOR=Oaxaca` in `rules` |
+| `debian/patches/session-lock-announce-unlock.patch` | ours (`0.3.2-0oaxaca2`): `WlSessionLock::unlock()` announces the unlock, so a lock screen works more than once per login (`docs/5 - hyprland-quickshell.md`, choice 9) |
 | `upstream` | the upstream tarball's URL and SHA-256; `scripts/build.sh` downloads it as the orig tarball and unpacks it around `debian/` before `dpkg-source` |
 
 Unlike the `oaxaca-*` packages, this directory holds no upstream source: `make build PKG=packages/quickshell` fetches it into `build/`.

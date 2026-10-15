@@ -1,3 +1,12 @@
+quickshell (0.3.2-0oaxaca2) stonking; urgency=medium
+
+  * session-lock-announce-unlock.patch: WlSessionLock::unlock() checked
+    isLocked() after releasing the lock, so it never emitted
+    lockStateChanged on unlock, and the shell's lock screen worked only once
+    per login: later lock requests were taken as already locked.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 15 Oct 2026 14:30:00 -0500
+
 quickshell (0.3.2-0oaxaca1) stonking; urgency=medium
 
   * New upstream release 0.3.2, built for Oaxaca from Debian's 0.3.1-1

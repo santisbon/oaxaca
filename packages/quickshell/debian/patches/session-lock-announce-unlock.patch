@@ -1,0 +1,38 @@
+Description: Announce the unlock in WlSessionLock::unlock()
+ WlSessionLock::unlock() released the lock through SessionLockManager::unlock(),
+ which clears the lock object, and only then checked isLocked() to decide
+ whether to emit lockStateChanged. isLocked() was false by then, so unlocking
+ never announced the change: a QML binding on WlSessionLock.locked kept its
+ locked value, and Omarchy's lock service, which reads such a binding before
+ starting a lock, took the session for still locked and never locked it
+ again until the shell restarted. Read the state before releasing it.
+ .
+ Seen on Oaxaca 2026-10-15 (Quickshell 0.3.2): the first lock after login
+ worked, every later one did nothing; the lock service's log showed
+ "secure=false" on unlock but no "session-locked=false". The same code is
+ on Quickshell's master branch (2026-10-15).
+Author: Oaxaca maintainers
+Forwarded: no
+Last-Update: 2026-10-15
+---
+--- a/src/wayland/session_lock.cpp
++++ b/src/wayland/session_lock.cpp
+@@ -172,6 +172,9 @@
+ 
+ void WlSessionLock::unlock() {
+ 	this->lockTarget = false;
++	// Read before releasing: SessionLockManager::unlock() clears the lock, so isLocked() is
++	// false afterwards and the change was never announced.
++	auto wasLocked = this->isLocked();
+ 
+ 	for (auto* surface: this->surfaces) {
+ 		surface->deleteLater();
+@@ -180,7 +183,7 @@
+ 	this->surfaces.clear();
+ 
+ 	if (this->manager) this->manager->unlock();
+-	if (this->isLocked()) emit this->lockStateChanged();
++	if (wasLocked) emit this->lockStateChanged();
+ }
+ 
+ void WlSessionLock::onScreensChanged() {
