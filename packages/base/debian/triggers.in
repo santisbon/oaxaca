@@ -3,3 +3,6 @@
 # system afterwards (/usr/libexec/@DISTRO_ID@/loader-fallback). noawait: nothing waits on it.
 interest-noawait /usr/lib/grub/x86_64-efi-signed
 interest-noawait /usr/lib/shim
+# The initramfs module list (initramfs-thunderbolt) changes what the initramfs holds, so rebuild it
+# when this package is installed or upgraded.
+activate-noawait update-initramfs

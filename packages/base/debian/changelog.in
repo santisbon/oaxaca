@@ -1,3 +1,15 @@
+@DISTRO_ID@-base (0.1.7) @BASE_SERIES@; urgency=medium
+
+  * The initramfs loads the thunderbolt driver at its start
+    (/usr/share/initramfs-tools/modules.d/@DISTRO_ID@-thunderbolt), before the
+    disk encryption passphrase prompt. Loaded only after the disk was
+    unlocked, the driver met an inactive firmware DisplayPort tunnel when
+    the passphrase took 20 s or more (11 s was still fine), tore it down, and the Apple
+    Studio Display stayed dark until replugged. The package activates
+    update-initramfs.
+
+ -- @MAINTAINER@  Thu, 15 Oct 2026 17:30:00 -0500
+
 @DISTRO_ID@-base (0.1.6) @BASE_SERIES@; urgency=medium
 
   * apt installs Recommends again, as a stock Ubuntu does: drop

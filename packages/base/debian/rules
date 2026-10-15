@@ -12,6 +12,7 @@ override_dh_auto_install:
 	install -D -m 0644 os-release $(dest)/usr/lib/os-release
 	install -D -m 0755 loader-fallback $(dest)/usr/libexec/$(ID)/loader-fallback
 	install -D -m 0644 apt-blocked-recommends.pref $(dest)/etc/apt/preferences.d/$(ID)-blocked-recommends
+	install -D -m 0644 initramfs-thunderbolt $(dest)/usr/share/initramfs-tools/modules.d/$(ID)-thunderbolt
 	install -D -m 0644 apt-unattended-upgrades.conf $(dest)/etc/apt/apt.conf.d/51$(ID)-unattended-upgrades
 	install -D -m 0600 netplan-network-manager.yaml $(dest)/etc/netplan/01-$(ID)-network-manager.yaml
 
