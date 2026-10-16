@@ -1,3 +1,14 @@
+oaxaca-installer (0.1.5) stonking; urgency=medium
+
+  * keep-previous-loader: on an EFI System Partition of the target's own
+    (no /EFI/ubuntu/grub.cfg stub, as after "Erase disk"), keep nothing: it
+    had still added a menu entry for every other system with its own /boot,
+    which on a machine with one disk per system points at another disk and
+    outlives it when that disk is wiped; each system boots from its own
+    disk through the firmware's boot menu.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 15 Oct 2026 20:00:00 -0500
+
 oaxaca-installer (0.1.4) stonking; urgency=medium
 
   * hardware-install: describe what the Legion package holds now, its GPU

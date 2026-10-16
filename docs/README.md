@@ -152,7 +152,7 @@ Next: the roadmap's eight steps are done. Pending, as of 2026-10-15 (details in 
 - the NVIDIA GPU never powers down on the Legion laptop: the driver's default power mode (`DynamicPowerManagement: 3`) did not change it, and the ACPI power resources of the bridge above the GPU match Kubuntu's, which reports `Enabled (fine-grained)`; next, compare with Kubuntu upgraded to stonking, on the same kernel and driver as Oaxaca;
 - on the laptop: the hardware checklist with the FIDO2 key registered, and the suspend runs on AC and on battery, since the lock fix (Secure Boot on, the Xbox controller over USB and Bluetooth, an iPhone or iPad in Files, and suspend docked with the lock were verified on 2026-10-15; the Apple Studio Display staying dark after a slow disk encryption passphrase was fixed the same day, docs/7 choice 49);
 - TPM unlock of the encrypted disk: the tools are installed (choice 47 of docs/7), the enrollment is to be designed;
-- a separate EFI System Partition for the distro, a design decision;
+- reinstall the Legion laptop with one disk per system, each with its own EFI System Partition (decided 2026-10-15, docs/7 choice 50);
 - user units enabled by a package start only with a new user manager; the next such package also starts them in running sessions;
 - the `GDK_BACKEND` warning from Files, not investigated;
 - the fork's test suite: `test/shell` in `~/Projects/omarchy` ends with 62 failures, upstream Omarchy tests for what the port replaced (Limine, pacman packages, deleted migrations, `lua`), and nothing runs it; each test is to be ported or deleted, then the suite run in CI (docs/6, choice 21);

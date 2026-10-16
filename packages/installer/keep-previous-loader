@@ -22,8 +22,9 @@
 # would at the GRUB prompt, so the other system's menu, kernels and encrypted root work as
 # before. grub-mkconfig, in the bootloader step, picks the script up with the rest of
 # /etc/grub.d. Nothing is written when there is no stub (an EFI System Partition of the
-# target's own), when the stub is the target's (a reinstall), or when its UUID matches no
-# filesystem (a stale stub).
+# target's own, which also skips the scan below: each system then boots from its own disk
+# through the firmware's boot menu), when the stub is the target's (a reinstall), or when its
+# UUID matches no filesystem (a stale stub).
 #
 # Usage: keep-previous-loader <target root>
 set -euo pipefail
@@ -103,7 +104,13 @@ if [[ -f $stub ]]; then
         END { if (u != "") print u }
     ' "$stub")
 else
-    echo "$id: no stub; scanning only"
+    # No stub: the EFI System Partition is this system's own (an "Erase disk" install, which
+    # creates one on the target disk). Every other system then boots from its own disk through
+    # the firmware's boot menu, and an entry here would point at another disk and outlive it
+    # when that disk is wiped (the maintainer's choice, 2026-10-15: one disk per system, picked
+    # in the firmware's boot menu).
+    echo "$id: no stub: the EFI System Partition is this system's own; nothing kept"
+    exit 0
 fi
 while read -r dev fstype fsuuid; do
     [[ -n $fsuuid ]] || continue
