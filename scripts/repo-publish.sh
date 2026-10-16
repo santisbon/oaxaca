@@ -110,6 +110,9 @@ declare -A wanted
 for changelog in "$here"/packages/*/debian/changelog; do
   wanted[$(sed -n '1s/ .*//p' "$changelog")]=1
 done
+# The search finishes before the first removal: aptly locks its database per process, and a
+# search still running in a process substitution makes each removal wait for the lock.
+sources=$(aptly repo search -format='{{.Package}} {{.Version}}' "$repo" '$Architecture (source)')
 while read -r src ver; do
   if [[ -z ${wanted[$src]:-} ]]; then
     query="\$Source ($src) | Name ($src)"
@@ -117,7 +120,7 @@ while read -r src ver; do
     query="\$Source ($src), !\$SourceVersion (= $ver)"
   fi
   aptly repo remove "$repo" "$query" | sed -n 's/^\[-\] \(.*\) removed$/dropped from the repository: \1/p'
-done < <(aptly repo search -format='{{.Package}} {{.Version}}' "$repo" '$Architecture (source)')
+done <<<"$sources"
 
 base="$repo-$(date +%Y%m%dT%H%M%S)"
 snap="$base"; n=1
