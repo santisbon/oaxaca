@@ -204,7 +204,7 @@ The desktop profile's manifest grows from step 5's 605 packages to the count in 
 
 ## Choices
 
-An audit on 2026-10-16 checked every removal described in this document against its reason; its findings and the restore list are in [port-removal-audit.md](port-removal-audit.md).
+An audit on 2026-10-16 checked every removal described in this document against its reason; its findings and the restore list are in the fork's [PORT-REMOVALS.md](https://github.com/santisbon/omarchy/blob/oaxaca/PORT-REMOVALS.md), next to `PORT.md`.
 
 1. **A fork with a branch, renamed at build time, instead of a renamed copy in this repository.** The policy (section 3) asks for a fork that rebases onto Omarchy's tags; a tree that already carries the distro's name would conflict on every line of every rebase. Keeping Omarchy's names on the branch and renaming in the build keeps rebases to the real changes. The cost is a script that must stay complete (the test is the built packages: nothing in them says "omarchy" except Omarchy's own addresses). Rejected: a subtree or a snapshot copy (no rebase); compatibility symlinks (policy section 4 says why).
 2. **One source, five binary packages, all at the tag's version.** Omarchy's two recipes are the map, and splitting `omarchy` into tools, shell and themes follows the plan's package list while keeping the tree's paths. The metapackage joins the same source because its dependency list is the ported package list from that tree; the policy's version table is corrected. Rejected: a native `oaxaca-desktop` with a hand-maintained list (two copies of one list drift).
