@@ -10,11 +10,13 @@ Rules-Requires-Root: no
 
 Package: oaxaca-live
 Architecture: all
-Depends: ${misc:Depends}, casper, mokutil
+Depends: ${misc:Depends}, casper, mokutil, timeshift
 Description: live session of the Oaxaca installation image
  Installed only in the squashfs of the installation ISO, never on an installed
  system (the installer removes it). It makes casper's live session land in the
  Oaxaca desktop: a casper-bottom script completes the SDDM autologin casper
  writes for the live user with the desktop's session name, and a boot test unit,
  inert unless the kernel command line carries oaxaca.boottest, reports the
- live session's state on the serial console for the ISO boot test.
+ live session's state on the serial console for the ISO boot test. Timeshift
+ is in the live session to restore a btrfs install's snapshot when the
+ installed system no longer starts; the installer keeps it on btrfs installs.

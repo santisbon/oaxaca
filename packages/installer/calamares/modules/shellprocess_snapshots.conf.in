@@ -1,0 +1,11 @@
+# shellprocess@snapshots: from the live system (dontChroot), right before the packages step: on a
+# btrfs root filesystem, keep btrfs-progs and Timeshift in the target and write Timeshift's
+# configuration (snapshots-setup's header). Before the packages step because that step's
+# "apt-get autoremove" would take both away. The leading "-" keeps a failure from aborting the
+# installation; the target keeps the log in /var/log/@DISTRO_ID@/snapshots-setup.log. ${ROOT} is
+# the target.
+---
+dontChroot: true
+timeout: 120
+script:
+    - "-/usr/libexec/@DISTRO_ID@/snapshots-setup ${ROOT}"

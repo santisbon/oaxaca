@@ -1,3 +1,14 @@
+oaxaca-installer (0.1.6) stonking; urgency=medium
+
+  * snapshots-setup, run as shellprocess@snapshots before the packages
+    step: on a btrfs root filesystem, mark btrfs-progs and Timeshift as
+    installed by hand, so the packages step's apt-get autoremove keeps
+    them, and write /etc/timeshift/timeshift.json for the root filesystem
+    (docs/7 choice 51). Until now every install lost btrfs-progs to that
+    autoremove, a btrfs install included.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 16 Oct 2026 12:00:00 -0500
+
 oaxaca-installer (0.1.5) stonking; urgency=medium
 
   * keep-previous-loader: on an EFI System Partition of the target's own
