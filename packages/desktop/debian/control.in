@@ -19,10 +19,11 @@ Depends: ${misc:Depends},
  asdcontrol,
  hyprland-preview-share-picker,
  localsend,
+ ttfx,
  nwg-displays (>= 0.4.3),
  ffmpegthumbnailer,
  ${port:Depends}
-Suggests: @DISTRO_ID@-desktop-apps, @DISTRO_ID@-hw-legion, nvtop
+Suggests: @DISTRO_ID@-hw-legion, nvtop
 Description: @DISTRO_NAME@ desktop (metapackage)
  The whole desktop: the session layer, the shell, the themes, the
  configuration, the command-line tools and the fonts, plus every
@@ -101,12 +102,3 @@ Description: @DISTRO_NAME@ configuration and defaults
  system drop-ins (logind), the SDDM theme and
  the Wayland session file, the Plymouth theme files, the application
  launchers and icons, and the branding files.
-
-Package: @DISTRO_ID@-desktop-apps
-Architecture: all
-Depends: ${misc:Depends}, gnome-disk-utility
-Description: optional applications for the @DISTRO_NAME@ desktop
- The applications a desktop usually has that nothing in the desktop's own
- scripts or shell needs: GNOME Disks. Installed on request, not by
- @DISTRO_ID@-desktop, which only suggests it. The document viewer, Papers,
- is part of the desktop itself.

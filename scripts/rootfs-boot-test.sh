@@ -249,13 +249,22 @@ echo "version: \$($id-version 2>&1)"
 echo "packages: \$(dpkg-query -W -f='\${Package} \${Version}\n' $id-fonts asdcontrol hyprland-preview-share-picker nwg-displays 2>&1 | paste -sd'|')"
 echo "fonts: jetbrains=\$(fc-list | grep -c JetBrainsMonoNerdFont) icon=\$(fc-list : family | grep -cx $id)"
 echo "pam lock files: \$(ls /etc/pam.d/ | grep "^$id-lock" | paste -sd' ')"
-# ufw stays as Ubuntu ships it (step 6, choice 13): the package's postinst enables ufw.service,
-# and ENABLED=no in ufw.conf makes its ufw-init exit without loading rules (same as a stock Ubuntu).
-echo "ufw: \$(systemctl is-enabled ufw 2>/dev/null) \$(grep -o '^ENABLED=.*' /etc/ufw/ufw.conf)"
+# ufw on from the next boot, with LocalSend's port (step 6, choice 40): apply-system's firewall.sh
+# adds two rules to user.rules and sets ENABLED=yes; ufw.service already ran this boot, so the
+# rules load at the next one.
+# Wi-Fi power save off (step 6, choice 42): the port's conf.d file overrides Ubuntu's
+# default-wifi-powersave-on.conf in NetworkManager's merged configuration.
+echo "wifi powersave: \$(NetworkManager --print-config 2>/dev/null | grep -o '^wifi.powersave *= *[0-9]' | tail -n1 | tr -d ' ')"
+echo "ufw: \$(systemctl is-enabled ufw 2>/dev/null) \$(grep -o '^ENABLED=.*' /etc/ufw/ufw.conf) localsend=\$(grep -c '^-A ufw-user-input -p [a-z]* --dport 53317 -j ACCEPT' /etc/ufw/user.rules)"
 # Ubuntu's configuration where the port once carried Omarchy's (step 6, "Ubuntu's configuration"):
 # bash's own skel .bashrc with our .bash_aliases beside it, no zram device, no sysctl file of
 # ours, and unattended-upgrades enabled by its own postinst.
 echo "ubuntu defaults: bashrc=\$(dpkg -S /etc/skel/.bashrc | cut -d: -f1) aliases=\$([ -f /etc/skel/.bash_aliases ] && echo yes || echo no) zram=\$([ -e /dev/zram0 ] && echo yes || echo no) sysctl=\$(ls /etc/sysctl.d | grep -c $id) auto-upgrades=\$(grep -c 'Unattended-Upgrade \"1\"' /etc/apt/apt.conf.d/20auto-upgrades 2>/dev/null)"
+# systemd-oomd's scope (step 6, choice 45): the user manager is not a kill candidate, the user's
+# app.slice is.
+echo "oomd scope: user@=\$(systemctl show "user@\$(id -u tester).service" -p ManagedOOMMemoryPressure --value) app.slice=\$(as_user systemctl --user show app.slice -p ManagedOOMMemoryPressure --value)"
+# SSH keepalive (step 6, choice 46): the effective client options for any host.
+echo "ssh keepalive: \$(as_user ssh -G example.invalid 2>/dev/null | grep -E '^(serveraliveinterval|serveralivecountmax|connecttimeout) ' | sort | paste -sd' ')"
 # The user's session environment, as the ported session file and uwsm set it up.
 echo "session env: \$(as_user systemctl --user show-environment 2>/dev/null | grep -E '^(${id^^}_PATH|XDG_CURRENT_DESKTOP)=' | paste -sd' ')"
 echo "hyprland config: \$(run_user hyprctl -j getoption general:border_size 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print("border_size=%s" % d.get("int"))' 2>/dev/null)"
@@ -286,12 +295,15 @@ echo "dns provider: \$(run_user $id-dns)"
 run_user $id-dns DHCP >>/tmp/dns.log 2>&1; echo "dns reset: \$(run_user $id-dns)"
 echo "dns sudoers rule: \$(ls /etc/sudoers.d | grep -c dns)"
 # The core/apps split (step 6, "Core and apps"): none of the removed preinstalls, Docker or the
-# command-line preferences in the image; only the three launchers Omarchy's own apps need.
+# command-line preferences in the image (tmux and Neovim came back, choices 25 and 26, and btop,
+# choice 43, so they are not in the list); only the three launchers Omarchy's own apps need.
+# The tools restored by choices 43 and 47, each by the command its callers run.
+echo "restored tools missing: [\$(for c in btop eza inxi lazygit starship zoxide ttfx swappy unzip gnome-calculator gnome-disks; do command -v \$c >/dev/null || printf '%s ' \$c; done)]"
 # Both stores preconfigured (step 6, choice 17): snapd's socket enabled by its package, Flathub added
 # system-wide at install from the repository file Ubuntu's flatpak package ships.
 echo "stores: snapd=\$(systemctl is-enabled snapd.socket 2>/dev/null) flathub=\$(flatpak remotes --system --columns=name 2>/dev/null | grep -cx flathub)"
 # dpkg-query -W prints a line for a package it merely knows of, so the status field is tested exactly.
-echo "apps split: removed=\$(dpkg-query -W -f='\${db:Status-Status}\n' libreoffice kdenlive obs-studio xournalpp docker.io neovim tmux btop 2>/dev/null | grep -cx installed) launchers=\$(ls /usr/share/$id/applications | wc -l) apps-pkg=\$(dpkg-query -W -f='\${db:Status-Status}\n' $id-desktop-apps 2>/dev/null | grep -cx installed)"
+echo "apps split: removed=\$(dpkg-query -W -f='\${db:Status-Status}\n' libreoffice kdenlive obs-studio xournalpp docker.io 2>/dev/null | grep -cx installed) launchers=\$(ls /usr/share/$id/applications | wc -l)"
 sleep 3
 echo "theme after switch: \$(cat /home/tester/.local/state/$id/current/theme.name 2>/dev/null)"
 echo "shell ping after switch: \$(run_user $id-shell shell ping 2>&1 | paste -sd'|')"
@@ -521,10 +533,13 @@ fi
 if [[ $profile == desktop ]]; then
   check "^plymouth crash: 0$"
   check "^apply-system unit: success$"
-  check "^version: $(dpkg-parsechangelog -l "$here/packages/desktop/debian/changelog" -S Version | sed 's/[.+]/\\&/g')$"
+  check "^version: $(dpkg-parsechangelog -l "$here/packages/desktop/debian/changelog" -S Version | sed 's/[.]/\\&/g')$"
   check "^fonts: jetbrains=[4-9] icon=1$"
   check "^pam lock files: $DISTRO_ID-lock-password$"
-  check "^ufw: enabled ENABLED=no$"
+  check "^ufw: enabled ENABLED=yes localsend=2$"
+  check "^wifi powersave: wifi.powersave=2$"
+  check "^oomd scope: user@=auto app.slice=kill$"
+  check "^ssh keepalive: connecttimeout 10 serveralivecountmax 3 serveraliveinterval 15$"
   check "^ubuntu defaults: bashrc=bash aliases=yes zram=no sysctl=0 auto-upgrades=1$"
   check "^session env: .*${DISTRO_ID^^}_PATH=/usr/share/$DISTRO_ID"
   check "^shell process: running$"
@@ -539,7 +554,8 @@ if [[ $profile == desktop ]]; then
   check "^dns provider: Cloudflare$"
   check "^dns reset: DHCP$"
   check "^dns sudoers rule: 0$"
-  check "^apps split: removed=0 launchers=3 apps-pkg=0$"
+  check "^apps split: removed=0 launchers=3$"
+  check "^restored tools missing: \[\]$"
   check "^stores: snapd=enabled flathub=1$"
   check "^theme after switch: nord$"
   check "^shell ping after switch: ok$"

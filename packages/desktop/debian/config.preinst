@@ -1,0 +1,16 @@
+#!/bin/sh
+# Generated from packages/desktop/debian/config.preinst.in by scripts/render.py. Edit the .in file, not this one.
+# Pause Hyprland's automatic config reload in every running session before this package's
+# files are unpacked, so that no session reloads a half-written /usr/share/oaxaca/default/hypr
+# (docs/6, choice 44). Omarchy does the same from a pacman hook (PreTransaction on
+# omarchy-settings); the postinst resumes and reloads once. The guard ships in
+# oaxaca-tools, so on a first install, or with that package absent, there is nothing to pause.
+set -e
+case "$1" in
+  install|upgrade)
+    if [ -x /usr/bin/oaxaca-hyprland-reload-guard ]; then
+      /usr/bin/oaxaca-hyprland-reload-guard pause || true
+    fi
+    ;;
+esac
+#DEBHELPER#

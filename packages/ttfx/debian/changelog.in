@@ -1,0 +1,7 @@
+ttfx (0.5.0-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
+  * Initial @DISTRO_NAME@ package of ttfx 0.5.0 (docs/6, choice 43).
+    Omarchy v4.0.4 installs ttfx from its own repository and its
+    screensaver runs it; Ubuntu's archive has no ttfx.
+
+ -- @MAINTAINER@  Fri, 16 Oct 2026 19:00:00 -0500

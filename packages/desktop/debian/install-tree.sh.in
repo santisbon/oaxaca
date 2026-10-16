@@ -87,6 +87,10 @@ done
 # The pam-auth-update profile the FIDO2 setup enables (libpam-u2f ships none); off by default.
 install -D -m 0644 "$R/default/pam-configs/$id-u2f" "$config/usr/share/pam-configs/$id-u2f"
 install -m 0755 "$R/default/systemd/system-sleep/unmount-fuse" "$config/usr/lib/systemd/system-sleep/unmount-fuse"
+# systemd-oomd's scope (docs/6, choice 45): only the user's apps (app.slice) are kill candidates,
+# and the user manager, which Ubuntu's systemd-oomd marks, is set back to auto.
+install -D -m 0644 "$R/default/systemd/user/app.slice.d/10-oomd.conf" "$config/usr/lib/systemd/user/app.slice.d/10-oomd.conf"
+install -D -m 0644 "$R/default/systemd/system/user@.service.d/20-$id-oomd.conf" "$config/usr/lib/systemd/system/user@.service.d/20-$id-oomd.conf"
 # Application launchers: the resync copy only. Omarchy also seeds them through /etc/skel, but
 # dpkg's conffile list cannot hold names with spaces ("Google Maps.desktop"), and the first
 # login copies them into the home anyway (<id>-refresh-applications, run by <id>-provision-user).

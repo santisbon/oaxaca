@@ -57,6 +57,7 @@ override_dh_auto_install:
 # debhelper wants debian/<package>.postinst and friends; the templates keep the distro's name
 # out of file names, so the copies are made here and listed in debian/clean.
 override_dh_installdeb:
+	cp debian/config.preinst debian/$(ID)-config.preinst
 	cp debian/config.postinst debian/$(ID)-config.postinst
 	cp debian/config.prerm debian/$(ID)-config.prerm
 	dh_installdeb

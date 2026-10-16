@@ -55,7 +55,7 @@ case $profile in
   # upstream patch (packages/plymouth: the script plugin no longer crashes without a console
   # viewer); the three depend on each other at the exact version, so they travel together.
   desktop) parts="archive-keyring apt-source base hybrid-backlight nvidia session fonts desktop tools shell themes config"
-           debs="quickshell asdcontrol hyprland-preview-share-picker nwg-displays localsend plymouth libplymouth5 plymouth-label"
+           debs="quickshell asdcontrol hyprland-preview-share-picker nwg-displays localsend ttfx plymouth libplymouth5 plymouth-label"
            browser=1 ;;
   # live: the desktop plus casper's live session and the installer, the tree the ISO's squashfs
   # is made from (scripts/iso-create.sh). The initramfs is rebuilt at the end so that casper's
@@ -64,7 +64,7 @@ case $profile in
   # Calamares with one patch (packages/calamares: Replace mode no longer crashes when encryption
   # is confirmed after a partition was chosen); they depend on each other at the exact version.
   live) parts="archive-keyring apt-source base hybrid-backlight nvidia session fonts desktop tools shell themes config live installer"
-        debs="quickshell asdcontrol hyprland-preview-share-picker nwg-displays localsend plymouth libplymouth5 plymouth-label calamares calamares-data libcalamares3.3 libcalamaresui3.3"
+        debs="quickshell asdcontrol hyprland-preview-share-picker nwg-displays localsend ttfx plymouth libplymouth5 plymouth-label calamares calamares-data libcalamares3.3 libcalamaresui3.3"
         browser=1
         extra_hooks=(--customize-hook='chroot "$1" update-initramfs -u -k all') ;;
   *) echo "unknown PROFILE '$profile' (base, session, desktop or live)" >&2; exit 1 ;;

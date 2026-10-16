@@ -1,0 +1,12 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format: ttfx's release tarball and its
+# SHA-256. The checksum is the one Omarchy's recipe records (omacom/omarchy-pkgs,
+# pkgbuilds/ttfx/PKGBUILD, read 2026-10-16) and matched sha256sum on the download the same day.
+URL=https://github.com/omacom/ttfx/archive/refs/tags/v0.5.0.tar.gz
+SHA256=2882c7e47011a95f4d136303f7320da71613299840f67f88fd1385ef53d5f2a0
+
+# The crates from Cargo.lock, fetched on this host with "cargo vendor" and shipped as the
+# component "vendor", so that cargo builds offline in the chroot.
+CARGO_VENDOR=1
+
+# make upstream-check compares this repository's latest release with debian/changelog.
+RELEASES=omacom/ttfx

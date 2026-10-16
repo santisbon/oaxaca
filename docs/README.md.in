@@ -2,7 +2,7 @@
 
 @DISTRO_NAME@ is a Linux distribution built from the Ubuntu [archive](#archive): Ubuntu @BASE_VERSION@ (`@BASE_SERIES@`) underneath, apt for packages, and on top a Wayland desktop made of Hyprland, Quickshell and the Omarchy shell, themes and fonts, ported from Arch to apt. @DISTRO_NAME@ works with Secure Boot on or off, with no key enrollment either way and never a requirement that Secure Boot be on, and @DISTRO_NAME@ installs onto an encrypted disk. The first machine @DISTRO_NAME@ is built for is a Lenovo Legion Pro 7 laptop with an Intel iGPU and an NVIDIA dGPU, so hybrid graphics and sleep are first-class concerns.
 
-Nothing is ever installed and then stripped out: the root filesystem is assembled from Ubuntu's archive one package at a time, and the parts Ubuntu doesn't have come from a small apt repository of our own. This document, the developer README (`docs/README.md`; the repository's top-level `README.md` is the short introduction), explains the tools that produce that repository and how those tools fit together. The reasoning behind each decision lives in the numbered documents next to this one in `docs/`.
+Nothing is ever installed and then stripped out: the root filesystem is assembled from Ubuntu's archive one package at a time, and the parts Ubuntu doesn't have come from a small apt repository of our own. The Omarchy port is built up the same way: it starts from Ubuntu's configuration plus the parts of Omarchy the desktop needs to run, and each further Omarchy feature is added by a recorded choice ([docs/6](6%20-%20omarchy-port.md#choices)). This document, the developer README (`docs/README.md`; the repository's top-level `README.md` is the short introduction), explains the tools that produce that repository and how those tools fit together. The reasoning behind each decision lives in the numbered documents next to this one in `docs/`.
 
 ## Contents
 
@@ -193,6 +193,7 @@ packages/
   fonts/             @DISTRO_ID@-fonts: JetBrains Mono Nerd Font and iA Writer, fetched from a file list
   asdcontrol/        asdcontrol (Apple Studio Display brightness), from its release tarball
   localsend/         localsend 1.18.2 (file sharing, Omarchy's Share menu), LocalSend's prebuilt app and CLI from its GitHub release; @DISTRO_ID@-desktop depends on it
+  ttfx/              ttfx 0.5.0 (terminal text effects, the screensaver), Rust, with its crates vendored at build time; @DISTRO_ID@-desktop depends on it
   voxtype/           voxtype 1.1.0 (dictation, Install > AI > Dictation), Voxtype's release .deb without its ONNX GPU builds; installed from the menu, nothing depends on it
   hyprland-preview-share-picker/  the screen-share picker, Rust, with its crates vendored at build time
   nwg-displays/      nwg-displays 0.4.4 on Debian's packaging (monitor layout GUI)
@@ -347,15 +348,16 @@ make upgrade-test                  # needs build/*.deb and network access to the
 
 ### `curl` with GitHub's API (`make upstream-check`)
 
-`scripts/upstream-check.sh` covers the packages that repackage a program's GitHub release, the ones whose `upstream` file sets `RELEASES=<owner>/<repo>` (today `packages/localsend` and `packages/voxtype`). For each one it asks GitHub's API for the repository's latest release (drafts and pre-releases skipped), drops a leading `v` from the release's tag and compares it with the upstream part of the version in the package's `debian/changelog`. A newer release fails the check and names the file to update; a package can sit behind its upstream unnoticed otherwise, and LocalSend receives files over the network. The weekly workflow `.github/workflows/upstream-check.yml` (Mondays 14:00 UTC, plus a "Run workflow" button) runs the same target, so a new release turns up as GitHub's failed-workflow notification. Exit status: 0 current, 1 a newer release, 2 GitHub could not be asked.
+`scripts/upstream-check.sh` covers the packages that repackage a program's GitHub release, the ones whose `upstream` file sets `RELEASES=<owner>/<repo>` (today `packages/localsend`, `packages/ttfx` and `packages/voxtype`). For each one it asks GitHub's API for the repository's latest release (drafts and pre-releases skipped), drops a leading `v` from the release's tag and compares it with the upstream part of the version in the package's `debian/changelog`. A newer release fails the check and names the file to update; a package can sit behind its upstream unnoticed otherwise, and LocalSend receives files over the network. The weekly workflow `.github/workflows/upstream-check.yml` (Mondays 14:00 UTC, plus a "Run workflow" button) runs the same target, so a new release turns up as GitHub's failed-workflow notification. Exit status: 0 current, 1 a newer release, 2 GitHub could not be asked.
 
 ```
 make upstream-check
 -- localsend: 1.18.2 is current (localsend/localsend's latest release is 1.18.2)
+-- ttfx: 0.5.0 is current (omacom/ttfx's latest release is 0.5.0)
 -- voxtype: 1.1.0 is current (peteonrails/voxtype's latest release is 1.1.0)
 ```
 
-A new LocalSend release: in `packages/localsend/upstream`, change the version in both URLs and both SHA-256s (GitHub shows each file's SHA-256 on the release page), add a changelog entry, `make build PKG=packages/localsend`, then publish. A new Voxtype release: in `packages/voxtype/sources.list`, change the version in the URL and the SHA-256, add a changelog entry, `make build PKG=packages/voxtype`, then publish.
+A new LocalSend release: in `packages/localsend/upstream`, change the version in both URLs and both SHA-256s (GitHub shows each file's SHA-256 on the release page), add a changelog entry, `make build PKG=packages/localsend`, then publish. A new ttfx release: see `packages/ttfx/README.md`. A new Voxtype release: in `packages/voxtype/sources.list`, change the version in the URL and the SHA-256, add a changelog entry, `make build PKG=packages/voxtype`, then publish.
 
 ### GitHub Actions (`.github/workflows/build.yml`)
 

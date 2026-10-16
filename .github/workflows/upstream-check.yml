@@ -1,5 +1,5 @@
 # Weekly check for new upstream releases of the programs this repository repackages from their
-# GitHub releases (packages whose upstream file sets RELEASES=<owner>/<repo>; today localsend and voxtype).
+# GitHub releases (packages whose upstream file sets RELEASES=<owner>/<repo>; today localsend, ttfx and voxtype).
 # Anatomy, one job: checks out the repository and runs make upstream-check, which is
 # scripts/upstream-check.sh. A newer release fails the job, and GitHub sends its usual
 # failed-workflow notification to the repository's owner; the job's log names the package, the

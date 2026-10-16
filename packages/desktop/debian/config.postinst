@@ -5,8 +5,22 @@
 # then a rebuild of the initramfs, whose plymouth hook copies the selected theme in.
 # stonking ships no plymouth-set-default-theme.
 set -e
+# Resume Hyprland's automatic config reload, paused by the preinst, with one reload of every
+# running session (docs/6, choice 44). Also on the abort paths, so a failed upgrade does not leave
+# the sessions paused.
+resume_reload() {
+  if [ -x /usr/bin/oaxaca-hyprland-reload-guard ]; then
+    /usr/bin/oaxaca-hyprland-reload-guard resume || true
+  fi
+}
 case "$1" in
+  abort-upgrade|abort-install|abort-remove|abort-deconfigure)
+    resume_reload
+    ;;
   configure)
+    # Resume first: the files are already in place, and a failure below must not leave the
+    # sessions paused.
+    resume_reload
     update-alternatives --install /usr/share/plymouth/themes/default.plymouth default.plymouth \
       /usr/share/plymouth/themes/oaxaca/oaxaca.plymouth 150
     if [ -x /usr/sbin/update-initramfs ] && [ -d /boot ] && ls /boot/vmlinuz-* >/dev/null 2>&1; then

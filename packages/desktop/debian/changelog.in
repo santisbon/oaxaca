@@ -1,5 +1,32 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * The firewall is on: apply-system allows LocalSend's port (53317 tcp
+    and udp) and turns ufw on for the next boot, on Ubuntu's policies
+    (deny incoming), without Omarchy's Docker rules. Systems installed
+    earlier keep ufw off.
+  * Install and Remove > Development no longer offer PHP or Laravel.
+  * Wi-Fi power save is off again (wifi.powersave = 2 in
+    /etc/NetworkManager/conf.d/@DISTRO_ID@-wifi-powersave.conf): power save
+    causes latency spikes and link drops on Intel BE200/BE211 firmware.
+  * btop, starship, eza, zoxide, lazygit and inxi are preinstalled again,
+    with Omarchy's btop, lazygit and starship configurations, btop's theme
+    sync and the Activity binding (Super+Ctrl+T); a migration seeds the
+    configurations for existing users. Depend on ttfx, so the screensaver
+    runs. The clipboard's image action and imv's Ctrl+E open swappy.
+  * Pause Hyprland's automatic config reload while @DISTRO_ID@-config is
+    unpacked (new preinst) and resume it with one reload in the postinst.
+  * systemd-oomd may kill the user's apps (app.slice) but no longer the
+    compositor: Ubuntu's kill policy on user@.service is set back to auto.
+  * SSH keepalive for every host (ServerAliveInterval 15), so the shell's
+    ssh wrapper notices a dropped connection.
+  * unzip, GNOME Disks and GNOME Calculator are preinstalled; the
+    calculator takes Super+Ctrl+Q and the Calculator key. Drop
+    @DISTRO_ID@-desktop-apps, whose only application moved here.
+
+ -- @MAINTAINER@  Fri, 16 Oct 2026 18:00:00 -0500
+
+@DISTRO_ID@-desktop (@OMARCHY_VERSION@+git20261016.45.f82dbf50-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Setup > Security > TPM Unlock: opt-in unlock of the encrypted root disk
     by the TPM at boot through Clevis, bound to PCR 7 (Secure Boot state);
     Remove > Security > TPM Unlock takes it off. Depend on clevis-luks,

@@ -1,0 +1,42 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# cargo keeps its registry cache under CARGO_HOME; a directory under debian/ keeps the
+# chroot build from writing to $HOME. debian/clean removes the directory.
+export CARGO_HOME = $(CURDIR)/debian/cargo_home
+
+%:
+	dh $@
+
+# No debhelper build system matches a cargo tree (dh-cargo is not used), so the dh_auto_*
+# steps are spelled out. .cargo/config.toml is the text "cargo vendor" prints: the crates-io
+# source is replaced by the vendor/ component, so cargo builds offline.
+override_dh_auto_build:
+	mkdir -p .cargo
+	printf '[source.crates-io]\nreplace-with = "vendored-sources"\n\n[source.vendored-sources]\ndirectory = "vendor"\n' > .cargo/config.toml
+	cargo build --frozen --release
+	target/release/ttfx --print-completion bash > ttfx.bash-completion
+
+# Omarchy's recipe installs the binary, the bash and zsh completions, the licence, NOTICE and
+# README; the licence and NOTICE are in debian/copyright here, and zsh is not part of the
+# desktop.
+override_dh_auto_install:
+	install -D -m 0755 target/release/ttfx debian/ttfx/usr/bin/ttfx
+	install -D -m 0644 ttfx.bash-completion debian/ttfx/usr/share/bash-completion/completions/ttfx
+	install -D -m 0644 README.md debian/ttfx/usr/share/doc/ttfx/README.md
+
+# The tests need the TerminalTextEffects reference checkout (tools/parity), which the build
+# cannot fetch.
+override_dh_auto_test:
+
+# dh_clean deletes every *.orig file in the tree, and every vendored crate carries a
+# Cargo.toml.orig that cargo checks against the crate's .cargo-checksum.json; the exclusion
+# keeps those files, or cargo refuses to build.
+override_dh_clean:
+	dh_clean -XCargo.toml.orig
+
+# Cargo.toml's release profile strips the binary, so the automatic dbgsym package would be
+# empty; dh_strip is told not to make one.
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym

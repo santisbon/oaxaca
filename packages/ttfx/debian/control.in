@@ -1,0 +1,23 @@
+Source: ttfx
+Section: utils
+Priority: optional
+Maintainer: @MAINTAINER@
+Build-Depends:
+ debhelper-compat (= 13),
+ cargo,
+ rustc
+Standards-Version: 4.7.4
+Homepage: https://github.com/omacom/ttfx
+Rules-Requires-Root: no
+
+Package: ttfx
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: terminal text effects
+ ttfx animates text in a terminal: it reads text on standard input and draws
+ it with one of several dozen effects (rain, fireworks, decryption, beams and
+ others). It is a Rust port of TerminalTextEffects by ChrisBuilds, written by
+ the Omarchy project, and reproduces that program's rendering frame for frame.
+ .
+ The @DISTRO_NAME@ desktop's screensaver runs ttfx on the distro's logo in a
+ full-screen terminal.
