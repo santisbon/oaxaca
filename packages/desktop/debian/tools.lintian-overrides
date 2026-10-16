@@ -1,0 +1,10 @@
+# Generated from packages/desktop/debian/tools.lintian-overrides.in by scripts/render.py. Edit the .in file, not this one.
+# Omarchy's commands have no manual pages; each one prints its own usage, and the menu and
+# "oaxaca help" list them. Writing 400-odd pages is not this port's job.
+oaxaca-tools: no-manual-page *
+# The first-run hooks are copied into the user's hook directory and run with bash
+# (oaxaca-hook-install, oaxaca-provision-first-run), never executed in place.
+oaxaca-tools: script-not-executable [usr/share/oaxaca/install/user/first-run/*.hook]
+# The migration runner waits on dpkg's frontend lock (/var/lib/dpkg/lock-frontend) so it never
+# runs while apt or dpkg holds it; it reads no other part of dpkg's database.
+oaxaca-tools: uses-dpkg-database-directly [usr/bin/oaxaca-migrate]

@@ -1,5 +1,43 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Share > Receive opens LocalSend to receive files, and Install >
+    Service > Chromium Account lets Chromium sign in to a Google account.
+  * The ic, ix and icx aliases open tdl's tmux layout with OpenCode,
+    Claude Code or both.
+  * After the first update, a one-time notification offers to install
+    dictation with Voxtype.
+  * Install > Service > 1Password also installs its Chromium extension;
+    the removal takes the extension out.
+  * Fingerprint authentication skips the reader while the laptop lid is
+    closed: Setup > Security > Fingerprint enables the new pam-auth-update
+    profile @DISTRO_ID@-fprintd, Ubuntu's fprintd profile with a pam_exec
+    gate in front. Run the setup again to switch an existing setup over.
+    The package's prerm removes both of its PAM profiles.
+  * Setup > DNS also sets NetworkManager's global DNS, so networks joined
+    later use the chosen servers. A polkit rule
+    (50-@DISTRO_ID@-global-dns.rules) lets the users who may change network
+    connections change it without a password, as for the connections.
+  * Hardware fixes for other machines, applied at install on a device
+    match: the xe options for ASUS ExpertBook B9406 and Zenbook UX5406AA
+    displays, Intel Quick Sync and i965 video drivers, and b43 firmware
+    for the Broadcom BCM4331.
+  * The inotify watch limit is 524288 again (90-@DISTRO_ID@-file-watchers.conf),
+    over localsearch's 65536.
+  * whois is preinstalled.
+  * The Wi-Fi 7 fix (iwlwifi disable_11be) applies to Dell XPS laptops on
+    Panther Lake only; the postinst removes it from other machines with an
+    Intel BE200 or BE211, which get Wi-Fi 7 back at the next boot.
+  * The maintainer scripts call programs by name (Debian Policy 6.1), and
+    lintian overrides with reasons cover the sample hooks, the copied
+    first-run hooks, the shell's sanitizer strings, the migration runner's
+    dpkg lock wait and the commands without manual pages.
+  * The pacman sample hook (pre-refresh-pacman.d) is gone: Ubuntu has no
+    pacman and the port has no "refresh pacman".
+
+ -- @MAINTAINER@  Fri, 16 Oct 2026 21:00:00 -0500
+
+@DISTRO_ID@-desktop (4.0.4+git20261016.53.d0a9b09a-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * The firewall is on: apply-system allows LocalSend's port (53317 tcp
     and udp) and turns ufw on for the next boot, on Ubuntu's policies
     (deny incoming), without Omarchy's Docker rules. Systems installed

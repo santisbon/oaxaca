@@ -6,4 +6,15 @@ case "$1" in
     update-alternatives --remove default.plymouth /usr/share/plymouth/themes/oaxaca/oaxaca.plymouth
     ;;
 esac
+# Take the package's PAM profiles out of the common-* stacks before the files go, as
+# pam-auth-update(8) asks of packages that ship profiles ("--remove ... before the modules
+# they reference are removed from disk"); the fingerprint profile names a program of this
+# desktop's (oaxaca-hw-laptop-closed).
+case "$1" in
+  remove)
+    if command -v pam-auth-update >/dev/null; then
+      pam-auth-update --package --remove oaxaca-u2f oaxaca-fprintd
+    fi
+    ;;
+esac
 #DEBHELPER#

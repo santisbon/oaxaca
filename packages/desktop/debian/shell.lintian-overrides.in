@@ -1,0 +1,3 @@
+# The notification sanitizer's comments and test strings name <img src="http://..."> decoys
+# it strips from notification bodies; the shell loads nothing from those addresses.
+@DISTRO_ID@-shell: privacy-breach-generic [usr/share/@DISTRO_ID@/shell/plugins/notifications/NotificationLogic.js]

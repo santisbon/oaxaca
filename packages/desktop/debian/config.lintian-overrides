@@ -3,3 +3,10 @@
 # distro's own desktop package, the one case /etc/skel exists for. Debian's tag guards
 # against ordinary packages changing every new user's defaults.
 oaxaca-config: package-contains-file-in-etc-skel *
+
+# The example hooks are not executable on purpose: a user copies one into ~/.config/oaxaca/hooks
+# and drops the .sample suffix to turn it on (Omarchy's hooks/README).
+oaxaca-config: script-not-executable [etc/skel/.config/oaxaca/hooks/*.sample]
+oaxaca-config: script-not-executable [usr/share/oaxaca/config/oaxaca/hooks/*.sample]
+# The reference copy of Omarchy's tree; the executable one is /usr/lib/systemd/system-sleep/unmount-fuse.
+oaxaca-config: script-not-executable [usr/share/oaxaca/default/systemd/system-sleep/unmount-fuse]

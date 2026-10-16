@@ -2,3 +2,10 @@
 # distro's own desktop package, the one case /etc/skel exists for. Debian's tag guards
 # against ordinary packages changing every new user's defaults.
 @DISTRO_ID@-config: package-contains-file-in-etc-skel *
+
+# The example hooks are not executable on purpose: a user copies one into ~/.config/@DISTRO_ID@/hooks
+# and drops the .sample suffix to turn it on (Omarchy's hooks/README).
+@DISTRO_ID@-config: script-not-executable [etc/skel/.config/@DISTRO_ID@/hooks/*.sample]
+@DISTRO_ID@-config: script-not-executable [usr/share/@DISTRO_ID@/config/@DISTRO_ID@/hooks/*.sample]
+# The reference copy of Omarchy's tree; the executable one is /usr/lib/systemd/system-sleep/unmount-fuse.
+@DISTRO_ID@-config: script-not-executable [usr/share/@DISTRO_ID@/default/systemd/system-sleep/unmount-fuse]

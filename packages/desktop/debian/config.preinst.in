@@ -7,8 +7,8 @@
 set -e
 case "$1" in
   install|upgrade)
-    if [ -x /usr/bin/@DISTRO_ID@-hyprland-reload-guard ]; then
-      /usr/bin/@DISTRO_ID@-hyprland-reload-guard pause || true
+    if command -v @DISTRO_ID@-hyprland-reload-guard >/dev/null; then
+      @DISTRO_ID@-hyprland-reload-guard pause || true
     fi
     ;;
 esac

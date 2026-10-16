@@ -8,8 +8,8 @@
 set -e
 case "$1" in
   install|upgrade)
-    if [ -x /usr/bin/oaxaca-hyprland-reload-guard ]; then
-      /usr/bin/oaxaca-hyprland-reload-guard pause || true
+    if command -v oaxaca-hyprland-reload-guard >/dev/null; then
+      oaxaca-hyprland-reload-guard pause || true
     fi
     ;;
 esac

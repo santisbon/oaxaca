@@ -1,5 +1,7 @@
 debian/renamed/
 debian/@DISTRO_ID@-config.lintian-overrides
+debian/@DISTRO_ID@-tools.lintian-overrides
+debian/@DISTRO_ID@-shell.lintian-overrides
 debian/@DISTRO_ID@-config.preinst
 debian/@DISTRO_ID@-config.postinst
 debian/@DISTRO_ID@-config.prerm

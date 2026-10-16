@@ -85,8 +85,13 @@ for unit in "$R"/default/systemd/user/*.service; do
   [[ $(basename "$unit") == "$id-speaker-tuning.service" ]] && continue
   install -m 0644 "$unit" "$config/usr/lib/systemd/user/"
 done
-# The pam-auth-update profile the FIDO2 setup enables (libpam-u2f ships none); off by default.
+# The pam-auth-update profiles the FIDO2 and fingerprint setups enable, both off by default:
+# FIDO2 (libpam-u2f ships none) and fingerprint with the lid-closed gate (docs/6, choice 53).
 install -D -m 0644 "$R/default/pam-configs/$id-u2f" "$config/usr/share/pam-configs/$id-u2f"
+install -D -m 0644 "$R/default/pam-configs/$id-fprintd" "$config/usr/share/pam-configs/$id-fprintd"
+# The polkit rule that lets Setup > DNS set NetworkManager's global DNS without a password, for
+# the users network-manager's own rule trusts with connections (docs/6, choice 54).
+install -D -m 0644 "$R/default/polkit-1/rules.d/$id-global-dns.rules" "$config/usr/share/polkit-1/rules.d/50-$id-global-dns.rules"
 install -m 0755 "$R/default/systemd/system-sleep/unmount-fuse" "$config/usr/lib/systemd/system-sleep/unmount-fuse"
 # systemd-oomd's scope (docs/6, choice 45): only the user's apps (app.slice) are kill candidates,
 # and the user manager, which Ubuntu's systemd-oomd marks, is set back to auto.

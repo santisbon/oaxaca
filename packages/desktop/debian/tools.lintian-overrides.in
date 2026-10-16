@@ -1,0 +1,9 @@
+# Omarchy's commands have no manual pages; each one prints its own usage, and the menu and
+# "@DISTRO_ID@ help" list them. Writing 400-odd pages is not this port's job.
+@DISTRO_ID@-tools: no-manual-page *
+# The first-run hooks are copied into the user's hook directory and run with bash
+# (@DISTRO_ID@-hook-install, @DISTRO_ID@-provision-first-run), never executed in place.
+@DISTRO_ID@-tools: script-not-executable [usr/share/@DISTRO_ID@/install/user/first-run/*.hook]
+# The migration runner waits on dpkg's frontend lock (/var/lib/dpkg/lock-frontend) so it never
+# runs while apt or dpkg holds it; it reads no other part of dpkg's database.
+@DISTRO_ID@-tools: uses-dpkg-database-directly [usr/bin/@DISTRO_ID@-migrate]

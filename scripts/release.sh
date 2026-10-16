@@ -36,12 +36,18 @@ git -C "$fork" push
 d=$(TZ=UTC git -C "$fork" log -1 --format=%cd --date=format-local:%Y%m%d)
 n=$(git -C "$fork" rev-list --count "$OMARCHY_TAG"..HEAD)
 c=$(git -C "$fork" rev-parse --short=8 HEAD)
+# The published versions, "<source> <version>" per line, from the repository's source index.
+published=$(curl -fsSL "$APT_URL/dists/$BASE_SERIES/$APT_COMPONENT/source/Sources.gz" | gunzip | awk '/^Package:/ {p=$2} /^Version:/ {print p" "$2}')
 if [[ $c != "$OMARCHY_PORT_COMMIT" ]]; then
   # The desktop changelog's top entry carries the version placeholder; the entry below it has to
-  # name the version published so far, or that version's entry would take the new version.
-  if ! head -1 "$changelog" | grep -qF '(@OMARCHY_PORT_VERSION@-' || ! grep -qF "($OMARCHY_PORT_VERSION-" "$changelog"; then
-    echo "!! the fork moved to $c, but $changelog has no new entry above $OMARCHY_PORT_VERSION's:" >&2
-    echo "   write $OMARCHY_PORT_VERSION into the top entry's first line, add a new entry above it" >&2
+  # name the published version, or that version's entry would take the new version. Compared
+  # with the published version, not distro.conf's: a release that stopped before uploading left
+  # distro.conf at a version nobody has.
+  pub=$(awk -v s="$DISTRO_ID-desktop" '$1 == s {print $2}' <<<"$published")
+  pub=${pub%-*}
+  if ! head -1 "$changelog" | grep -qF '(@OMARCHY_PORT_VERSION@-' || ! grep -qF "($pub-" "$changelog"; then
+    echo "!! the fork moved to $c, but $changelog has no new entry above the published $pub's:" >&2
+    echo "   write $pub into the top entry's first line, add a new entry above it" >&2
     echo "   with the placeholder (docs/README.md, \"Before each release\"), then run make release again" >&2
     exit 1
   fi
@@ -53,7 +59,6 @@ source distro.conf
 echo "== desktop version: $OMARCHY_PORT_VERSION"
 
 # 3. Build the packages whose version is not published yet.
-published=$(curl -fsSL "$APT_URL/dists/$BASE_SERIES/$APT_COMPONENT/source/Sources.gz" | gunzip | awk '/^Package:/ {p=$2} /^Version:/ {print p" "$2}')
 changed=()
 for dir in packages/*/; do
   top=$(sed -n '1s/^\([^ ]*\) (\([^)]*\)).*/\1 \2/p' "$dir/debian/changelog")

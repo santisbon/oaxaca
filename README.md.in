@@ -1,6 +1,6 @@
 # @DISTRO_NAME@
 
-@DISTRO_NAME@ is a Linux distribution: Ubuntu underneath, and on top the Omarchy desktop (Hyprland, a Quickshell bar and menus, Omarchy's themes and tools), ported from Arch Linux to Ubuntu's package manager. The first machine it is built for is a Lenovo Legion Pro 7 laptop with Intel and NVIDIA graphics, used with an Apple Studio Display.
+@DISTRO_NAME@ is a Linux distribution: Ubuntu underneath, and on top the Omarchy desktop (Hyprland, a Quickshell bar and menus, Omarchy's themes and tools), ported from Arch Linux to Ubuntu's package manager. The first machine it is built for is a Lenovo Legion Pro 7 laptop with Intel and NVIDIA graphics, used with an Apple Studio Display, and it is meant to run on other PCs too: Omarchy's fixes for other laptops (ASUS, Apple, Framework, Lenovo and others) are applied at install on the machines they match.
 
 ## Built on Ubuntu
 

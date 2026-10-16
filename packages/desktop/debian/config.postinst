@@ -9,8 +9,8 @@ set -e
 # running session (docs/6, choice 44). Also on the abort paths, so a failed upgrade does not leave
 # the sessions paused.
 resume_reload() {
-  if [ -x /usr/bin/oaxaca-hyprland-reload-guard ]; then
-    /usr/bin/oaxaca-hyprland-reload-guard resume || true
+  if command -v oaxaca-hyprland-reload-guard >/dev/null; then
+    oaxaca-hyprland-reload-guard resume || true
   fi
 }
 case "$1" in
@@ -21,9 +21,19 @@ case "$1" in
     # Resume first: the files are already in place, and a failure below must not leave the
     # sessions paused.
     resume_reload
+    # The Wi-Fi 7 fix is for a Dell XPS on Panther Lake only (docs/6, choice 60). Installs made
+    # earlier wrote it on every machine with an Intel BE200 or BE211; take it back off the
+    # others. The file is not a package file, and a migration runs as the user, so this is the
+    # place; the initramfs rebuilt below then carries the change too.
+    eht=/etc/modprobe.d/iwlwifi-disable-eht.conf
+    if [ -f "$eht" ] && grep -q 'Temporary fix Dell XPS' "$eht" &&
+      ! { grep -qi XPS /sys/class/dmi/id/product_name /sys/class/dmi/id/product_family 2>/dev/null &&
+          lspci 2>/dev/null | grep -iE 'vga|3d|display' | grep -qi 'panther lake'; }; then
+      rm -f "$eht"
+    fi
     update-alternatives --install /usr/share/plymouth/themes/default.plymouth default.plymouth \
       /usr/share/plymouth/themes/oaxaca/oaxaca.plymouth 150
-    if [ -x /usr/sbin/update-initramfs ] && [ -d /boot ] && ls /boot/vmlinuz-* >/dev/null 2>&1; then
+    if command -v update-initramfs >/dev/null && [ -d /boot ] && ls /boot/vmlinuz-* >/dev/null 2>&1; then
       update-initramfs -u
     fi
     ;;

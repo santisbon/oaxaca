@@ -1,0 +1,4 @@
+# Generated from packages/desktop/debian/shell.lintian-overrides.in by scripts/render.py. Edit the .in file, not this one.
+# The notification sanitizer's comments and test strings name <img src="http://..."> decoys
+# it strips from notification bodies; the shell loads nothing from those addresses.
+oaxaca-shell: privacy-breach-generic [usr/share/oaxaca/shell/plugins/notifications/NotificationLogic.js]

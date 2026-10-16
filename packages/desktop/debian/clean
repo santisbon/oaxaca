@@ -1,6 +1,8 @@
 # Generated from packages/desktop/debian/clean.in by scripts/render.py. Edit the .in file, not this one.
 debian/renamed/
 debian/oaxaca-config.lintian-overrides
+debian/oaxaca-tools.lintian-overrides
+debian/oaxaca-shell.lintian-overrides
 debian/oaxaca-config.preinst
 debian/oaxaca-config.postinst
 debian/oaxaca-config.prerm

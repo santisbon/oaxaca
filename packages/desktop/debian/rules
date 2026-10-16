@@ -64,6 +64,8 @@ override_dh_installdeb:
 
 override_dh_lintian:
 	cp debian/config.lintian-overrides debian/$(ID)-config.lintian-overrides
+	cp debian/tools.lintian-overrides debian/$(ID)-tools.lintian-overrides
+	cp debian/shell.lintian-overrides debian/$(ID)-shell.lintian-overrides
 	dh_lintian
 
 override_dh_fixperms:

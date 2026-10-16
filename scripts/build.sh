@@ -6,7 +6,7 @@
 # sbuild.conf, mode: unshare) then takes that .dsc, unpacks the chroot tarball from
 # ~/.cache/sbuild in a user namespace, installs the build dependencies there, runs
 # dpkg-buildpackage, and drops the .deb, .changes and .buildinfo files into build/. Then
-# lintian, on the host, checks every .changes file.
+# lintian, on the host, checks the .changes files this run produced.
 #
 # dpkg-source runs from build/ on purpose: dpkg-source -b writes its output to the current
 # directory, and handing sbuild the package directory instead would make sbuild run
@@ -109,6 +109,10 @@ fetch() {
   echo "$sum  $file" | sha256sum --check --quiet || { echo "!! $file does not match the SHA-256 given for $url" >&2; exit 1; }
 }
 
+# lintian checks only this run's .changes files: build/ keeps every earlier build, whose
+# .changes can name files deleted since (lintian then prints "Skipping ... does not exist").
+stamp=$(mktemp)
+trap 'rm -f "$stamp"' EXIT
 built=0
 for pkg in "${pkgs[@]}"; do
   pkg=$(cd "$pkg" && pwd)
@@ -252,6 +256,7 @@ done
 
 if ((built == 0)); then echo "nothing built"; exit 0; fi
 echo "== lintian"
-lintian --fail-on error --info "$out"/*.changes
+mapfile -t changes < <(find "$out" -maxdepth 1 -name '*.changes' -newer "$stamp")
+lintian --fail-on error --info "${changes[@]}"
 echo "== artifacts in build/"
 ls -1 "$out"/*.deb "$out"/*.dsc 2>/dev/null
