@@ -6,10 +6,12 @@
 # script adds the newest version of each package in build/ (.deb files and .dsc source packages,
 # chosen by dpkg's version order, so older builds still lying in build/ are never published) to
 # the local repo and removes every older version of those packages from it, so the repository
-# offers one version of each. It takes a snapshot and publishes it (aptly writes dists/ and pool/
-# under its public/ directory and signs the Release file with the archive key from distro.conf,
-# asking gpg for the apt signing key passphrase). With --push, the aws-cli's "s3 sync" uploads public/ to the
-# bucket APT_S3_BUCKET, in three passes so a client never reads an index that names a missing
+# offers one version of each. It then removes what the tree no longer builds: packages whose
+# source has no directory under packages/, and binary packages left over from an older version
+# of a source (a binary package dropped from a control file). It takes a snapshot and publishes
+# it (aptly writes dists/ and pool/ under its public/ directory and signs the Release file with
+# the archive key from distro.conf, asking gpg for the apt signing key passphrase). With --push,
+# the aws-cli's "s3 sync" uploads public/ to the bucket APT_S3_BUCKET, in three passes so a client never reads an index that names a missing
 # file: pool/ first, then dists/, then pool/ again with --delete to drop the files no index
 # names any more. Without --push, the same sync runs with --dryrun and lists what would change.
 #
@@ -98,6 +100,24 @@ for key in "${!best_ver[@]}"; do
   name=${key#*:}
   aptly repo remove "$repo" "Name (= $name), \$Version (<< ${best_ver[$key]})" >/dev/null
 done
+
+# Drop what this tree no longer builds, so a dropped package leaves the repository instead of
+# staying at its last version: every package whose source is not a directory under packages/
+# (kpmcore, after its rebuild was dropped), and every binary package built from another version
+# of a source than the one the repository now has (oaxaca-desktop-apps, dropped from the desktop's
+# control file). The source names are the first word of each rendered debian/changelog.
+declare -A wanted
+for changelog in "$here"/packages/*/debian/changelog; do
+  wanted[$(sed -n '1s/ .*//p' "$changelog")]=1
+done
+while read -r src ver; do
+  if [[ -z ${wanted[$src]:-} ]]; then
+    query="\$Source ($src) | Name ($src)"
+  else
+    query="\$Source ($src), !\$SourceVersion (= $ver)"
+  fi
+  aptly repo remove "$repo" "$query" | sed -n 's/^\[-\] \(.*\) removed$/dropped from the repository: \1/p'
+done < <(aptly repo search -format='{{.Package}} {{.Version}}' "$repo" '$Architecture (source)')
 
 base="$repo-$(date +%Y%m%dT%H%M%S)"
 snap="$base"; n=1
