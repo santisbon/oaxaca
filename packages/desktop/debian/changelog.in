@@ -1,5 +1,27 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Setup > Security > TPM Unlock: opt-in unlock of the encrypted root disk
+    by the TPM at boot through Clevis, bound to PCR 7 (Secure Boot state);
+    Remove > Security > TPM Unlock takes it off. Depend on clevis-luks,
+    clevis-tpm2 and clevis-initramfs.
+  * tmux gives extended keys to every xterm-type terminal, so Shift+Enter
+    reaches programs such as Claude Code inside tmux in Foot, Alacritty and
+    Ghostty; a migration fixes the line in existing users' tmux.conf.
+  * @DISTRO_ID@-update takes a Timeshift snapshot of / before updating on
+    btrfs installs and keeps the newest five of its own (new
+    @DISTRO_ID@-snapshot; restore opens Timeshift).
+  * The launcher starts applications whose desktop id ends in .desktop,
+    such as Telegram's org.telegram.desktop.
+  * The fork's tests are sorted for the port (the fork's PORT.md, Tests).
+  * Omarchy's agent skills are shipped again, ported to Ubuntu, and linked
+    for Claude Code, Codex, Pi and Hermes (a migration links them for
+    existing users); their bug reports go to the fork, santisbon/omarchy,
+    whose name the rename step now keeps (DISTRO_FORK_REPO).
+
+ -- @MAINTAINER@  Fri, 16 Oct 2026 12:00:00 -0500
+
+@DISTRO_ID@-desktop (@OMARCHY_VERSION@+git20261015.39.7a4a96b4-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * LibreOffice's launchers are named Writer, Calc, Impress, Draw, Base and
     Math: the snap names them "LibreOffice <version> Writer" and so on, which
     the launcher cut off. Install > Productivity > LibreOffice writes
