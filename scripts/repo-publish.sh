@@ -23,6 +23,7 @@
 # package that no installed system can have yet (before the first release).
 #
 # Usage: scripts/repo-publish.sh [--push] [--replace]
+#        scripts/repo-publish.sh --seed    (once per workstation: make repo-seed)
 # Env:   AWS_PROFILE  the aws-cli profile for the upload (default APT_AWS_PROFILE in distro.conf)
 set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
@@ -37,18 +38,46 @@ mkdir -p "$root"
 aptly() { command aptly -config="$cfg" "$@"; }
 
 repo="$DISTRO_ID"
-if ! aptly repo show "$repo" >/dev/null 2>&1; then
-  aptly repo create -distribution="$BASE_SERIES" -component="$APT_COMPONENT" "$repo"
-fi
-
-push=0 replace=0
+push=0 replace=0 seed=0
 for arg in "$@"; do
   case $arg in
     --push) push=1 ;;
     --replace) replace=1 ;;
-    *) echo "unknown option $arg (--push, --replace)" >&2; exit 1 ;;
+    --seed) seed=1 ;;
+    *) echo "unknown option $arg (--push, --replace, --seed)" >&2; exit 1 ;;
   esac
 done
+
+# --seed: fill an empty aptly database, and build/, from the published repository. A new
+# workstation's database is empty, and a publish from it would upload only build/'s packages and
+# delete every other package from the bucket. aptly mirrors the published repository (checked
+# against our archive keyring), the mirror is imported into the local repo, and the published
+# .deb files are copied into build/, so make rootfs has every package and the same-version guard
+# below sees the published files byte for byte.
+if ((seed)); then
+  if aptly repo show "$repo" >/dev/null 2>&1; then
+    echo "aptly's database already has the repository $repo: nothing to seed"
+    exit 0
+  fi
+  keyring="$here/packages/archive-keyring/archive-keyring.gpg"
+  aptly mirror create -with-sources -keyring="$keyring" published "$APT_URL" "$BASE_SERIES" "$APT_COMPONENT"
+  aptly mirror update -keyring="$keyring" published
+  aptly repo create -distribution="$BASE_SERIES" -component="$APT_COMPONENT" "$repo"
+  aptly repo import published "$repo" Name
+  mkdir -p "$here/build"
+  find "$root/pool" -name '*.deb' -exec cp -n -t "$here/build/" {} +
+  echo "seeded $repo and build/ from $APT_URL"
+  exit 0
+fi
+
+if ! aptly repo show "$repo" >/dev/null 2>&1; then
+  if curl -sSfL --max-time 30 -o /dev/null "$APT_URL/dists/$BASE_SERIES/InRelease"; then
+    echo "aptly's database has no repository $repo, but $APT_URL is published: run 'make repo-seed' first," >&2
+    echo "or this publish would delete every package build/ does not have from the bucket" >&2
+    exit 1
+  fi
+  aptly repo create -distribution="$BASE_SERIES" -component="$APT_COMPONENT" "$repo"
+fi
 
 shopt -s nullglob
 # The newest .deb per package name and the newest .dsc per source name, by dpkg's version order

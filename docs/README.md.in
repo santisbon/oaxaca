@@ -175,7 +175,9 @@ scripts/
   keygen.sh          creates the apt signing key (run once, by hand)
   chroot-create.sh   builds the clean build chroot with mmdebstrap
   build.sh           builds packages with sbuild, checks them with lintian
-  repo-publish.sh    publishes build/ into the apt repository with aptly; refuses a published version with different content
+  machine-setup.sh   installs the tools, checks the credentials, builds the chroot and seeds aptly, once per workstation (make machine-setup)
+  release.sh         builds what is unpublished, tests the image, commits and publishes (make release)
+  repo-publish.sh    publishes build/ into the apt repository with aptly; refuses a published version with different content; --seed fills a new workstation's aptly database from the published repository
   version-check.sh   fails when a package directory changed since the last v* tag without a version bump (step 8)
   upgrade-test.sh    upgrades the published packages to build/ in a throwaway chroot and runs the migrations (step 8)
   upstream-check.sh  fails when a program repackaged from its GitHub release (RELEASES= in packages/*/upstream) has a newer release (make upstream-check)
@@ -415,11 +417,10 @@ CI runs the first three rows (render, chroot, build) and the upgrade test on eve
 
 Going from a fresh clone of this repository to a bootable USB stick is a chain of `make` targets, then one `dd`. Every target is described above; this list gives the order the targets run in on a clean checkout and what each one leaves behind. Nothing here needs root except the final write to the stick. Two targets are missing on purpose. `make render` is absent because every rendered file is committed next to its `.in` template (CI's `make check-render` keeps the two in step), so a clone is complete, and `make build` runs `render` first anyway. `make publish` is absent because no step reads the published repository or the secret signing key: `make rootfs` installs our packages from the `.deb` files in `build/` and writes only Ubuntu's apt sources into the tarball, and the one key file the build needs, the public `packages/archive-keyring/archive-keyring.gpg`, is committed. Publishing matters after installation: the installed system's apt sources entry points at `@APT_URL@`, so `apt update` on an installed machine needs the repository published, which is the "Releasing" line under Day-to-day.
 
-1. Install the tools. `git`, `curl` and `cargo` are for `scripts/build.sh`, which fetches the fork's branch, the upstream tarballs and the share picker's crates. `lua5.5` and `ripgrep` are not for the build: the Omarchy fork's own tests (`./test/all` in the fork's checkout; the fork's `PORT.md`, "Tests") need `lua5.5`'s `lua` command to read the fork's Hyprland configuration, which is written in Lua, and `ripgrep`'s `rg` for three more test files:
+1. Install the tools. `make machine-setup SETUP_FLAGS=--tools` runs `scripts/machine-setup.sh`, which installs them from Ubuntu's archive (the list, with what each tool is for, is at the top of the script) and stops; without `SETUP_FLAGS` the script goes on to the publishing setup in [Releasing](#releasing). `lua5.5` and `ripgrep` are not for the build: the Omarchy fork's own tests (`./test/all` in the fork's checkout; the fork's `PORT.md`, "Tests") need `lua5.5`'s `lua` command to read the fork's Hyprland configuration, which is written in Lua, and `ripgrep`'s `rg` for three more test files:
 
-   ```
-   sudo apt install git curl cargo python3 sbuild mmdebstrap uidmap devscripts debhelper lintian \
-       qemu-system-x86 e2fsprogs ovmf squashfs-tools xorriso dosfstools mtools lua5.5 ripgrep
+   ```sh
+   make machine-setup SETUP_FLAGS=--tools
    ```
 
 2. `make chroot`: the clean build [chroot](#chroot) tarball under `~/.cache/sbuild/`, about 25 minutes the first time, kept for a week afterwards.
@@ -441,11 +442,11 @@ Rebuilding after a change repeats the chain from the step whose input changed: a
 
 ## Day-to-day
 
-The first time on a new workstation: install the tools from step 1 of [Building the distro from source](#building-the-distro-from-source) plus `aptly` and the aws-cli for publishing, then `make chroot`. Creating the signing key, the GitHub repository and the apt repository's S3 bucket (`make apt-infra`) are one-time steps described in [docs/2 - build-infra.md](2%20-%20build-infra.md) and [infra/apt-repo/README.md](../infra/apt-repo/README.md).
+The first time on a new workstation: `make machine-setup` ([Releasing, Once per machine](#once-per-machine)). Creating the signing key, the GitHub repository and the apt repository's S3 bucket (`make apt-infra`) are one-time steps described in [docs/2 - build-infra.md](2%20-%20build-infra.md) and [infra/apt-repo/README.md](../infra/apt-repo/README.md).
 
 Adding a package: create `packages/<dir>` with a `debian/` directory, using `.in` templates wherever the distro's name or identifier appears, and debhelper's unprefixed file names (`debian/install`, `debian/service`, `debian/udev`), then `make build PKG=packages/<dir>` until lintian is quiet. A third-party package we rebuild (`packages/quickshell`) holds only `debian/` and an `upstream` file with the tarball's URL and SHA-256; `scripts/build.sh` downloads the tarball into `build/` and unpacks it around `debian/` before `dpkg-source`. The `upstream` file can instead name a git tree (`GIT=`, `REF=`; `packages/desktop`) or a list of files (`FILES=`; `packages/fonts`), or an Ubuntu source package rebuilt with our additions (`DSC=`; `packages/plymouth`, whose `debian/` holds only its patch, its series line and a changelog entry, laid over Ubuntu's `debian/` at build time, so a one-line fix to an archive package needs no fork and no copy of its packaging), and add component tarballs and `CARGO_VENDOR=1` (`packages/hyprland-preview-share-picker`); the header of `scripts/build.sh` documents each. Directory names never carry the distro name. Versions follow the scheme in [docs/1 - policy.md](1%20-%20policy.md).
 
-Releasing: [Releasing](#releasing) has the whole sequence as two blocks to paste, one for a new machine and one for each release.
+Releasing: `make release` ([Releasing](#releasing)).
 
 ## Shipping a change: the apt repository or a new ISO
 
@@ -469,64 +470,39 @@ A release is one upload of the apt repository at `@APT_URL@`, made after the cha
 
 The upload's anatomy: `make publish` runs `scripts/repo-publish.sh`, which drives two programs. aptly keeps the repository's database and package pool under `~/.local/state/@DISTRO_ID@/aptly` on the workstation, adds `build/`'s newest packages to that database, and signs the published tree with the apt signing key (section [`aptly`](#aptly-make-publish)). The aws-cli's `aws s3 sync` then uploads aptly's published tree to the S3 bucket `@APT_S3_BUCKET@`, deleting from the bucket whatever aptly's tree no longer has.
 
-Release tags (`v*`) have not been used so far, so `make check-versions` has nothing to compare against. The release block below finds the packages to build another way: a package needs building when the version at the top of its rendered `debian/changelog` is missing from the published repository's source index (`dists/@BASE_SERIES@/main/source/Sources.gz`). A package changed without a version bump is therefore not built; `make publish` refuses such a package's file when a build of the package does turn up, as its guard describes in [`aptly`](#aptly-make-publish).
+Two scripts run the whole process; each one's header comment says what the script runs and in what order:
 
-The two blocks run as written on a machine where this repository is cloned at `~/Projects/mydistro`, the Omarchy fork at `~/Projects/omarchy` (branch `@OMARCHY_PORT_REF@`), and these credentials are in place:
+- `scripts/machine-setup.sh` (`make machine-setup`), once per workstation;
+- `scripts/release.sh` (`make release`), once per release.
+
+Both expect this repository cloned at `~/Projects/mydistro` and the Omarchy fork at `~/Projects/omarchy` (branch `@OMARCHY_PORT_REF@`; `OMARCHY_FORK_DIR=<path>` names another checkout), and these credentials in place:
 
 - an SSH key that GitHub accepts for both repositories, for `git push`;
 - the apt signing key in GnuPG, restored from the password manager as in [docs/2, Backing up the signing key](2%20-%20build-infra.md#backing-up-the-signing-key);
 - an aws-cli profile named as `APT_AWS_PROFILE` in `distro.conf`, allowed to write to the bucket `@APT_S3_BUCKET@`;
 - write access to `/dev/kvm`, for QEMU's boot tests.
 
-Each block is one subshell in parentheses that starts with `set -euo pipefail`. Bash reads a parenthesized block whole before running any of it, so a prompt inside the block (sudo, gpg's pinentry asking for the apt signing key passphrase, git's commit editor, the upload question) reads the keyboard instead of the rest of the paste. The first command that fails stops the block, and the terminal stays open because only the subshell exits.
-
 ### Once per machine
 
-The last part of this block matters most on a new machine. The new machine's aptly database starts empty, and `make publish` uploads only what that database holds, deleting the rest from the bucket: a first publish from `build/` alone would remove every package the release did not rebuild. So the block fills aptly's database from the published repository first, through an aptly mirror (aptly's copy of a remote repository, checked against our archive keyring), and copies the published `.deb` files into `build/`, so that `make rootfs` has every package and `make publish`'s guard sees the published files byte for byte. On a machine whose aptly database already exists, the block skips that part.
-
 ```sh
-( set -euo pipefail
-cd ~/Projects/mydistro
-source distro.conf
-
-# Build, test and publish tools from Ubuntu's archive (aptly is in universe), and the aws-cli from Amazon's snap.
-sudo apt install git curl cargo python3 sbuild mmdebstrap uidmap devscripts debhelper lintian \
-    qemu-system-x86 e2fsprogs ovmf squashfs-tools xorriso dosfstools mtools lua5.5 ripgrep aptly
-sudo snap install aws-cli --classic
-
-# The credentials: each line stops the block when its credential is missing.
-gpg --list-secret-keys "$APT_KEY_FPR" >/dev/null                      # the apt signing key
-aws sts get-caller-identity --profile "$APT_AWS_PROFILE" >/dev/null    # the aws-cli profile
-git ls-remote origin HEAD >/dev/null                                   # GitHub over SSH: this repository
-git -C ~/Projects/omarchy ls-remote origin "$OMARCHY_PORT_REF" >/dev/null   # and the fork
-grep -q "^$USER:" /etc/subuid                                          # subordinate ids, for mmdebstrap's unshare mode
-test -w /dev/kvm                                                       # QEMU's boot tests
-
-# The clean build chroot, ~/.cache/sbuild/$BASE_SERIES-amd64.tar (make build copies it per package).
-make chroot
-
-# Fill aptly's database and build/ from the published repository, unless aptly's database already has the repository.
-root=~/.local/state/$DISTRO_ID/aptly
-keyring=$PWD/packages/archive-keyring/archive-keyring.gpg
-mkdir -p "$root" build
-[ -f "$root/aptly.conf" ] || printf '{ "rootDir": "%s", "gpgProvider": "gpg" }\n' "$root" > "$root/aptly.conf"
-a() { aptly -config="$root/aptly.conf" "$@"; }
-if ! a repo show "$DISTRO_ID" >/dev/null 2>&1; then
-  a mirror create -with-sources -keyring="$keyring" published "$APT_URL" "$BASE_SERIES" "$APT_COMPONENT"
-  a mirror update -keyring="$keyring" published
-  a repo create -distribution="$BASE_SERIES" -component="$APT_COMPONENT" "$DISTRO_ID"
-  a repo import published "$DISTRO_ID" Name
-  find "$root/pool" -name '*.deb' -exec cp -n -t build/ {} +
-fi
-echo "== machine ready" )
+cd ~/Projects/mydistro && make machine-setup
 ```
+
+What `make machine-setup` does, stopping at the first failure:
+
+1. Installs the build, test and publish tools with apt (aptly is in universe), and the aws-cli from Amazon's snap.
+2. Checks each credential above, plus subordinate ids in `/etc/subuid` for mmdebstrap's unshare mode, and lists every one that is missing.
+3. Builds the clean build chroot (`scripts/chroot-create.sh`, the same as `make chroot`).
+4. Seeds aptly's database and `build/` from the published repository (`scripts/repo-publish.sh --seed`, the same as `make repo-seed`).
+
+Step 4 matters most on a new machine. The new machine's aptly database starts empty, and `make publish` uploads only what that database holds, deleting the rest from the bucket: a first publish from `build/` alone would remove every package the release did not rebuild. The seed fills aptly's database through an aptly mirror (aptly's copy of a remote repository, checked against our archive keyring) and copies the published `.deb` files into `build/`, so that `make rootfs` has every package and `make publish`'s guard sees the published files byte for byte. `make publish` itself refuses to run on an empty aptly database while the repository is published, and names `make repo-seed`. Every step skips work already done, so a second run of `make machine-setup` only checks.
 
 ### Before each release
 
-These steps change files by hand, so they come before the block:
+These steps change files by hand, so they come before `make release`:
 
-1. **Commit the fork's changes** on the `@OMARCHY_PORT_REF@` branch in `~/Projects/omarchy` (the block pushes them).
-2. **When the fork changed, give the desktop package a new changelog entry.** The top entry of `packages/desktop/debian/changelog.in` carries the placeholder `@@OMARCHY_PORT_VERSION@@`, which `make render` fills from `distro.conf`, so the top entry always names the version being built. Before the block moves `distro.conf` to the fork's new commit, write the published version into the top entry, while `distro.conf` still names that version:
+1. **Commit the fork's changes** on the `@OMARCHY_PORT_REF@` branch in `~/Projects/omarchy` (`make release` pushes them).
+2. **When the fork changed, give the desktop package a new changelog entry.** The top entry of `packages/desktop/debian/changelog.in` carries the placeholder `@@OMARCHY_PORT_VERSION@@`, which `make render` fills from `distro.conf`, so the top entry always names the version being built. Before `make release` moves `distro.conf` to the fork's new commit, write the published version into the top entry, while `distro.conf` still names that version:
 
    ```sh
    ( cd ~/Projects/mydistro && source distro.conf && sed -i "1s/@@OMARCHY_PORT_VERSION@@/$OMARCHY_PORT_VERSION/" packages/desktop/debian/changelog.in && head -1 packages/desktop/debian/changelog.in )
@@ -542,75 +518,29 @@ These steps change files by hand, so they come before the block:
     -- @@MAINTAINER@@  Fri, 16 Oct 2026 18:00:00 -0500
    ```
 
+   `make release` stops with this instruction when the fork moved and the entry is missing.
 3. **Bump every other package that changed**: a new entry at the top of its `debian/changelog.in` with a higher version, following [docs/1, Version scheme](1%20-%20policy.md).
 
 ### Each release
 
 ```sh
-( set -euo pipefail
-cd ~/Projects/mydistro
-source distro.conf
-
-# 1. Push the fork: the desktop build clones the fork's branch from GitHub, not the local checkout.
-test "$(git -C ~/Projects/omarchy branch --show-current)" = "$OMARCHY_PORT_REF"
-test -z "$(git -C ~/Projects/omarchy status --porcelain)"     # stops here if the fork has uncommitted changes
-git -C ~/Projects/omarchy push
-
-# 2. Point distro.conf at the fork's HEAD (commit date in UTC, commits since Omarchy's tag, short hash:
-#    together the desktop's version) and render every template from distro.conf.
-d=$(TZ=UTC git -C ~/Projects/omarchy log -1 --format=%cd --date=format-local:%Y%m%d)
-n=$(git -C ~/Projects/omarchy rev-list --count "$OMARCHY_TAG"..HEAD)
-c=$(git -C ~/Projects/omarchy rev-parse --short=8 HEAD)
-sed -i "s/^OMARCHY_PORT_DATE=.*/OMARCHY_PORT_DATE=$d/; s/^OMARCHY_PORT_COUNT=.*/OMARCHY_PORT_COUNT=$n/; s/^OMARCHY_PORT_COMMIT=.*/OMARCHY_PORT_COMMIT=$c/" distro.conf
-make render
-source distro.conf
-grep '^OMARCHY_PORT_' distro.conf
-
-# 3. Build the packages whose version is not published yet, each in a fresh copy of the build chroot; lintian runs after each.
-published=$(curl -fsSL "$APT_URL/dists/$BASE_SERIES/$APT_COMPONENT/source/Sources.gz" | gunzip | awk '/^Package:/ {p=$2} /^Version:/ {print p" "$2}')
-changed=()
-for dir in packages/*/; do
-  top=$(sed -n '1s/^\([^ ]*\) (\([^)]*\)).*/\1 \2/p' "$dir/debian/changelog")
-  grep -qxF "$top" <<<"$published" || changed+=("${dir%/}")
-done
-if ((${#changed[@]} == 0)); then echo "== every package's version is published: nothing to release"; exit 0; fi
-echo "== to build: ${changed[*]}"
-make build PKG="${changed[*]}"
-
-# 4. Note newer upstream releases of the repackaged programs (LocalSend, ttfx, Voxtype); not a reason to stop.
-make upstream-check || echo "== a newer upstream release is listed above: package it in a later release"
-
-# 5. The live root filesystem from Ubuntu's archive plus build/'s newest packages, booted in QEMU
-#    (the base, session and desktop checks). One command per line, so set -e stops at the first failure.
-make rootfs
-make rootfs-test
-
-# 6. The installation ISO from that root filesystem, booted under OVMF with Secure Boot on, then off.
-make iso
-make iso-test
-make iso-test SECURE_BOOT=off
-
-# 7. The published packages upgraded to build/'s in a throwaway chroot, migrations included.
-make upgrade-test
-
-# 8. Commit this repository (git opens your editor for the message) and push; CI builds the same commit.
-git status -sb
-git add -A
-git diff --cached --quiet || git commit
-git push
-
-# 9. Sign the repository locally (pinentry asks for the apt signing key passphrase) and list what the upload would change.
-make publish
-read -rp "Upload to $APT_S3_BUCKET? [y/N] " answer
-[ "$answer" = y ]
-
-# 10. Upload, then check the uploaded signature with our public key.
-make publish PUBLISH_FLAGS=--push
-curl -fsSL "$APT_URL/dists/$BASE_SERIES/InRelease" | gpgv --keyring "$PWD/packages/archive-keyring/archive-keyring.gpg" -
-echo "== released: run $DISTRO_ID-update on installed systems; build/iso/ has the matching ISO" )
+cd ~/Projects/mydistro && make release
 ```
 
-The `gpgv` line must print `Good signature from "@DISTRO_NAME@ Archive Signing Key"` ([docs/2, One-time setup](2%20-%20build-infra.md#one-time-setup-in-order), step 5, explains the other results). After the block: `@DISTRO_ID@-update` on each installed system, and for a new install, the ISO in `build/iso/` written to a USB stick as in [Building the distro from source](#building-the-distro-from-source), step 7.
+What `make release` does, stopping at the first failure:
+
+1. Pushes the fork, after checking it is on `@OMARCHY_PORT_REF@` with nothing uncommitted: the desktop build clones the fork's branch from GitHub, not the local checkout.
+2. Sets `OMARCHY_PORT_DATE`, `_COUNT` and `_COMMIT` in `distro.conf` from the fork's HEAD (commit date in UTC, commits since `@OMARCHY_TAG@`, short hash: together the desktop's version) and runs `make render`.
+3. Builds the packages whose version is not published yet (`make build PKG=...`). Release tags (`v*`) have not been used so far, so `make check-versions` has nothing to compare against; instead, a package needs building when the version at the top of its rendered `debian/changelog` is missing from the published source index (`dists/@BASE_SERIES@/main/source/Sources.gz`). A package changed without a version bump is therefore not built. When every version is published, the release ends here with "nothing to release".
+4. Runs `make upstream-check` and reports a newer upstream release without stopping.
+5. Builds the live root filesystem and boots it in QEMU (`make rootfs`, `make rootfs-test`: the base, session and desktop checks).
+6. Builds the ISO and boots it under OVMF with Secure Boot on, then off (`make iso`, `make iso-test`, `make iso-test SECURE_BOOT=off`).
+7. Upgrades the published packages to `build/`'s in a throwaway chroot, migrations included (`make upgrade-test`).
+8. Commits this repository (git opens the editor; an empty message stops the release) and pushes.
+9. Signs the repository locally with `make publish` (pinentry asks for the apt signing key passphrase), lists what the upload would change, and asks `Upload to @APT_S3_BUCKET@? [y/N]`.
+10. On `y`, uploads with `make publish PUBLISH_FLAGS=--push` and checks the uploaded signature with `gpgv`, which must print `Good signature from "@DISTRO_NAME@ Archive Signing Key"` ([docs/2, One-time setup](2%20-%20build-infra.md#one-time-setup-in-order), step 5, explains the other results).
+
+A release that stopped resumes with another `make release`: `distro.conf` already names the fork's commit, and the packages built so far are rebuilt. After the release: `@DISTRO_ID@-update` on each installed system, and for a new install, the ISO in `build/iso/` written to a USB stick as in [Building the distro from source](#building-the-distro-from-source), step 7.
 
 ## Conventions
 

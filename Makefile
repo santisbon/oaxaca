@@ -1,5 +1,5 @@
 # Entry points for the build. See docs/2 - build-infra.md, docs/3 - rootfs.md and docs/4 - session.md.
-.PHONY: render check-render check-versions upstream-check chroot build lint publish apt-infra apt-infra-check rootfs rootfs-test drivers-check iso iso-test upgrade-test clean
+.PHONY: render check-render check-versions upstream-check chroot build lint publish repo-seed machine-setup release apt-infra apt-infra-check rootfs rootfs-test drivers-check iso iso-test upgrade-test clean
 
 # Root filesystem profile for rootfs, rootfs-test and drivers-check: base (step 3), session (step 4),
 # desktop (step 6) or live (step 7, the desktop plus casper and the installer: what the ISO ships).
@@ -27,6 +27,15 @@ build: render      ## Build packages in the clean chroot: make build [PKG=packag
 
 publish:           ## Add build/'s newest packages to the apt repo, sign, and upload to S3 with --push: make publish [PUBLISH_FLAGS="--push --replace"]
 	scripts/repo-publish.sh $(PUBLISH_FLAGS)
+
+repo-seed:         ## Fill a new workstation's empty aptly database and build/ from the published apt repo (once per machine)
+	scripts/repo-publish.sh --seed
+
+machine-setup:     ## Install the build, test and publish tools, check the credentials, build the chroot and seed aptly: make machine-setup [SETUP_FLAGS=--tools]
+	scripts/machine-setup.sh $(SETUP_FLAGS)
+
+release:           ## Build what is unpublished, test the image, commit, and publish after a prompt (docs/README.md, Releasing)
+	scripts/release.sh
 
 apt-infra:         ## Create or update the S3 bucket that serves the apt repo (CloudFormation, infra/apt-repo/)
 	scripts/apt-infra.sh
