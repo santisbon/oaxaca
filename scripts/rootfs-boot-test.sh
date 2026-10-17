@@ -412,10 +412,11 @@ print("yes" if any(l["namespace"] == "$id-menu" for m in d.values() for lv in m[
 run_user $id-menu toggle >/dev/null 2>&1
 echo "update-available: \$(run_user $id-update-available 2>&1 | paste -sd'|') (exit \$?)"
 # The bar's widgets on screen: a bar whose plugins failed to load still has its layer surface.
-echo "bar widgets: \$(run_user $id-shell shell debugBarGeometry 2>/dev/null | python3 -c '
+bar=\$(run_user $id-shell shell debugBarGeometry 2>/dev/null | python3 -c '
 import json, sys
 v = [w["id"] for w in json.load(sys.stdin) if w.get("visible")]
-print("%d visible: %s" % (len(v), " ".join(v)))' 2>/dev/null || echo "0 visible: (no answer)")"
+print("%d visible: %s" % (len(v), " ".join(v)))' 2>/dev/null || echo "0 visible: (no answer)")
+echo "bar widgets: \$bar"
 # The keybindings, as the user's hyprland.lua makes them (scripts/boot-test-bindings.lua).
 if apt-get install -y -q lua5.4 >/tmp/apt-lua.log 2>&1; then echo "apt install lua5.4: ok"; else echo "apt install lua5.4: FAILED"; tail -5 /tmp/apt-lua.log; fi
 as_user env HOME=/home/tester OMARCHY_PATH=/usr/share/$id lua5.4 /usr/local/share/$id-boot-test/bindings.lua /home/tester/.config/hypr/hyprland.lua > /tmp/bindings.tsv 2>/tmp/bindings.err
@@ -430,7 +431,9 @@ cat /tmp/binding-check.out 2>/dev/null || echo "binding programs: no report"
 # Each binding that opens a menu or a shell panel, run through Hyprland as a key press runs it:
 # it must exit 0 and put something new on screen, a layer surface (L:<namespace>) or a window
 # (C:<class>). A menu route can name an entry that runs an action (Background, Theme, Set a
-# reminder), which opens its own picker instead of the menu. Each is closed before the next.
+# reminder), which opens its own picker instead of the menu. Each is closed before the next. A
+# panel whose widget is not in the bar (the power panel, with no battery in QEMU) has nothing to
+# open from, so its binding is reported as skipped.
 surfaces() {
     { run_user hyprctl -j layers 2>/dev/null | python3 -c '
 import json, sys
@@ -458,9 +461,12 @@ while IFS="\$tab" read -r keys cmd; do
     sleep 1.5
     surfaces > /tmp/surfaces-after
     opened=\$(comm -13 /tmp/surfaces-before /tmp/surfaces-after | sed 's/^\(C:[^:]*\):.*/\1/' | paste -sd' ')
-    # Closed the way a user would: the menu's close call, or the same binding again (a toggle);
-    # a window the binding opened is ended by its process id.
+    # Closed through the shell: the menu's close call, the image selector's cancel call (the
+    # Background picker) and the reminder flow's hide; then the same binding again (a toggle),
+    # and a window the binding opened is ended by its process id.
     run_user $id-menu close >/dev/null 2>&1
+    run_user $id-shell -q image-selector cancel "" >/dev/null 2>&1
+    run_user $id-shell -q shell hide omarchy.reminders >/dev/null 2>&1
     sleep 0.5
     surfaces > /tmp/surfaces-now
     if ! cmp -s /tmp/surfaces-before /tmp/surfaces-now; then run_binding "\$cmd" >/dev/null; sleep 1; fi
@@ -468,7 +474,13 @@ while IFS="\$tab" read -r keys cmd; do
     sleep 0.5
     surfaces > /tmp/surfaces-now
     closed=\$(cmp -s /tmp/surfaces-before /tmp/surfaces-now && echo yes || echo no)
-    echo "binding run: \$keys: exit=\$rc opened=[\$opened] closed=\$closed"
+    note=""
+    case "\$cmd" in
+        "$id-shell shell toggle "*)
+            panel=\${cmd##* }
+            case " \${bar#*: } " in *" \$panel "*) ;; *) [ -z "\$opened" ] && note=" skipped=not-in-bar" ;; esac ;;
+    esac
+    echo "binding run: \$keys: exit=\$rc opened=[\$opened] closed=\$closed\$note"
 done < /tmp/bindings-run.tsv
 echo "shell ping after bindings: \$(run_user $id-shell shell ping 2>&1 | paste -sd'|')"
 # The shell's journal: Quickshell's WARN lines are listed, its ERROR/CRIT lines and QML
@@ -738,7 +750,7 @@ if [[ $profile == desktop ]]; then
   check "^binding programs: [1-9][0-9]* checked, 0 missing$"
   runs=$(grep -c '^binding run: ' <<< "$report" || true)
   (( runs >= 10 )) || { echo "!! expected at least 10 menu and panel bindings run, got $runs" >&2; fail=1; }
-  if grep -E '^binding run: ' <<< "$report" | grep -Ev ': exit=0 opened=\[[^]]+\] closed=yes$' >&2; then
+  if grep -E '^binding run: ' <<< "$report" | grep -Ev ': exit=0 (opened=\[[^]]+\] closed=yes|opened=\[\] closed=yes skipped=not-in-bar)$' >&2; then
     echo "!! expected: every menu and panel binding above exits 0, opens something and closes again" >&2; fail=1
   fi
   check "^binding run: SUPER + SPACE: exit=0 opened=\[.*L:$DISTRO_ID-menu"

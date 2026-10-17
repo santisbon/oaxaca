@@ -1,3 +1,16 @@
+oaxaca-desktop (4.0.4+git20261017.93.86706132-0oaxaca1) stonking; urgency=medium
+
+  * An update no longer leaves the running session with an empty bar and
+    dead menu keys. The shell's commands (oaxaca-shell,
+    oaxaca-restart-shell, oaxaca-launch-shell) and
+    oaxaca-update-available fall back to /usr/share/oaxaca when
+    OMARCHY_PATH is not set, as in a session that began before the update
+    that introduced it, so the update's shell restart works there; the
+    update also puts OMARCHY_PATH into such a session's user manager, and
+    says the plugins were reloaded only after the restart succeeded.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sat, 17 Oct 2026 15:37:20 -0500
+
 oaxaca-desktop (4.0.4+git20261017.92.3742329d-0oaxaca1) stonking; urgency=medium
 
   * The installer sets the wireless regulatory domain from the timezone

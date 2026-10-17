@@ -1,5 +1,18 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * An update no longer leaves the running session with an empty bar and
+    dead menu keys. The shell's commands (@DISTRO_ID@-shell,
+    @DISTRO_ID@-restart-shell, @DISTRO_ID@-launch-shell) and
+    @DISTRO_ID@-update-available fall back to /usr/share/@DISTRO_ID@ when
+    OMARCHY_PATH is not set, as in a session that began before the update
+    that introduced it, so the update's shell restart works there; the
+    update also puts OMARCHY_PATH into such a session's user manager, and
+    says the plugins were reloaded only after the restart succeeded.
+
+ -- @MAINTAINER@  Sat, 17 Oct 2026 15:37:20 -0500
+
+@DISTRO_ID@-desktop (4.0.4+git20261017.92.3742329d-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * The installer sets the wireless regulatory domain from the timezone
     chosen at install again, as Omarchy does: the timezone's country goes to
     /etc/modprobe.d/@DISTRO_ID@-wireless-regdom.conf as cfg80211's
