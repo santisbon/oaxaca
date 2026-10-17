@@ -11,6 +11,11 @@
   * Xournal++ and Kdenlive can be installed from the menu the same way:
     Install > Productivity > Xournal++ and > Kdenlive install their
     projects' Flatpaks from Flathub, and Remove > Productivity removes them.
+  * Docker Desktop can be installed from the menu: Install > Development >
+    Docker Desktop follows Docker's instructions for Ubuntu (gnome-terminal,
+    Docker's apt repository, Docker's package, the kvm group), and Remove >
+    Development > Docker Desktop removes it with its containers and images.
+    Omarchy's own Docker setup stays out.
 
  -- @MAINTAINER@  Sat, 17 Oct 2026 01:10:00 -0500
 
