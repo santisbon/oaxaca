@@ -6,8 +6,8 @@
 dontChroot: false
 timeout: 900
 script:
-    # @DISTRO_ID_UPPER@_LOG_TO_STDOUT=1: the script otherwise writes every step's output to
+    # OMARCHY_LOG_TO_STDOUT=1: the script otherwise writes every step's output to
     # /var/log/@DISTRO_ID@-install.log in the target and prints nothing, so a failure reached
     # Calamares as "exit code 1, there was no output from the command" (Legion laptop,
     # 2026-10-11). Calamares runs each entry through "/bin/sh -c", so the assignment holds.
-    - "@DISTRO_ID_UPPER@_LOG_TO_STDOUT=1 @DISTRO_ID@-apply-system --install-user ${gs[username]} --first-install"
+    - "OMARCHY_LOG_TO_STDOUT=1 @DISTRO_ID@-apply-system --install-user ${gs[username]} --first-install"

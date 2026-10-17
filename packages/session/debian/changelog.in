@@ -1,3 +1,12 @@
+@DISTRO_ID@-session (0.1.7) @BASE_SERIES@; urgency=medium
+
+  * The GPU environment generator exports OMARCHY_GPU_OFFLOAD and
+    OMARCHY_GPU_OFFLOAD_DEVICE, Omarchy's variable names, which the desktop
+    packages now keep for plugins and themes written for Omarchy (docs/6
+    choice 86); they were renamed to the distro's prefix before.
+
+ -- @MAINTAINER@  Sat, 17 Oct 2026 12:12:00 -0500
+
 @DISTRO_ID@-session (0.1.6) @BASE_SERIES@; urgency=medium
 
   * Depend on packages a stock Ubuntu gets through Recommends, skipped here

@@ -1,3 +1,11 @@
+@DISTRO_ID@-live (0.1.5) @BASE_SERIES@; urgency=medium
+
+  * live-boot-test sets OMARCHY_PATH, Omarchy's variable name, which the
+    desktop packages now keep for plugins and themes written for Omarchy
+    (docs/6 choice 86).
+
+ -- @MAINTAINER@  Sat, 17 Oct 2026 12:12:00 -0500
+
 @DISTRO_ID@-live (0.1.4) @BASE_SERIES@; urgency=medium
 
   * Depend on timeshift: the live session can restore a btrfs install's

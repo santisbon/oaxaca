@@ -3,8 +3,9 @@
 # rendered from gpu-env.in) against made-up machines. Each case builds a fake sysfs tree with
 # PCI devices (class, vendor, boot_vga), points the generator's PCI scan at it through
 # <ID>_GPU_SYSFS, and compares the hybrid-graphics lines it prints (the EGL and Vulkan
-# selections and <ID>_GPU_OFFLOAD*) with the expected ones. Runs as any user, on any machine;
-# nothing outside a temporary directory is read for the scan or written.
+# selections and OMARCHY_GPU_OFFLOAD*, Omarchy's names, docs/6 choice 86) with the expected
+# ones. Runs as any user, on any machine; nothing outside a temporary directory is read for
+# the scan or written.
 # Usage: tests/gpu-env/run.sh
 set -u
 here=$(cd "$(dirname "$0")/../.." && pwd)
@@ -27,7 +28,7 @@ check() {
   mkdir -p "$tree/bus/pci/devices"
   while (($#)); do dev "$tree" $1; shift; done
   got=$(env -u __EGL_VENDOR_LIBRARY_FILENAMES -u AQ_DRM_DEVICES "${up}_GPU_SYSFS=$tree" sh "$gen" 2>/dev/null \
-        | grep -E "^(__EGL_VENDOR_LIBRARY_FILENAMES|VK_DRIVER_FILES|${up}_GPU_OFFLOAD|${up}_GPU_OFFLOAD_DEVICE)=" | paste -sd';')
+        | grep -E "^(__EGL_VENDOR_LIBRARY_FILENAMES|VK_DRIVER_FILES|OMARCHY_GPU_OFFLOAD|OMARCHY_GPU_OFFLOAD_DEVICE)=" | paste -sd';')
   [[ -z $got ]] && got=none
   if [[ $got == "$want" ]]; then echo "ok   $name: $got"; else echo "FAIL $name: got [$got], want [$want]"; fail=1; fi
 }
@@ -35,15 +36,15 @@ mesa_egl="__EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.j
 intel_vk="VK_DRIVER_FILES=/usr/share/vulkan/icd.d/intel_icd.json:/usr/share/vulkan/icd.d/intel_hasvk_icd.json"
 radeon_vk="VK_DRIVER_FILES=/usr/share/vulkan/icd.d/radeon_icd.json"
 
-check legion-intel-nvidia "$mesa_egl;$intel_vk;${up}_GPU_OFFLOAD=nvidia" \
+check legion-intel-nvidia "$mesa_egl;$intel_vk;OMARCHY_GPU_OFFLOAD=nvidia" \
   "0000:00:02.0 0x030000 0x8086 1" "0000:02:00.0 0x030000 0x10de 0" "0000:02:00.1 0x040300 0x10de -"
-check amd-apu-nvidia "$mesa_egl;$radeon_vk;${up}_GPU_OFFLOAD=nvidia" \
+check amd-apu-nvidia "$mesa_egl;$radeon_vk;OMARCHY_GPU_OFFLOAD=nvidia" \
   "0000:06:00.0 0x030000 0x1002 1" "0000:01:00.0 0x030200 0x10de 0"
-check intel-amd-dgpu "${up}_GPU_OFFLOAD=amd;${up}_GPU_OFFLOAD_DEVICE=pci-0000_03_00_0" \
+check intel-amd-dgpu "OMARCHY_GPU_OFFLOAD=amd;OMARCHY_GPU_OFFLOAD_DEVICE=pci-0000_03_00_0" \
   "0000:00:02.0 0x030000 0x8086 1" "0000:03:00.0 0x030000 0x1002 0"
-check amd-apu-amd-dgpu "${up}_GPU_OFFLOAD=amd;${up}_GPU_OFFLOAD_DEVICE=pci-0000_03_00_0" \
+check amd-apu-amd-dgpu "OMARCHY_GPU_OFFLOAD=amd;OMARCHY_GPU_OFFLOAD_DEVICE=pci-0000_03_00_0" \
   "0000:06:00.0 0x030000 0x1002 1" "0000:03:00.0 0x038000 0x1002 0"
-check intel-nvidia-amd "$mesa_egl;$intel_vk;${up}_GPU_OFFLOAD=nvidia" \
+check intel-nvidia-amd "$mesa_egl;$intel_vk;OMARCHY_GPU_OFFLOAD=nvidia" \
   "0000:00:02.0 0x030000 0x8086 1" "0000:01:00.0 0x030000 0x10de 0" "0000:03:00.0 0x030000 0x1002 0"
 check amd-desktop-only none "0000:03:00.0 0x030000 0x1002 1"
 check intel-only none "0000:00:02.0 0x030000 0x8086 1"

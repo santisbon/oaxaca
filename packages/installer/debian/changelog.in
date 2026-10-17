@@ -1,3 +1,11 @@
+@DISTRO_ID@-installer (0.1.7) @BASE_SERIES@; urgency=medium
+
+  * The system step sets OMARCHY_LOG_TO_STDOUT, Omarchy's variable name,
+    which the desktop packages now keep for plugins and themes written for
+    Omarchy (docs/6 choice 86).
+
+ -- @MAINTAINER@  Sat, 17 Oct 2026 12:12:00 -0500
+
 @DISTRO_ID@-installer (0.1.6) @BASE_SERIES@; urgency=medium
 
   * snapshots-setup, run as shellprocess@snapshots before the packages

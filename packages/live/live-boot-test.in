@@ -8,7 +8,7 @@
 id=@DISTRO_ID@
 user=$id
 uid=$(id -u "$user" 2>/dev/null || echo 1000)
-as_user() { runuser -u "$user" -- env XDG_RUNTIME_DIR=/run/user/$uid DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus HYPRLAND_INSTANCE_SIGNATURE="$sig" @DISTRO_ID_UPPER@_PATH=/usr/share/@DISTRO_ID@ "$@"; }
+as_user() { runuser -u "$user" -- env XDG_RUNTIME_DIR=/run/user/$uid DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus HYPRLAND_INSTANCE_SIGNATURE="$sig" OMARCHY_PATH=/usr/share/@DISTRO_ID@ "$@"; }
 
 # Kernel messages share the serial console with these lines and can land mid-line (a raid6
 # benchmark line glued to "shell layers:" failed a check on 2026-10-11); keep them off the

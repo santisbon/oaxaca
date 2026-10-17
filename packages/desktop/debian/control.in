@@ -2,7 +2,7 @@ Source: @DISTRO_ID@-desktop
 Section: x11
 Priority: optional
 Maintainer: @MAINTAINER@
-Build-Depends: debhelper-compat (= 13), python3-fonttools, imagemagick, fonts-dejavu-core, perl
+Build-Depends: debhelper-compat (= 13), imagemagick, fonts-dejavu-core, perl
 Standards-Version: 4.7.2
 Homepage: @DISTRO_HOME_URL@
 Rules-Requires-Root: no
@@ -89,7 +89,7 @@ Description: @DISTRO_NAME@ theme bundles and templates
 Package: @DISTRO_ID@-config
 Architecture: all
 Depends: ${misc:Depends},
- @DISTRO_ID@-session,
+ @DISTRO_ID@-session (>= 0.1.7),
  @DISTRO_ID@-tools (= ${binary:Version}),
  @DISTRO_ID@-themes (= ${binary:Version}),
  hicolor-icon-theme, fontconfig, bluez-tools

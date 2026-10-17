@@ -27,7 +27,8 @@
 # Nothing else: an installed system without a hardware package keeps aquamarine's own choice.
 # Hybrid graphics: the GPU the firmware used at boot (boot_vga = 1 under its PCI device) drives
 # the display, and a second GPU beside it renders only what is started on it ("offload"). Two
-# cases are recognized, and OAXACA_GPU_OFFLOAD names the discrete GPU's kind for the
+# cases are recognized, and OMARCHY_GPU_OFFLOAD (Omarchy's variable name, kept for plugins and
+# themes, docs/6 choice 86) names the discrete GPU's kind for the
 # session (the port's nvidia.lua) and for oaxaca-launch-dgpu, the launcher the menu uses:
 #   nvidia  an NVIDIA GPU beside an Intel or AMD display GPU. Every application's EGL and Vulkan
 #           point at Mesa, the display GPU's driver, so that starting one does not load NVIDIA's
@@ -37,7 +38,7 @@
 #           oaxaca-launch-nvidia runs an application on the NVIDIA GPU (PRIME render offload).
 #   amd     an AMD GPU that is not the display GPU, beside an Intel or AMD display GPU, and no
 #           NVIDIA GPU. Both GPUs run Mesa, which already defaults to the display GPU, so no
-#           driver selection is needed; OAXACA_GPU_OFFLOAD_DEVICE carries the AMD GPU's
+#           driver selection is needed; OMARCHY_GPU_OFFLOAD_DEVICE carries the AMD GPU's
 #           PCI address in the form Mesa's DRI_PRIME takes ("pci-0000_03_00_0", Mesa's
 #           docs/envvars.rst), and oaxaca-launch-dgpu sets DRI_PRIME to it (docs/7, choice 43).
 # With an NVIDIA and a second AMD GPU both beside the display GPU, the NVIDIA case applies.
@@ -71,10 +72,10 @@ hybrid_env() {
     if [ -n "$nvidia" ]; then
         echo "__EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json"
         echo "VK_DRIVER_FILES=$icds"
-        echo "OAXACA_GPU_OFFLOAD=nvidia"
+        echo "OMARCHY_GPU_OFFLOAD=nvidia"
     elif [ -n "$amd_offload" ]; then
-        echo "OAXACA_GPU_OFFLOAD=amd"
-        echo "OAXACA_GPU_OFFLOAD_DEVICE=$amd_offload"
+        echo "OMARCHY_GPU_OFFLOAD=amd"
+        echo "OMARCHY_GPU_OFFLOAD_DEVICE=$amd_offload"
     fi
 }
 [ -n "$__EGL_VENDOR_LIBRARY_FILENAMES" ] || hybrid_env

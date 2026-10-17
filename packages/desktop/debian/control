@@ -3,7 +3,7 @@ Source: oaxaca-desktop
 Section: x11
 Priority: optional
 Maintainer: santisbon <santisbon@users.noreply.github.com>
-Build-Depends: debhelper-compat (= 13), python3-fonttools, imagemagick, fonts-dejavu-core, perl
+Build-Depends: debhelper-compat (= 13), imagemagick, fonts-dejavu-core, perl
 Standards-Version: 4.7.2
 Homepage: https://github.com/santisbon/oaxaca
 Rules-Requires-Root: no
@@ -90,7 +90,7 @@ Description: Oaxaca theme bundles and templates
 Package: oaxaca-config
 Architecture: all
 Depends: ${misc:Depends},
- oaxaca-session,
+ oaxaca-session (>= 0.1.7),
  oaxaca-tools (= ${binary:Version}),
  oaxaca-themes (= ${binary:Version}),
  hicolor-icon-theme, fontconfig, bluez-tools

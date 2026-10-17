@@ -1,3 +1,11 @@
+oaxaca-live (0.1.5) stonking; urgency=medium
+
+  * live-boot-test sets OMARCHY_PATH, Omarchy's variable name, which the
+    desktop packages now keep for plugins and themes written for Omarchy
+    (docs/6 choice 86).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sat, 17 Oct 2026 12:12:00 -0500
+
 oaxaca-live (0.1.4) stonking; urgency=medium
 
   * Depend on timeshift: the live session can restore a btrfs install's

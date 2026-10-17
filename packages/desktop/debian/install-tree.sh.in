@@ -29,6 +29,23 @@ done
 # Ubuntu names these two binaries fdfind and batcat (name clashes in Debian's archive).
 ln -s fdfind "$tools/usr/bin/fd"
 ln -s batcat "$tools/usr/bin/bat"
+# Omarchy's names for what plugins and themes written for Omarchy call (docs/6, choice 86):
+# omarchy-<name> for every <id>-<name> command, omarchy for the <id> dispatcher, and
+# /usr/share/omarchy for /usr/share/<id>. port/rename.sh fails the build when a file of the
+# port itself still says omarchy-<name>, so nothing shipped depends on these links.
+upstream=omarchy
+for f in "$tools"/usr/bin/"$id"-*; do
+  b=$(basename "$f")
+  ln -s "$b" "$tools/usr/bin/$upstream-${b#"$id"-}"
+done
+ln -s "$id" "$tools/usr/bin/$upstream"
+ln -s "$id" "$tools/usr/share/$upstream"
+# Stand-ins for Arch's package tools, at the end of PATH (default/bash/env-bootstrap): each name
+# runs <id>-arch-standin, which explains that the distro uses apt (docs/6, choice 86).
+install -d "$tools/usr/lib/$id/arch-standins"
+for tool in pacman yay paru makepkg; do
+  ln -s "/usr/bin/$id-arch-standin" "$tools/usr/lib/$id/arch-standins/$tool"
+done
 cp -a "$R/install" "$tools/$share/install"
 install -D -m 0644 "$R/version" "$tools/$share/version"
 # The migrations directory always exists in the package, so omarchy-migrate-notify.service's

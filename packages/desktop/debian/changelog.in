@@ -16,6 +16,22 @@
     Docker's apt repository, Docker's package, the kvm group), and Remove >
     Development > Docker Desktop removes it with its containers and images.
     Omarchy's own Docker setup stays out.
+  * Plugins and themes written for Omarchy work on the distro (docs/6
+    choice 86). Every command answers to its Omarchy name too
+    (omarchy-<name> and omarchy link to the distro's), and so does
+    /usr/share/omarchy; each user gets ~/.config/omarchy,
+    ~/.local/state/omarchy and ~/.local/share/omarchy as links. Names users
+    do not see keep Omarchy's spelling: the built-in plugins' IDs
+    (omarchy.clock), OMARCHY_* variables, app IDs (org.omarchy.terminal), a
+    plugin manifest's "omarchy" section and the icon font's family. A
+    migration updates existing users' files to those names, and
+    @DISTRO_ID@-config needs @DISTRO_ID@-session 0.1.7, which exports the
+    GPU variables under Omarchy's names.
+  * Adding a plugin or a theme warns when its files mention Arch Linux's
+    package tools (pacman, yay, paru, makepkg), and asks before keeping
+    it. Stand-ins for those tools, last on PATH, say that the distro uses
+    apt and change nothing. Omarchy's package command installs the Ubuntu
+    package for an Arch name it knows (bluez-obex is bluez-obexd).
 
  -- @MAINTAINER@  Sat, 17 Oct 2026 01:10:00 -0500
 
