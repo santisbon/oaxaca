@@ -1,5 +1,16 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * The firewall comes on for systems installed before it was turned on at
+    install (docs/6, choice 40): on an upgrade, @DISTRO_ID@-config's postinst
+    allows LocalSend's port and enables ufw when it is off and the system
+    has never had the firewall set up. A user who turns ufw off afterwards
+    keeps it off.
+  * Docker Desktop is the first entry of Install > Development.
+
+ -- @MAINTAINER@  Sat, 17 Oct 2026 16:51:52 -0500
+
+@DISTRO_ID@-desktop (4.0.4+git20261017.93.86706132-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * An update no longer leaves the running session with an empty bar and
     dead menu keys. The shell's commands (@DISTRO_ID@-shell,
     @DISTRO_ID@-restart-shell, @DISTRO_ID@-launch-shell) and

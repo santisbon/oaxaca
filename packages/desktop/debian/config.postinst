@@ -43,6 +43,23 @@ case "$1" in
       # iwlwifi keeps the option until it loads again.
       request_reboot
     fi
+    # The firewall (docs/6, choice 40): install/config/firewall.sh turns ufw on at install since
+    # desktop 4.0.4+git20261016.47; systems installed earlier have it off, and migrations run as
+    # the user, without root. On an upgrade (not the image build, where $2 is empty), a system
+    # without the marker firewall.sh writes gets the same state once, live: LocalSend's port and
+    # ufw on. The marker then keeps a user's own "ufw disable" in force.
+    marker=/var/lib/oaxaca/firewall-on
+    if [ -n "$2" ] && [ ! -e "$marker" ] && command -v ufw >/dev/null; then
+      if grep -q '^ENABLED=no' /etc/ufw/ufw.conf 2>/dev/null; then
+        ufw allow 53317/udp comment localsend >/dev/null || true
+        ufw allow 53317/tcp comment localsend >/dev/null || true
+        sed -i 's/^ENABLED=.*/ENABLED=yes/' /etc/ufw/ufw.conf
+        systemctl enable ufw >/dev/null 2>&1 || true
+        ufw --force enable >/dev/null 2>&1 || echo "oaxaca-config: ufw is on from the next boot" >&2
+      fi
+      mkdir -p /var/lib/oaxaca
+      touch "$marker"
+    fi
     update-alternatives --install /usr/share/plymouth/themes/default.plymouth default.plymouth \
       /usr/share/plymouth/themes/oaxaca/oaxaca.plymouth 150
     if command -v update-initramfs >/dev/null && [ -d /boot ] && ls /boot/vmlinuz-* >/dev/null 2>&1; then

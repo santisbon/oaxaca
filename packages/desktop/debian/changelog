@@ -1,5 +1,16 @@
 oaxaca-desktop (4.0.4+git20261017.93.86706132-0oaxaca1) stonking; urgency=medium
 
+  * The firewall comes on for systems installed before it was turned on at
+    install (docs/6, choice 40): on an upgrade, oaxaca-config's postinst
+    allows LocalSend's port and enables ufw when it is off and the system
+    has never had the firewall set up. A user who turns ufw off afterwards
+    keeps it off.
+  * Docker Desktop is the first entry of Install > Development.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sat, 17 Oct 2026 16:51:52 -0500
+
+oaxaca-desktop (4.0.4+git20261017.93.86706132-0oaxaca1) stonking; urgency=medium
+
   * An update no longer leaves the running session with an empty bar and
     dead menu keys. The shell's commands (oaxaca-shell,
     oaxaca-restart-shell, oaxaca-launch-shell) and
