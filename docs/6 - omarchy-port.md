@@ -132,7 +132,7 @@ Rule, set 2026-10-10: `oaxaca-desktop` depends on what the desktop needs to func
 
 | Group | Packages | Also removed from the port branch |
 |---|---|---|
-| Omarchy's removable preinstalls | libreoffice (in the menu again from Flathub since 2026-10-14, choice 31), kdenlive and xournalpp (in the menu from Flathub since 2026-10-17, choice 84), obs-studio (in the menu from Flathub since 2026-10-17, choice 83) | `omarchy-install-preinstalls`, `omarchy-remove-preinstalls`, their menu entries, `config/xournalpp` |
+| Omarchy's removable preinstalls | libreoffice (in the menu again since 2026-10-14, from the Snap Store since 2026-10-15, choice 31), kdenlive and xournalpp (in the menu from Flathub since 2026-10-17, choice 84), obs-studio (in the menu from Flathub since 2026-10-17, choice 83) | `omarchy-install-preinstalls`, `omarchy-remove-preinstalls`, their menu entries, `config/xournalpp` |
 | Web-app launchers | none (they were `.desktop` files) | Basecamp, HEY, X, WhatsApp, Zoom, Discord, YouTube, Google Contacts, Maps, Messages and Photos, Docker and Disk Usage launchers with their icons; foot, imv and mpv stay |
 | Docker | docker.io, docker-buildx, docker-compose-v2 | the Super+Shift+D binding, `omarchy-launch-docker-tui`, `-install-docker-dbs`, `-windows-vm`, `-sudo-docker`, the sudoless-docker setup and removal scripts, `install/config/docker.sh`, the `docker.socket` enable, the Windows menu entries |
 | Flatpak | none: `flatpak` went out with this pass and came back the same day as a preconfigured store (choice 17) | nothing |
