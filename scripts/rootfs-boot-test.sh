@@ -247,7 +247,8 @@ grep -c 'Completed:' /var/log/$id-install.log | sed 's/^/apply-system completed 
 grep 'Failed:' /var/log/$id-install.log | sed 's/^/apply-system: /'
 echo "version: \$($id-version 2>&1)"
 echo "packages: \$(dpkg-query -W -f='\${Package} \${Version}\n' $id-fonts asdcontrol hyprland-preview-share-picker nwg-displays 2>&1 | paste -sd'|')"
-echo "fonts: jetbrains=\$(fc-list | grep -c JetBrainsMonoNerdFont) icon=\$(fc-list : family | grep -cx $id)"
+# The icon font keeps Omarchy's family name, "omarchy", for plugins written for Omarchy (docs/6, choice 86).
+echo "fonts: jetbrains=\$(fc-list | grep -c JetBrainsMonoNerdFont) icon=\$(fc-list : family | grep -cx omarchy)"
 echo "pam lock files: \$(ls /etc/pam.d/ | grep "^$id-lock" | paste -sd' ')"
 # ufw on from the next boot, with LocalSend's port (step 6, choice 40): apply-system's firewall.sh
 # adds two rules to user.rules and sets ENABLED=yes; ufw.service already ran this boot, so the
@@ -272,7 +273,7 @@ echo "font list icon fonts: \$($id-font-list | grep -c -i -E 'material icons|fon
 echo "mise source: \$(apt-cache policy mise 2>/dev/null | awk '/\*\*\*/{getline; print \$2; exit}')"
 echo "fingerprint profile: \$(sed -n 's/^\t\[success=1 default=ignore\]\t\(pam_exec.so quiet .*\)/\1/p' /usr/share/pam-configs/$id-fprintd 2>/dev/null)"
 # The user's session environment, as the ported session file and uwsm set it up.
-echo "session env: \$(as_user systemctl --user show-environment 2>/dev/null | grep -E '^(${id^^}_PATH|XDG_CURRENT_DESKTOP)=' | paste -sd' ')"
+echo "session env: \$(as_user systemctl --user show-environment 2>/dev/null | grep -E '^(OMARCHY_PATH|XDG_CURRENT_DESKTOP)=' | paste -sd' ')"
 echo "hyprland config: \$(run_user hyprctl -j getoption general:border_size 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print("border_size=%s" % d.get("int"))' 2>/dev/null)"
 # The shell the port's autostart launched: its process, its IPC ping, its layers.
 echo "shell process: \$(pgrep -u tester -f 'quickshell.*-p /usr/share/$id/shell' | head -1 | sed 's/.*/running/')"
@@ -553,7 +554,8 @@ if [[ $profile == desktop ]]; then
   check "^mise source: https://mise.jdx.dev/deb$"
   check "^fingerprint profile: pam_exec.so quiet /usr/bin/$DISTRO_ID-hw-laptop-closed$"
   check "^ubuntu defaults: bashrc=bash aliases=yes zram=no sysctl=2 auto-upgrades=1$"
-  check "^session env: .*${DISTRO_ID^^}_PATH=/usr/share/$DISTRO_ID"
+  # OMARCHY_PATH keeps Omarchy's name, for plugins written for Omarchy (docs/6, choice 86).
+  check "^session env: .*OMARCHY_PATH=/usr/share/$DISTRO_ID"
   check "^shell process: running$"
   check "^shell ping: ok$"
   check "^shell layers: \\[.*$DISTRO_ID-bar"

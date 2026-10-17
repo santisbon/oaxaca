@@ -184,8 +184,9 @@ echo "$id-upgrade-test: synthetic migration"
 mkdir -p "\$HOME/.local/state/$id"
 echo ran > "\$HOME/.local/state/$id/upgrade-test-migration"
 EOF
-  upper=${id^^}
-  as_tester() { runuser -u tester -- env "HOME=$home" "${upper}_PATH=/usr/share/$id" PATH=/usr/local/bin:/usr/bin:/bin "$@"; }
+  # The migrations read OMARCHY_PATH, Omarchy's name, kept for plugins written for Omarchy
+  # (docs/6, choice 86).
+  as_tester() { runuser -u tester -- env "HOME=$home" "OMARCHY_PATH=/usr/share/$id" PATH=/usr/local/bin:/usr/bin:/bin "$@"; }
   r "migrations shipped: $(ls "$mdir"/*.sh 2>/dev/null | grep -vc 9999999999)"
   r "migrations pending before: $(as_tester "$id-migrate" --pending 2>/dev/null | grep -c .)"
   as_tester "$id-migrate"
