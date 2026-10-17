@@ -1,5 +1,15 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * The installer sets the wireless regulatory domain from the timezone
+    chosen at install again, as Omarchy does: the timezone's country goes to
+    /etc/modprobe.d/@DISTRO_ID@-wireless-regdom.conf as cfg80211's
+    ieee80211_regdom option. Wi-Fi cards that manage their own regulatory
+    domain, such as Intel's, ignore it.
+
+ -- @MAINTAINER@  Sat, 17 Oct 2026 01:10:00 -0500
+
+@DISTRO_ID@-desktop (4.0.4+git20261017.78.dacbe9f9-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Style > Font changes the system's monospace font again: the fontconfig
     rule that makes monospace JetBrains Mono is linked as
     /etc/fonts/conf.d/51-@DISTRO_ID@.conf, after 50-user.conf, so the user's
