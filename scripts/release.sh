@@ -84,8 +84,10 @@ make iso
 make iso-test
 make iso-test SECURE_BOOT=off
 
-# 7. The published packages upgraded to build/'s in a throwaway chroot, migrations included.
+# 7. The published packages upgraded to build/'s in a throwaway chroot, migrations included; then
+#    the published desktop booted in QEMU and updated to build/'s inside its running session.
 make upgrade-test
+make session-upgrade-test
 
 # 8. Commit this repository (git opens the editor; an empty message stops the release) and push.
 git status -sb

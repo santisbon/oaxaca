@@ -33,6 +33,7 @@ Nothing is ever installed and then stripped out: the root filesystem is assemble
   - [`unshare` with `chroot` (`make drivers-check`)](#unshare-with-chroot-make-drivers-check)
   - [`git` with `dpkg --compare-versions` (`make check-versions`)](#git-with-dpkg---compare-versions-make-check-versions)
   - [`mmdebstrap` with `dpkg-scanpackages` (`make upgrade-test`)](#mmdebstrap-with-dpkg-scanpackages-make-upgrade-test)
+  - [`qemu-system-x86_64` on the published desktop (`make session-upgrade-test`)](#qemu-system-x86_64-on-the-published-desktop-make-session-upgrade-test)
   - [`curl` with GitHub's API (`make upstream-check`)](#curl-with-githubs-api-make-upstream-check)
   - [GitHub Actions (`.github/workflows/build.yml`)](#github-actions-githubworkflowsbuildyml)
   - [`scripts/suspend-baseline.sh` (measurement, not build)](#scriptssuspend-baselinesh-measurement-not-build)
@@ -168,7 +169,7 @@ Next: the roadmap's eight steps are done. Pending, as of 2026-10-15 (details in 
 
 ```
 distro.conf          the only place the distro's name and identity live
-Makefile             entry points: render, check-versions, upstream-check, chroot, build, publish, rootfs, rootfs-test, drivers-check, iso, iso-test, upgrade-test
+Makefile             entry points: render, check-versions, upstream-check, chroot, build, publish, rootfs, rootfs-test, drivers-check, iso, iso-test, upgrade-test, session-upgrade-test
 sbuild.conf          sbuild settings for this repo (loaded through SBUILD_CONFIG)
 scripts/
   render.py          fills @@TOKEN@@ templates (*.in) from distro.conf
@@ -184,7 +185,10 @@ scripts/
   vendor-copyright.py  writes the debian/copyright paragraphs for a vendored Rust crate tree, from each crate's license field (texts in licenses/)
   rootfs-create.sh   builds the root filesystem tarball with mmdebstrap (steps 3, 4, 6 and 7; PROFILE=base|session|desktop|live)
   keys/xtradeb.gpg   the xtradeb PPA's signing key, for the Chromium the desktop and live profiles install (docs/6, choice 3)
-  rootfs-boot-test.sh  boots that tarball in QEMU and checks the base system, the graphical session and, for desktop, the ported desktop
+  rootfs-boot-test.sh  boots that tarball in QEMU and checks the base system, the graphical session and, for desktop, the ported desktop;
+                       UPGRADE=1 updates the published desktop to build/ inside its running session first
+  boot-test-bindings.lua, boot-test-bindings.py
+                       the boot test's keybinding lister (Lua) and the check of the programs the bindings run
   drivers-check.sh   runs ubuntu-drivers inside the tarball against this machine's GPU (step 4)
   iso-create.sh      turns the live tarball into the installation ISO: squashfs, signed shim and GRUB in an EFI image, xorriso (step 7)
   iso-boot-test.sh   boots the test ISO in QEMU under OVMF, Secure Boot on or off, and checks the live session and the installer
@@ -309,12 +313,13 @@ make rootfs                        # needs build/*.deb from make build; PROFILE=
 make rootfs PROFILE=desktop        # step 6's tarball, without casper and the installer
 make rootfs PROFILE=session        # step 4's tarball
 make rootfs PROFILE=base           # step 3's tarball
+make rootfs PROFILE=desktop SOURCE=published   # step 6's tarball with our packages from the published archive
 UBUNTU_MIRROR=http://us.archive.ubuntu.com/ubuntu make rootfs
 ```
 
 ### `qemu-system-x86_64` with `mke2fs` (`make rootfs-test`)
 
-QEMU is the machine emulator; with KVM (`/dev/kvm`) it runs the guest on the real CPU. `scripts/rootfs-boot-test.sh` pulls the kernel and initramfs out of the root filesystem tarball with `tar`, unpacks the tarball inside an unprivileged user namespace and turns it into a raw ext4 disk image with `mke2fs -d`, drops in a oneshot systemd unit that runs the checks and powers off, then boots the kernel directly (`-kernel`, `-initrd`, `-append`) with the ext4 image as `/dev/vda` and the serial console logged to a file. The script prints the checks (systemd running, no failed units, `os-release` identity, AppArmor and NetworkManager active, network connected, `apt update` succeeding against both archives, snapd available from the archive) and exits non-zero if any check failed. For the `session` profile the guest also gets a virtio GPU (with virgl through the host's render node when one is writable) and a test user that SDDM logs in automatically, and the checks continue: uwsm's units active in the user's systemd manager, Hyprland on the virtual monitor, `xeyes` as an Xwayland client, the three portals answering, the Secret Service (GNOME Keyring) answering, `ubuntu-drivers` and `@DISTRO_ID@-drivers-install --show` running. For the `desktop` profile the test user's home is seeded from `/etc/skel`, `@DISTRO_ID@-apply-system` runs before SDDM as the installer will run it, SDDM logs the user into the port's own session, and the checks continue with the shell the port launched (its IPC ping, its bar and background layers), first-run (the theme it set, the user units it enabled), a live theme switch, the menu, the fonts and the third-party packages.
+QEMU is the machine emulator; with KVM (`/dev/kvm`) it runs the guest on the real CPU. `scripts/rootfs-boot-test.sh` pulls the kernel and initramfs out of the root filesystem tarball with `tar`, unpacks the tarball inside an unprivileged user namespace and turns it into a raw ext4 disk image with `mke2fs -d`, drops in a oneshot systemd unit that runs the checks and powers off, then boots the kernel directly (`-kernel`, `-initrd`, `-append`) with the ext4 image as `/dev/vda` and the serial console logged to a file. The script prints the checks (systemd running, no failed units, `os-release` identity, AppArmor and NetworkManager active, network connected, `apt update` succeeding against both archives, snapd available from the archive) and exits non-zero if any check failed. For the `session` profile the guest also gets a virtio GPU (with virgl through the host's render node when one is writable) and a test user that SDDM logs in automatically, and the checks continue: uwsm's units active in the user's systemd manager, Hyprland on the virtual monitor, `xeyes` as an Xwayland client, the three portals answering, the Secret Service (GNOME Keyring) answering, `ubuntu-drivers` and `@DISTRO_ID@-drivers-install --show` running. For the `desktop` profile the test user's home is seeded from `/etc/skel`, `@DISTRO_ID@-apply-system` runs before SDDM as the installer will run it, SDDM logs the user into the port's own session, and the checks continue with the shell the port launched (its IPC ping, its bar and background layers), first-run (the theme it set, the user units it enabled), a live theme switch, the menu, the fonts and the third-party packages. Then the bar must show its widgets (the shell's `debugBarGeometry` call; a bar whose plugins failed to load still has its layer surface), and the keybindings are checked: Lua, installed in the guest with apt, runs the test user's `hyprland.lua` through `scripts/boot-test-bindings.lua`, which lists every binding and the command it runs; `scripts/boot-test-bindings.py`, started through Hyprland so it sees the environment a key press gives a command, checks that every program those commands run is on `PATH`; and each binding that opens a menu or a shell panel is run through Hyprland (`hyprctl dispatch` with `hl.dsp.exec_cmd`), as a key press runs it, and must exit 0 and, for a menu, put the menu's layer on screen.
 
 ```
 make rootfs-test                   # the live tarball with the desktop checks (casper's medium check masked, the installer's autostart removed: both need the ISO)
@@ -356,6 +361,14 @@ VERSION_CHECK_TAG=<ref> scripts/version-check.sh   # compare against any ref
 
 ```
 make upgrade-test                  # needs build/*.deb and network access to the published archive
+```
+
+### `qemu-system-x86_64` on the published desktop (`make session-upgrade-test`)
+
+The upgrade test above upgrades packages in a chroot, where no desktop runs. An update on an installed system happens inside a running session, whose environment, shell process and Hyprland configuration all started on N; on 2026-10-17 an update that renamed `OAXACA_PATH` to `OMARCHY_PATH` left the running session's bar empty and Super+Space dead, and no test saw it, because every boot test booted a fresh image. `make session-upgrade-test` runs two scripts. `scripts/rootfs-create.sh` with `SOURCE=published` builds the desktop tarball with our packages from the published archive instead of `build/` (`build/rootfs/@DISTRO_ID@-@BASE_VERSION@-amd64-desktop-published.tar`). `scripts/rootfs-boot-test.sh` with `UPGRADE=1` boots that tarball as `make rootfs-test` boots its own, with `build/`'s newest packages copied into the image as a flat file archive. Once first-run has finished and the shell answers, the guest adds apt's source for that archive and runs `@DISTRO_ID@-update -y` as the test user in the environment the session had at login, as a terminal opened before the update would. The update must exit 0, print no shell errors (an unbound variable, a missing command or file, Omarchy's "Something went wrong"), change the desktop's version and restart the shell. Then every desktop check above runs against the upgraded system inside the session that began before the update.
+
+```
+make session-upgrade-test          # needs build/*.deb, KVM, and network access to the published archive
 ```
 
 ### `curl` with GitHub's API (`make upstream-check`)
@@ -411,6 +424,7 @@ Ubuntu archive + build/{archive-keyring,apt-source,base[,nvidia,session,quickshe
                                                 tar + unshare/chroot ──▶ ubuntu-drivers devices, @DISTRO_ID@-drivers-install --show, apt --simulate   (make drivers-check)
 
 @APT_URL@ (N) + build/*.deb (N+1) ──mmdebstrap (minbase + N), apt-get full-upgrade, @DISTRO_ID@-migrate──▶ build/upgrade-test/report.txt   (make upgrade-test; CI)
+@APT_URL@ (N, desktop tarball) + build/*.deb (N+1) ──qemu: log in on N, @DISTRO_ID@-update -y inside the session──▶ desktop checks on N+1   (make session-upgrade-test)
 
 live tarball (PROFILE=live: desktop + casper + @DISTRO_ID@-live + @DISTRO_ID@-installer) + the NVIDIA driver pool (apt download) ──mksquashfs, signed shim and GRUB into a FAT image, xorriso──▶ build/iso/@DISTRO_ID@-@BASE_VERSION@-amd64.iso (+ -test.iso)   (make iso)
                                                                                         │
@@ -541,7 +555,7 @@ What `make release` does, stopping at the first failure:
 4. Runs `make upstream-check` and reports a newer upstream release without stopping.
 5. Builds the live root filesystem and boots it in QEMU (`make rootfs`, `make rootfs-test`: the base, session and desktop checks).
 6. Builds the ISO and boots it under OVMF with Secure Boot on, then off (`make iso`, `make iso-test`, `make iso-test SECURE_BOOT=off`).
-7. Upgrades the published packages to `build/`'s in a throwaway chroot, migrations included (`make upgrade-test`).
+7. Upgrades the published packages to `build/`'s in a throwaway chroot, migrations included (`make upgrade-test`), then boots the published desktop and updates it to `build/`'s inside its running session (`make session-upgrade-test`).
 8. Commits this repository (git opens the editor; an empty message stops the release) and pushes.
 9. Signs the repository locally with `make publish` (pinentry asks for the apt signing key passphrase), lists what the upload would change, and asks `Upload to @APT_S3_BUCKET@? [y/N]`.
 10. On `y`, uploads with `make publish PUBLISH_FLAGS=--push` and checks the uploaded signature with `gpgv`, which must print `Good signature from "@DISTRO_NAME@ Archive Signing Key"` ([docs/2, One-time setup](2%20-%20build-infra.md#one-time-setup-in-order), step 5, explains the other results).

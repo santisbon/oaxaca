@@ -44,15 +44,32 @@
 #   the theme name file, the user units it enables), the lock-screen PAM files exist, a theme
 #   switch with "<id>-theme-set" takes effect live, the menu opens as a layer surface on
 #   "<id>-menu toggle", the fonts and the third-party packages are installed, "<id>-version"
-#   and "<id>-update-available" run, and the shell's journal has no error lines.
+#   and "<id>-update-available" run, and the shell's journal has no error lines. The bar has
+#   visible widgets (the shell's debugBarGeometry call), not only a layer surface. The
+#   keybindings: Lua (lua5.4, installed with apt inside the guest) runs the user's hyprland.lua
+#   through scripts/boot-test-bindings.lua, which lists every binding and the command it runs;
+#   scripts/boot-test-bindings.py, started through Hyprland so that it sees a key press's
+#   environment, checks that every program those commands run is on PATH; and every binding that
+#   opens a menu or a shell panel is run the way a key press runs it (hyprctl dispatch with
+#   hl.dsp.exec_cmd), exits 0, and for a menu puts the menu's layer on screen.
+#   UPGRADE=1 (desktop profile): the tarball is the published system (rootfs-create.sh with
+#   SOURCE=published), and build/'s newest packages go into the image as a flat apt archive.
+#   Once the session is up, the guest runs "<id>-update -y" as the test user in the session's
+#   environment from login, as a terminal opened before the update would, and with apt's source
+#   for build/ added, so the update installs build/. The update must exit 0 with no shell
+#   errors in its output and restart the shell; all the desktop checks then run against the
+#   upgraded system in the session that began before it. Found missing on 2026-10-17: an update
+#   that renamed a variable left the running session's bar empty and Super+Space dead, and every
+#   test booted a fresh image.
 #
 # Usage: scripts/rootfs-boot-test.sh [tarball]   default: build/rootfs/<id>-<version>-amd64-<profile>.tar
+#                                                (with UPGRADE=1: ...-desktop-published.tar)
 # Env:   PROFILE (base | session | desktop | live, default live; the live tarball is the desktop plus
 #        casper and the installer, so live runs the desktop checks with casper's medium check masked
 #        and the installer's autostart removed), QEMU_MEM (MiB, default 2048 base /
 #        3072 session / 4096 desktop and live),
 #        QEMU_TIMEOUT (seconds, default 600), QEMU_RENDERNODE (default: the first non-NVIDIA render node),
-#        KEEP=1 keeps the work dir
+#        KEEP=1 keeps the work dir, UPGRADE=1 (see above; QEMU_TIMEOUT default 900)
 set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
 # shellcheck source=/dev/null
@@ -60,8 +77,11 @@ source "$here/distro.conf"
 
 profile=${PROFILE:-live}
 case $profile in base|session|desktop|live) ;; *) echo "unknown PROFILE '$profile' (base, session, desktop or live)" >&2; exit 1 ;; esac
-tarball=${1:-"$here/build/rootfs/$DISTRO_ID-$BASE_VERSION-amd64-$profile.tar"}
-[[ -f $tarball ]] || { echo "no root filesystem tarball at $tarball: run 'make rootfs PROFILE=$profile' first" >&2; exit 1; }
+upgrade=${UPGRADE:-0}
+[[ $upgrade == 0 || $profile == desktop ]] || { echo "UPGRADE=1 needs PROFILE=desktop" >&2; exit 1; }
+suffix=""; [[ $upgrade == 1 ]] && suffix=-published
+tarball=${1:-"$here/build/rootfs/$DISTRO_ID-$BASE_VERSION-amd64-$profile$suffix.tar"}
+[[ -f $tarball ]] || { echo "no root filesystem tarball at $tarball: run 'make rootfs PROFILE=$profile${suffix:+ SOURCE=published}' first" >&2; exit 1; }
 # The live tarball is the desktop tarball plus casper, the live-session package and the installer
 # (scripts/rootfs-create.sh), so the desktop checks are the right ones for it. Two of its parts do
 # act when the tarball boots from a disk instead of the ISO, and the image preparation below
@@ -78,6 +98,27 @@ image="$work/root.ext4"
 serial="$work/serial.log"
 case $profile in desktop) default_mem=4096 ;; session) default_mem=3072 ;; *) default_mem=2048 ;; esac
 mem=${QEMU_MEM:-$default_mem}
+timeout_s=${QEMU_TIMEOUT:-600}
+[[ $upgrade == 1 ]] && timeout_s=${QEMU_TIMEOUT:-900}
+
+upgrade_dir=""
+if [[ $upgrade == 1 ]]; then
+  # build/'s newest .deb of each package (dpkg's version order), with a Packages index for apt's
+  # flat-archive format (dpkg-scanpackages), as upgrade-test.sh stages them.
+  upgrade_dir="$work/upgrade"
+  mkdir -p "$upgrade_dir"
+  declare -A up_ver up_deb
+  for deb in "$here"/build/*.deb; do
+    [[ -f $deb ]] || continue
+    base=$(basename "$deb"); n=${base%%_*}; rest=${base#*_}; v=${rest%%_*}
+    if [[ -z ${up_ver[$n]:-} ]] || dpkg --compare-versions "$v" gt "${up_ver[$n]}"; then
+      up_ver[$n]=$v; up_deb[$n]=$deb
+    fi
+  done
+  for n in "${!up_deb[@]}"; do cp "${up_deb[$n]}" "$upgrade_dir/"; done
+  (cd "$upgrade_dir" && dpkg-scanpackages . /dev/null > Packages 2>/dev/null)
+  echo "== upgrade: $(grep -c '^Package:' "$upgrade_dir/Packages") packages from build/ staged for the update inside the session"
+fi
 
 echo "== kernel and initramfs out of $tarball"
 kver=$(tar -tf "$tarball" | sed -n 's|^\./boot/vmlinuz-\(.*\)$|\1|p' | sort -V | tail -1)
@@ -103,8 +144,9 @@ fi
 echo "== ext4 image from the tarball (unprivileged user namespace)"
 # Everything in this heredoc runs as the root user inside the namespace, so the tarball's
 # root-owned files extract with their real ownership and mke2fs records it.
-unshare --user --map-root-user --map-auto bash -eu -s "$tarball" "$work" "$image" "$DISTRO_ID" "$profile" "$omarchy_dir" "$live" <<'INNER'
-tarball=$1 work=$2 image=$3 id=$4 profile=$5 omarchy_dir=$6 live=$7
+unshare --user --map-root-user --map-auto bash -eu -s "$tarball" "$work" "$image" "$DISTRO_ID" "$profile" "$omarchy_dir" "$live" "$upgrade_dir" "$here/scripts" <<'INNER'
+tarball=$1 work=$2 image=$3 id=$4 profile=$5 omarchy_dir=$6 live=$7 upgrade_dir=$8 scripts=$9
+upgrade=0; [ -n "$upgrade_dir" ] && upgrade=1
 root="$work/root"
 mkdir "$root"
 # Device nodes cannot be created in a user namespace, and the guest kernel mounts devtmpfs
@@ -238,6 +280,49 @@ echo "omarchy shell log: \$(echo "\$log" | grep -c .) lines, \$(echo "\$log" | g
 echo "\$log" | grep -iE 'error|cannot|not a type|is not defined|no such file' | sed -E 's/^[^ ]+ [0-9:.]+ //' | cut -c1-150 | sort | uniq -c | sort -rn | head -n 10 | sed 's/^/omarchy shell log: /'
 EOF
 fi
+if [ "$upgrade" = 1 ]; then
+cat >> "$root/usr/local/sbin/$id-boot-test" <<EOF
+echo "--- upgrade in the running session"
+# The visible widgets of the bar on screen, by id (the shell's debugBarGeometry IPC call).
+bar_widgets() {
+    run_user $id-shell shell debugBarGeometry 2>/dev/null | python3 -c '
+import json, sys
+v = [w["id"] for w in json.load(sys.stdin) if w.get("visible")]
+print("%d visible: %s" % (len(v), " ".join(v)))' 2>/dev/null || echo "0 visible: (no answer)"
+}
+# The session as an installed system has it before its update: first-run done, the shell up.
+for i in \$(seq 120); do
+    [ -f /home/tester/.local/state/$id/done/first-run-user ] && run_user $id-shell shell ping >/dev/null 2>&1 && break
+    sleep 1
+done
+from=\$(dpkg-query -W -f='\${Version}' $id-desktop)
+echo "bar widgets before upgrade: \$(bar_widgets)"
+shell_before=\$(pgrep -u tester -f 'quickshell.*-p /usr/share/$id/shell' | head -1)
+# build/ as a flat archive (copied into the image), and the sudo rule an administrator's own
+# password would stand for. verifypw=any: the update's stay-awake step runs "sudo -v" when its
+# input is a terminal (the update runs itself under script(1), so it is), and with sudo's default
+# verifypw=all that asks for a password whenever any matching entry lacks NOPASSWD, as
+# /etc/sudoers' %sudo line does; the first try hung the update on that prompt (2026-10-17).
+printf 'Types: deb\nURIs: file:/var/lib/$id-upgrade-test\nSuites: ./\nTrusted: yes\n' > /etc/apt/sources.list.d/$id-upgrade-test.sources
+printf 'Defaults:tester verifypw=any\ntester ALL=(ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/90-$id-boot-test
+chmod 0440 /etc/sudoers.d/90-$id-boot-test
+# The user's update in the environment the user manager got at login, which a terminal opened
+# before the update also has.
+# A prompt nobody answers would hang it: after 8 minutes the test goes on with exit 124 and the log.
+timeout 480 runuser -u tester -- env XDG_RUNTIME_DIR=/run/user/1001 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1001/bus systemd-run --user --pipe --wait --collect -q -u $id-boot-test-update $id-update -y > /tmp/update.log 2>&1
+echo "update exit: \$?"
+to=\$(dpkg-query -W -f='\${Version}' $id-desktop)
+echo "upgrade: \$from -> \$to"
+echo "upgrade changed: \$([ "\$from" != "\$to" ] && echo yes || echo no)"
+errors=\$(sed 's/\x1b\[[0-9;]*m//g' /tmp/update.log | grep -E 'unbound variable|config not found|command not found|Something went wrong|No such file or directory|did not become ready')
+echo "update log errors: \$(printf '%s' "\$errors" | grep -c .)"
+printf '%s\n' "\$errors" | grep . | head -n 10 | sed 's/^/update log: /'
+sed 's/\x1b\[[0-9;]*m//g' /tmp/update.log | tail -n 8 | sed 's/^/update log tail: /'
+sleep 3
+shell_after=\$(pgrep -u tester -f 'quickshell.*-p /usr/share/$id/shell' | head -1)
+echo "shell restarted: \$([ -n "\$shell_after" ] && [ "\$shell_after" != "\$shell_before" ] && echo yes || echo no)"
+EOF
+fi
 if [ "$profile" = desktop ]; then
 cat >> "$root/usr/local/sbin/$id-boot-test" <<EOF
 echo "--- desktop"
@@ -326,6 +411,66 @@ d = json.load(sys.stdin)
 print("yes" if any(l["namespace"] == "$id-menu" for m in d.values() for lv in m["levels"].values() for l in lv) else "no")' 2>/dev/null)"
 run_user $id-menu toggle >/dev/null 2>&1
 echo "update-available: \$(run_user $id-update-available 2>&1 | paste -sd'|') (exit \$?)"
+# The bar's widgets on screen: a bar whose plugins failed to load still has its layer surface.
+echo "bar widgets: \$(run_user $id-shell shell debugBarGeometry 2>/dev/null | python3 -c '
+import json, sys
+v = [w["id"] for w in json.load(sys.stdin) if w.get("visible")]
+print("%d visible: %s" % (len(v), " ".join(v)))' 2>/dev/null || echo "0 visible: (no answer)")"
+# The keybindings, as the user's hyprland.lua makes them (scripts/boot-test-bindings.lua).
+if apt-get install -y -q lua5.4 >/tmp/apt-lua.log 2>&1; then echo "apt install lua5.4: ok"; else echo "apt install lua5.4: FAILED"; tail -5 /tmp/apt-lua.log; fi
+as_user env HOME=/home/tester OMARCHY_PATH=/usr/share/$id lua5.4 /usr/local/share/$id-boot-test/bindings.lua /home/tester/.config/hypr/hyprland.lua > /tmp/bindings.tsv 2>/tmp/bindings.err
+echo "bindings: \$(grep -c . /tmp/bindings.tsv) total, \$(awk -F'\t' '\$3 != ""' /tmp/bindings.tsv | grep -c .) run a command"
+head -n 3 /tmp/bindings.err | sed 's/^/bindings error: /'
+# Every program those commands run, looked up in Hyprland's own environment: the checker is
+# started the way a key press starts a command.
+rm -f /tmp/binding-check.out
+run_user hyprctl dispatch 'hl.dsp.exec_cmd("python3 /usr/local/share/$id-boot-test/bindings.py /tmp/bindings.tsv /tmp/binding-check.out")' >/dev/null 2>&1
+for i in \$(seq 50); do [ -s /tmp/binding-check.out ] && break; sleep 0.2; done
+cat /tmp/binding-check.out 2>/dev/null || echo "binding programs: no report"
+# Each binding that opens a menu or a shell panel, run through Hyprland as a key press runs it:
+# it must exit 0 and put something new on screen, a layer surface (L:<namespace>) or a window
+# (C:<class>). A menu route can name an entry that runs an action (Background, Theme, Set a
+# reminder), which opens its own picker instead of the menu. Each is closed before the next.
+surfaces() {
+    { run_user hyprctl -j layers 2>/dev/null | python3 -c '
+import json, sys
+for m in json.load(sys.stdin).values():
+    for lv in m["levels"].values():
+        for l in lv: print("L:" + l["namespace"])' 2>/dev/null
+      run_user hyprctl -j clients 2>/dev/null | python3 -c '
+import json, sys
+for c in json.load(sys.stdin): print("C:%s:%s" % (c.get("class", ""), c.get("pid", "")))' 2>/dev/null
+    } | sort -u
+}
+run_binding() {
+    rm -f /tmp/bind-rc
+    { printf '%s\n' "\$1"; echo 'echo \$? > /tmp/bind-rc'; } > /tmp/bind-run.sh
+    run_user hyprctl dispatch 'hl.dsp.exec_cmd("sh /tmp/bind-run.sh")' >/dev/null 2>&1
+    for i in \$(seq 50); do [ -f /tmp/bind-rc ] && break; sleep 0.1; done
+    cat /tmp/bind-rc 2>/dev/null || echo none
+}
+tab=\$(printf '\t')
+# Keys and command only: read treats a tab as whitespace, so an empty description would vanish.
+awk -F'\t' -v id=$id '\$3 ~ "^" id "-menu toggle" || \$3 ~ "^" id "-shell shell toggle " { print \$1 "\t" \$3 }' /tmp/bindings.tsv > /tmp/bindings-run.tsv
+while IFS="\$tab" read -r keys cmd; do
+    surfaces > /tmp/surfaces-before
+    rc=\$(run_binding "\$cmd")
+    sleep 1.5
+    surfaces > /tmp/surfaces-after
+    opened=\$(comm -13 /tmp/surfaces-before /tmp/surfaces-after | sed 's/^\(C:[^:]*\):.*/\1/' | paste -sd' ')
+    # Closed the way a user would: the menu's close call, or the same binding again (a toggle);
+    # a window the binding opened is ended by its process id.
+    run_user $id-menu close >/dev/null 2>&1
+    sleep 0.5
+    surfaces > /tmp/surfaces-now
+    if ! cmp -s /tmp/surfaces-before /tmp/surfaces-now; then run_binding "\$cmd" >/dev/null; sleep 1; fi
+    for c in \$(comm -13 /tmp/surfaces-before /tmp/surfaces-after | sed -n 's/^C:[^:]*:\([0-9][0-9]*\)\$/\1/p'); do kill \$c 2>/dev/null; done
+    sleep 0.5
+    surfaces > /tmp/surfaces-now
+    closed=\$(cmp -s /tmp/surfaces-before /tmp/surfaces-now && echo yes || echo no)
+    echo "binding run: \$keys: exit=\$rc opened=[\$opened] closed=\$closed"
+done < /tmp/bindings-run.tsv
+echo "shell ping after bindings: \$(run_user $id-shell shell ping 2>&1 | paste -sd'|')"
 # The shell's journal: Quickshell's WARN lines are listed, its ERROR/CRIT lines and QML
 # failures (a type that failed to load, an undefined reference) are counted.
 log=\$(journalctl -b -t $id-shell --no-pager -o cat | sed 's/\x1b\[[0-9;]*m//g')
@@ -416,6 +561,13 @@ if [ "$profile" = session ]; then
     cp -a "$omarchy_dir/config/omarchy" "$root/usr/share/omarchy/config/omarchy"
 fi
 if [ "$profile" = desktop ]; then
+    # The keybinding lister and checker the desktop checks run (see the header).
+    mkdir -p "$root/usr/local/share/$id-boot-test"
+    cp "$scripts/boot-test-bindings.lua" "$root/usr/local/share/$id-boot-test/bindings.lua"
+    cp "$scripts/boot-test-bindings.py" "$root/usr/local/share/$id-boot-test/bindings.py"
+    # build/'s packages for the update inside the session (UPGRADE=1); apt's source for them is
+    # added by the guest just before the update, so first-run cannot install from them.
+    [ "$upgrade" = 1 ] && cp -a "$upgrade_dir" "$root/var/lib/$id-upgrade-test"
     # What useradd -m does: the user's home seeded from /etc/skel, which the config package
     # populated (.bashrc, .config, launchers, toggles, branding).
     cp -a "$root/etc/skel/." "$root/home/tester/"
@@ -437,9 +589,12 @@ EOF
     ln -s "../$id-boot-test-prepare.service" "$root/etc/systemd/system/display-manager.service.wants/$id-boot-test-prepare.service"
 fi
 
-# Sparse 8 GiB file; mke2fs -d copies the tree in. The test root mounts rw from the kernel
+# Sparse file; mke2fs -d copies the tree in. The test root mounts rw from the kernel
 # command line, so no fstab is needed.
-truncate -s 16G "$image"
+# The update inside the session (UPGRADE=1) refuses to start with less than 10 GiB free
+# (<id>-update-requires-free-space), so that image is twice the size.
+size=16G; [ "$upgrade" = 1 ] && size=32G
+truncate -s "$size" "$image"
 mke2fs -q -F -t ext4 -L "$id-test" -d "$root" "$image"
 rm -rf "$root"
 INNER
@@ -471,9 +626,9 @@ else
   gpu=(-display none)
 fi
 
-echo "== booting in QEMU (serial log: $serial, timeout ${QEMU_TIMEOUT:-600}s, ${mem} MiB)"
+echo "== booting in QEMU (serial log: $serial, timeout ${timeout_s}s, ${mem} MiB)"
 set +e
-timeout "${QEMU_TIMEOUT:-600}" qemu-system-x86_64 \
+timeout "$timeout_s" qemu-system-x86_64 \
   -enable-kvm -cpu host -machine q35 -smp 2 -m "$mem" \
   -kernel "$work/vmlinuz" -initrd "$work/initrd.img" \
   -append "root=/dev/vda rw console=ttyS0 systemd.show_status=true splash plymouth.debug" \
@@ -483,7 +638,7 @@ timeout "${QEMU_TIMEOUT:-600}" qemu-system-x86_64 \
 qemu_rc=$?
 set -e
 if (( qemu_rc == 124 )); then
-  echo "!! QEMU hit the ${QEMU_TIMEOUT:-600}s timeout; last lines of the serial log:" >&2
+  echo "!! QEMU hit the ${timeout_s}s timeout; last lines of the serial log:" >&2
   tail -n 30 "$serial" >&2; exit 1
 fi
 
@@ -575,7 +730,26 @@ if [[ $profile == desktop ]]; then
   check "^shell ping after switch: ok$"
   check "^shell layers after switch: \\[.*$DISTRO_ID-background.*$DISTRO_ID-bar"
   check "^menu layer: yes$"
+  # Omarchy's bar layout (config/omarchy/shell.json) has 14 widgets; some hide when what they show
+  # is absent (Bluetooth, a battery, a second keyboard layout), so at least 4, the clock among them.
+  check "^bar widgets: \([4-9]\|[1-9][0-9]\) visible: .*omarchy\.clock"
+  check "^apt install lua5.4: ok$"
+  check "^bindings: [1-9][0-9][0-9] total, [1-9][0-9]* run a command$"
+  check "^binding programs: [1-9][0-9]* checked, 0 missing$"
+  runs=$(grep -c '^binding run: ' <<< "$report" || true)
+  (( runs >= 10 )) || { echo "!! expected at least 10 menu and panel bindings run, got $runs" >&2; fail=1; }
+  if grep -E '^binding run: ' <<< "$report" | grep -Ev ': exit=0 opened=\[[^]]+\] closed=yes$' >&2; then
+    echo "!! expected: every menu and panel binding above exits 0, opens something and closes again" >&2; fail=1
+  fi
+  check "^binding run: SUPER + SPACE: exit=0 opened=\[.*L:$DISTRO_ID-menu"
+  check "^shell ping after bindings: ok$"
   check "^shell log: [0-9]* lines, 0 errors, "
+fi
+if [[ $upgrade == 1 ]]; then
+  check "^update exit: 0$"
+  check "^upgrade changed: yes$"
+  check "^update log errors: 0$"
+  check "^shell restarted: yes$"
 fi
 [[ ${KEEP:-0} == 1 ]] || rm -rf "$work"
 if (( fail )); then echo "!! boot test FAILED"; exit 1; fi

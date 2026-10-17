@@ -25,6 +25,10 @@
 # unshare mode. The result is build/rootfs/<id>-<version>-<arch>-<profile>.tar plus a
 # .manifest listing every installed package. No bootloader is written to any disk: that is
 # the image step (roadmap step 7).
+# With SOURCE=published, our packages come from the published apt repository (APT_URL in
+# distro.conf) instead of build/: the system an installed machine has before its next update.
+# The result is then build/rootfs/<id>-<version>-<arch>-<profile>-published.tar, which
+# rootfs-boot-test.sh's UPGRADE=1 mode boots and upgrades to build/ inside the running session.
 #
 # Usage: scripts/rootfs-create.sh
 # Env:   PROFILE                 base | session | desktop | live (default live, the newest layer: the
@@ -33,6 +37,7 @@
 #        UBUNTU_SECURITY_MIRROR  default http://security.ubuntu.com/ubuntu
 #        ROOTFS_COMPONENTS       default "main restricted universe multiverse" (multiverse: nvtop,
 #                                intel-media-va-driver-non-free, steam-installer)
+#        SOURCE                  build (default: our packages from build/) | published (from APT_URL)
 set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
 # shellcheck source=/dev/null
@@ -69,12 +74,15 @@ case $profile in
         extra_hooks=(--customize-hook='chroot "$1" update-initramfs -u -k all') ;;
   *) echo "unknown PROFILE '$profile' (base, session, desktop or live)" >&2; exit 1 ;;
 esac
+source=${SOURCE:-build}
+case $source in build|published) ;; *) echo "unknown SOURCE '$source' (build or published)" >&2; exit 1 ;; esac
 mirror=${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu}
 security=${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu}
 components=${ROOTFS_COMPONENTS:-"main restricted universe multiverse"}
 keyring=/usr/share/keyrings/ubuntu-archive-keyring.gpg
 out_dir="$here/build/rootfs"
 out="$out_dir/$DISTRO_ID-$BASE_VERSION-$arch-$profile.tar"
+[[ $source == published ]] && out="${out%.tar}-published.tar"
 manifest="${out%.tar}.manifest"
 tmp="${out%.tar}.tmp.tar"
 
@@ -100,7 +108,17 @@ stage=$(mktemp -d /tmp/"$DISTRO_ID"-rootfs-debs.XXXXXX)
 chmod 0755 "$stage"
 trap 'rm -rf "$stage"' EXIT
 includes=()
+our_sources=()
+if [[ $source == published ]]; then
+  # By name from the published repository: apt takes the newest version there, as an installed
+  # system's apt does. Our key goes into the keyring directory below.
+  for part in $parts; do includes+=("--include=$DISTRO_ID-$part"); done
+  for name in $debs; do includes+=("--include=$name"); done
+  install -m 0644 "$here/packages/archive-keyring/archive-keyring.gpg" "$stage/$DISTRO_ID-archive-keyring.gpg"
+  our_sources=("deb $APT_URL $BASE_SERIES $APT_COMPONENT")
+fi
 for part in $parts; do
+  [[ $source == build ]] || break
   deb=$(newest_deb "$here/build/$DISTRO_ID-${part}_"*_all.deb)
   if [[ -z $deb ]]; then
     echo "no $DISTRO_ID-$part .deb in build/: run 'make build' first" >&2; exit 1
@@ -111,6 +129,7 @@ done
 # Third-party packages we rebuild keep their upstream names (policy, naming rules), so they
 # are listed by name: build/<name>_<version>_<arch>.deb.
 for name in $debs; do
+  [[ $source == build ]] || break
   deb=$(newest_deb "$here/build/${name}_"*.deb)
   if [[ -z $deb ]]; then
     echo "no $name .deb in build/: run 'make build' first" >&2; exit 1
@@ -209,7 +228,7 @@ done
 
 mkdir -p "$out_dir"
 rm -f "$tmp"
-echo "creating $out (profile $profile) from $mirror ($BASE_SERIES, $BASE_SERIES-updates, $BASE_SERIES-security; $components)"
+echo "creating $out (profile $profile, our packages from $source) from $mirror ($BASE_SERIES, $BASE_SERIES-updates, $BASE_SERIES-security; $components)"
 mmdebstrap \
   --mode=unshare \
   --variant=minbase \
@@ -235,6 +254,7 @@ mmdebstrap \
   "deb $mirror $BASE_SERIES $components" \
   "deb $mirror $BASE_SERIES-updates $components" \
   "deb $security $BASE_SERIES-security $components" \
-  "${vendor_sources[@]}"
+  "${vendor_sources[@]}" \
+  "${our_sources[@]}"
 mv "$tmp" "$out"
 echo "done: $(du -h "$out" | cut -f1) $out ($(wc -l < "$manifest") packages, list in $manifest)"

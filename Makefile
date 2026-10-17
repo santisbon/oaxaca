@@ -1,11 +1,15 @@
 # Entry points for the build. See docs/2 - build-infra.md, docs/3 - rootfs.md and docs/4 - session.md.
-.PHONY: render check-render check-versions upstream-check chroot build lint publish repo-seed machine-setup release apt-infra apt-infra-check rootfs rootfs-test drivers-check iso iso-test upgrade-test clean
+.PHONY: render check-render check-versions upstream-check chroot build lint publish repo-seed machine-setup release apt-infra apt-infra-check rootfs rootfs-test drivers-check iso iso-test upgrade-test session-upgrade-test clean
 
 # Root filesystem profile for rootfs, rootfs-test and drivers-check: base (step 3), session (step 4),
 # desktop (step 6) or live (step 7, the desktop plus casper and the installer: what the ISO ships).
 # The default is the newest layer, the one the ISO is made from.
 PROFILE ?= live
 SECURE_BOOT ?= on
+# rootfs: SOURCE=published takes our packages from the published apt repository instead of build/.
+# rootfs-test: UPGRADE=1 boots that published desktop and updates it to build/ inside its session.
+SOURCE ?= build
+UPGRADE ?= 0
 
 render:            ## Render every *.in file from distro.conf
 	scripts/render.py
@@ -43,11 +47,11 @@ apt-infra:         ## Create or update the S3 bucket that serves the apt repo (C
 apt-infra-check:   ## Validate the bucket's CloudFormation template and show the stack's state; changes nothing
 	scripts/apt-infra.sh --check
 
-rootfs:            ## Build the root filesystem tarball from the Ubuntu archive plus build/*.deb: make rootfs [PROFILE=base|session|desktop|live]
-	PROFILE=$(PROFILE) scripts/rootfs-create.sh
+rootfs:            ## Build the root filesystem tarball from the Ubuntu archive plus build/*.deb: make rootfs [PROFILE=base|session|desktop|live] [SOURCE=published]
+	PROFILE=$(PROFILE) SOURCE=$(SOURCE) scripts/rootfs-create.sh
 
 rootfs-test:       ## Boot the root filesystem tarball in QEMU and check the base system (and, for session, the graphical session) comes up
-	PROFILE=$(PROFILE) scripts/rootfs-boot-test.sh
+	PROFILE=$(PROFILE) UPGRADE=$(UPGRADE) scripts/rootfs-boot-test.sh
 
 drivers-check:     ## Ask ubuntu-drivers, inside the tarball, what it would install for this machine's GPU (step 4)
 	PROFILE=$(PROFILE) scripts/drivers-check.sh
@@ -60,6 +64,10 @@ iso-test:          ## Boot the test ISO in QEMU under OVMF and check the live se
 
 upgrade-test:      ## Upgrade the published packages to build/ in a throwaway chroot and run the migrations (step 8)
 	scripts/upgrade-test.sh
+
+session-upgrade-test: ## Boot the published desktop, update it to build/ inside its running session, and check the desktop
+	PROFILE=desktop SOURCE=published scripts/rootfs-create.sh
+	PROFILE=desktop UPGRADE=1 scripts/rootfs-boot-test.sh
 
 clean:
 	rm -rf build
