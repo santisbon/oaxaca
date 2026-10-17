@@ -1,3 +1,16 @@
+oaxaca-desktop (4.0.4+git20261017.78.dacbe9f9-0oaxaca1) stonking; urgency=medium
+
+  * Style > Font changes the system's monospace font again: the fontconfig
+    rule that makes monospace JetBrains Mono is linked as
+    /etc/fonts/conf.d/51-oaxaca.conf, after 50-user.conf, so the user's
+    choice in ~/.config/fontconfig/fonts.conf comes first. Before, the rule
+    ran first and the choice never applied; the menu's checkmark and
+    fc-match monospace always named JetBrains Mono.
+  * Style > Font no longer lists icon fonts such as Material Icons, which
+    drew icons in place of letters when chosen.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 16 Oct 2026 23:45:00 -0500
+
 oaxaca-desktop (4.0.4+git20261017.77.8ae5b19b-0oaxaca1) stonking; urgency=medium
 
   * oaxaca-update offers a reboot when a package created

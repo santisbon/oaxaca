@@ -267,6 +267,8 @@ echo "oomd scope: user@=\$(systemctl show "user@\$(id -u tester).service" -p Man
 echo "ssh keepalive: \$(as_user ssh -G example.invalid 2>/dev/null | grep -E '^(serveraliveinterval|serveralivecountmax|connecttimeout) ' | sort | paste -sd' ')"
 echo "inotify watches: \$(sysctl -n fs.inotify.max_user_watches)"
 echo "tcp mtu probing: \$(sysctl -n net.ipv4.tcp_mtu_probing)"
+echo "font switch: \$(as_user sh -c 'mkdir -p /home/tester/.config/fontconfig && printf "%s\n" "<?xml version=\"1.0\"?><fontconfig><match target=\"pattern\"><test name=\"family\" qual=\"any\"><string>monospace</string></test><edit name=\"family\" mode=\"prepend_first\" binding=\"strong\"><string>Noto Mono</string></edit></match></fontconfig>" > /home/tester/.config/fontconfig/fonts.conf && fc-match monospace -f "%{family[0]}"; rm -f /home/tester/.config/fontconfig/fonts.conf')"
+echo "font list icon fonts: \$($id-font-list | grep -c -i -E 'material icons|font awesome')"
 echo "mise source: \$(apt-cache policy mise 2>/dev/null | awk '/\*\*\*/{getline; print \$2; exit}')"
 echo "fingerprint profile: \$(sed -n 's/^\t\[success=1 default=ignore\]\t\(pam_exec.so quiet .*\)/\1/p' /usr/share/pam-configs/$id-fprintd 2>/dev/null)"
 # The user's session environment, as the ported session file and uwsm set it up.
@@ -546,6 +548,8 @@ if [[ $profile == desktop ]]; then
   check "^ssh keepalive: connecttimeout 10 serveralivecountmax 3 serveraliveinterval 15$"
   check "^inotify watches: 524288$"
   check "^tcp mtu probing: 1$"
+  check "^font switch: Noto Mono$"
+  check "^font list icon fonts: 0$"
   check "^mise source: https://mise.jdx.dev/deb$"
   check "^fingerprint profile: pam_exec.so quiet /usr/bin/$DISTRO_ID-hw-laptop-closed$"
   check "^ubuntu defaults: bashrc=bash aliases=yes zram=no sysctl=2 auto-upgrades=1$"

@@ -1,5 +1,18 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Style > Font changes the system's monospace font again: the fontconfig
+    rule that makes monospace JetBrains Mono is linked as
+    /etc/fonts/conf.d/51-@DISTRO_ID@.conf, after 50-user.conf, so the user's
+    choice in ~/.config/fontconfig/fonts.conf comes first. Before, the rule
+    ran first and the choice never applied; the menu's checkmark and
+    fc-match monospace always named JetBrains Mono.
+  * Style > Font no longer lists icon fonts such as Material Icons, which
+    drew icons in place of letters when chosen.
+
+ -- @MAINTAINER@  Fri, 16 Oct 2026 23:45:00 -0500
+
+@DISTRO_ID@-desktop (4.0.4+git20261017.77.8ae5b19b-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * @DISTRO_ID@-update offers a reboot when a package created
     /run/reboot-required, Ubuntu's way for a package to ask for one.
   * @DISTRO_ID@-config's postinst asks for a reboot that way when it removes

@@ -74,7 +74,12 @@ install -D -m 0644 "$R/default/uwsm/env.d/10-$id" "$config/usr/share/uwsm/env.d/
 install -D -m 0644 "$R/default/environment.d/10-$id-fcitx.conf" "$config/usr/lib/environment.d/10-$id-fcitx.conf"
 install -D -m 0644 "$R/default/fontconfig/conf.avail/50-$id.conf" "$config/usr/share/fontconfig/conf.avail/50-$id.conf"
 install -d "$config/etc/fonts/conf.d"
-ln -s "/usr/share/fontconfig/conf.avail/50-$id.conf" "$config/etc/fonts/conf.d/50-$id.conf"
+# Linked as 51-, after 50-user.conf, not 50- as Omarchy does: the rule replaces the generic
+# "monospace" with JetBrains Mono, and fontconfig applies conf.d in name order, so before
+# 50-user.conf it ran first and the user's Style > Font choice in ~/.config/fontconfig/fonts.conf,
+# which tests for "monospace", never matched (fc-match monospace stayed JetBrains Mono whatever
+# was chosen, 2026-10-16). After it, the user's font is prepended first and wins.
+ln -s "/usr/share/fontconfig/conf.avail/50-$id.conf" "$config/etc/fonts/conf.d/51-$id.conf"
 install -D -m 0644 "$R/default/xdg-terminal-exec/hyprland-xdg-terminals.list" "$config/usr/share/xdg-terminal-exec/hyprland-xdg-terminals.list"
 install -D -m 0644 "$R/default/applications/mimeapps.list" "$config/usr/share/applications/mimeapps.list"
 install -d "$config/usr/lib/systemd/user" "$config/usr/lib/systemd/system-sleep"
