@@ -5,6 +5,9 @@
     /etc/modprobe.d/@DISTRO_ID@-wireless-regdom.conf as cfg80211's
     ieee80211_regdom option. Wi-Fi cards that manage their own regulatory
     domain, such as Intel's, ignore it.
+  * OBS Studio can be installed from the menu: Install > Productivity >
+    OBS Studio installs the OBS project's Flatpak from Flathub, and Remove >
+    Productivity > OBS Studio removes it with its data.
 
  -- @MAINTAINER@  Sat, 17 Oct 2026 01:10:00 -0500
 
