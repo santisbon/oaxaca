@@ -266,6 +266,8 @@ echo "oomd scope: user@=\$(systemctl show "user@\$(id -u tester).service" -p Man
 # SSH keepalive (step 6, choice 46): the effective client options for any host.
 echo "ssh keepalive: \$(as_user ssh -G example.invalid 2>/dev/null | grep -E '^(serveraliveinterval|serveralivecountmax|connecttimeout) ' | sort | paste -sd' ')"
 echo "inotify watches: \$(sysctl -n fs.inotify.max_user_watches)"
+echo "tcp mtu probing: \$(sysctl -n net.ipv4.tcp_mtu_probing)"
+echo "mise source: \$(apt-cache policy mise 2>/dev/null | awk '/\*\*\*/{getline; print \$2; exit}')"
 echo "fingerprint profile: \$(sed -n 's/^\t\[success=1 default=ignore\]\t\(pam_exec.so quiet .*\)/\1/p' /usr/share/pam-configs/$id-fprintd 2>/dev/null)"
 # The user's session environment, as the ported session file and uwsm set it up.
 echo "session env: \$(as_user systemctl --user show-environment 2>/dev/null | grep -E '^(${id^^}_PATH|XDG_CURRENT_DESKTOP)=' | paste -sd' ')"
@@ -300,7 +302,7 @@ echo "dns sudoers rule: \$(ls /etc/sudoers.d | grep -c dns)"
 # command-line preferences in the image (tmux and Neovim came back, choices 25 and 26, and btop,
 # choice 43, so they are not in the list); only the three launchers Omarchy's own apps need.
 # The tools restored by choices 43 and 47, each by the command its callers run.
-echo "restored tools missing: [\$(for c in btop eza inxi lazygit starship zoxide ttfx swappy unzip gnome-calculator gnome-disks whois; do command -v \$c >/dev/null || printf '%s ' \$c; done)]"
+echo "restored tools missing: [\$(for c in btop eza inxi lazygit starship zoxide ttfx swappy unzip gnome-calculator gnome-disks whois mise dua; do command -v \$c >/dev/null || printf '%s ' \$c; done)]"
 # Both stores preconfigured (step 6, choice 17): snapd's socket enabled by its package, Flathub added
 # system-wide at install from the repository file Ubuntu's flatpak package ships.
 echo "stores: snapd=\$(systemctl is-enabled snapd.socket 2>/dev/null) flathub=\$(flatpak remotes --system --columns=name 2>/dev/null | grep -cx flathub)"
@@ -543,8 +545,10 @@ if [[ $profile == desktop ]]; then
   check "^oomd scope: user@=auto app.slice=kill$"
   check "^ssh keepalive: connecttimeout 10 serveralivecountmax 3 serveraliveinterval 15$"
   check "^inotify watches: 524288$"
+  check "^tcp mtu probing: 1$"
+  check "^mise source: https://mise.jdx.dev/deb$"
   check "^fingerprint profile: pam_exec.so quiet /usr/bin/$DISTRO_ID-hw-laptop-closed$"
-  check "^ubuntu defaults: bashrc=bash aliases=yes zram=no sysctl=1 auto-upgrades=1$"
+  check "^ubuntu defaults: bashrc=bash aliases=yes zram=no sysctl=2 auto-upgrades=1$"
   check "^session env: .*${DISTRO_ID^^}_PATH=/usr/share/$DISTRO_ID"
   check "^shell process: running$"
   check "^shell ping: ok$"
@@ -558,7 +562,7 @@ if [[ $profile == desktop ]]; then
   check "^dns provider: Cloudflare$"
   check "^dns reset: DHCP$"
   check "^dns sudoers rule: 0$"
-  check "^apps split: removed=0 launchers=3$"
+  check "^apps split: removed=0 launchers=4$"
   check "^restored tools missing: \[\]$"
   check "^stores: snapd=enabled flathub=1$"
   check "^theme after switch: nord$"

@@ -1,0 +1,56 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# cargo keeps its registry cache under CARGO_HOME; a directory under debian/ keeps the
+# chroot build from writing to $HOME. debian/clean removes the directory.
+export CARGO_HOME = $(CURDIR)/debian/cargo_home
+
+%:
+	dh $@
+
+# No debhelper build system matches a cargo tree, so the dh_auto_* steps are spelled out.
+# .cargo/config.toml points crates-io at the vendor/ component, so cargo builds offline. Only the
+# four programs Omarchy's package ships are built, not the ROG Control Center GUI.
+override_dh_auto_build:
+	mkdir -p .cargo
+	printf '[source.crates-io]\nreplace-with = "vendored-sources"\n\n[source.vendored-sources]\ndirectory = "vendor"\n' > .cargo/config.toml
+	cargo build --frozen --release -p asusctl -p asusd -p asus-shutdown -p asusd-user
+
+# The install-asusd, -asusctl, -asus-shutdown, -asusd_user and install-data-asusd targets of
+# upstream's Makefile, spelled out so that nothing triggers a rebuild or the GUI's data.
+override_dh_auto_install:
+	install -D -m 0755 -t debian/asusctl/usr/bin target/release/asusd target/release/asusctl target/release/asus-shutdown target/release/asusd-user
+	install -D -m 0644 data/asusd.rules debian/asusctl/usr/lib/udev/rules.d/99-asusd.rules
+	install -D -m 0644 rog-aura/data/aura_support.ron debian/asusctl/usr/share/asusd/aura_support.ron
+	install -D -m 0644 data/asusd.conf debian/asusctl/usr/share/dbus-1/system.d/asusd.conf
+	install -D -m 0644 -t debian/asusctl/usr/lib/systemd/system data/asusd.service data/asus-shutdown.service
+	install -D -m 0644 data/asusd-user.service debian/asusctl/usr/lib/systemd/user/asusd-user.service
+	cd rog-anime/data && find anime -type f -exec install -D -m 0644 "{}" "$(CURDIR)/debian/asusctl/usr/share/asusd/{}" \;
+
+# asusd's udev rule starts asusd and asus-shutdown on the ASUS laptops it supports; enabling
+# them everywhere would start them on machines without the hardware. asusd-user is started by
+# hand by whoever wants per-user settings.
+override_dh_installsystemd:
+	dh_installsystemd --no-enable --no-start
+
+override_dh_installsystemduser:
+	dh_installsystemduser --no-enable
+
+# No tests run in the chroot: they need the hardware.
+override_dh_auto_test:
+
+# dh_clean deletes every *.orig file in the tree, and every vendored crate carries a
+# Cargo.toml.orig that cargo checks against the crate's .cargo-checksum.json; the exclusion
+# keeps those files, or cargo refuses to build.
+override_dh_clean:
+	dh_clean -XCargo.toml.orig
+
+# Upstream's Makefile (asusctl, supergfxctl) has a distclean target that deletes vendor/, and
+# dh_auto_clean runs it; debian/clean removes what the build writes instead.
+override_dh_auto_clean:
+
+# Cargo.toml's release profile strips the binaries, so the automatic dbgsym package would be
+# empty; dh_strip is told not to make one.
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym

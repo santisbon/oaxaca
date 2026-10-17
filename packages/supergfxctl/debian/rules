@@ -1,0 +1,43 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# cargo keeps its registry cache under CARGO_HOME; a directory under debian/ keeps the
+# chroot build from writing to $HOME. debian/clean removes the directory.
+export CARGO_HOME = $(CURDIR)/debian/cargo_home
+
+%:
+	dh $@
+
+# No debhelper build system matches a cargo tree, so the dh_auto_* steps are spelled out.
+override_dh_auto_build:
+	mkdir -p .cargo
+	printf '[source.crates-io]\nreplace-with = "vendored-sources"\n\n[source.vendored-sources]\ndirectory = "vendor"\n' > .cargo/config.toml
+	cargo build --frozen --release
+
+# Upstream's Makefile install target, spelled out. The X11 configuration
+# (90-nvidia-screen-G05.conf) is left out: the desktop runs no X server.
+override_dh_auto_install:
+	install -D -m 0755 -t debian/supergfxctl/usr/bin target/release/supergfxd target/release/supergfxctl
+	install -D -m 0644 data/supergfxd.service debian/supergfxctl/usr/lib/systemd/system/supergfxd.service
+	install -D -m 0644 data/org.supergfxctl.Daemon.conf debian/supergfxctl/usr/share/dbus-1/system.d/org.supergfxctl.Daemon.conf
+	install -D -m 0644 data/90-supergfxd-nvidia-pm.rules debian/supergfxctl/usr/lib/udev/rules.d/90-supergfxd-nvidia-pm.rules
+
+# Omarchy's Hybrid GPU toggle writes /etc/supergfxd.conf before it enables the service ("to
+# prevent hang on first boot"), so the package neither enables nor starts it. Upstream's
+# systemd preset, which would enable it, is not installed for the same reason.
+override_dh_installsystemd:
+	dh_installsystemd --no-enable --no-start
+
+# No tests run in the chroot: they need the hardware.
+override_dh_auto_test:
+
+# dh_clean deletes every *.orig file in the tree, and every vendored crate carries a
+# Cargo.toml.orig that cargo checks against the crate's .cargo-checksum.json; the exclusion
+# keeps those files, or cargo refuses to build.
+override_dh_clean:
+	dh_clean -XCargo.toml.orig
+
+# Upstream's Makefile (asusctl, supergfxctl) has a distclean target that deletes vendor/, and
+# dh_auto_clean runs it; debian/clean removes what the build writes instead.
+override_dh_auto_clean:

@@ -1,0 +1,12 @@
+<!-- Generated from packages/dell-xps-touchpad-haptics/README.md.in by scripts/render.py. Edit the .in file, not this one. -->
+# dell-xps-touchpad-haptics
+
+Omarchy's package for the haptic touchpad of Dell XPS 14 and 16 laptops (a Synaptics touchpad on I2C, id `06CB`), built for Oaxaca from the five files of `omacom/omarchy-pkgs`, `pkgbuilds/dell-xps-touchpad-haptics` (version 1.0.0, MIT), listed with their SHA-256s in `sources.list`. It installs:
+
+- `dell-xps-touchpad-haptics`, the command that reads and sets the preset (`get`, `set low|mid|high`), kept in `~/.config/oaxaca/dell-haptic.conf`;
+- `dell-xps-touchpad-haptics-daemon`, a Python program (standard library only) that drives the touchpad's haptic actuator over hidraw, run by `dell-xps-touchpad-haptics.service`;
+- `99-dell-xps-touchpad-haptics.rules`, a udev rule that keeps the touchpad's I2C controller powered.
+
+`debian/postinst` does what Omarchy's pacman install hook does: it picks the desktop user, writes `/etc/dell-xps-touchpad-haptics.env` with that user's home for the service, and seeds the setting at `high`; debhelper then enables and starts the service. Nothing depends on this package: the desktop's install step `install/hardware/dell-xps-touchpad-haptics.sh` installs it from Oaxaca's apt repository when `oaxaca-hw-dell-xps-haptic-touchpad` matches (DMI "XPS" and the I2C device `i2c-VEN_06CB:00`), and the menu's Hardware > Touchpad Haptics offers the three presets.
+
+A new upstream version: change the commit in `sources.list`'s five URLs, recompute the SHA-256s, add a changelog entry, `make build PKG=packages/dell-xps-touchpad-haptics`.

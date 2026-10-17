@@ -1,0 +1,38 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# cargo keeps its registry cache under CARGO_HOME; a directory under debian/ keeps the
+# chroot build from writing to $HOME. debian/clean removes the directory.
+export CARGO_HOME = $(CURDIR)/debian/cargo_home
+
+%:
+	dh $@
+
+# No debhelper build system matches a cargo tree, so the dh_auto_* steps are spelled out.
+override_dh_auto_build:
+	mkdir -p .cargo
+	printf '[source.crates-io]\nreplace-with = "vendored-sources"\n\n[source.vendored-sources]\ndirectory = "vendor"\n' > .cargo/config.toml
+	cargo build --frozen --release
+
+# The binary is qmk_hid, as upstream names it; the desktop's keyboard theming calls it so.
+override_dh_auto_install:
+	install -D -m 0755 target/release/qmk_hid debian/qmk-hid/usr/bin/qmk_hid
+
+# No tests run in the chroot: they need the hardware.
+override_dh_auto_test:
+
+# dh_clean deletes every *.orig file in the tree, and every vendored crate carries a
+# Cargo.toml.orig that cargo checks against the crate's .cargo-checksum.json; the exclusion
+# keeps those files, or cargo refuses to build.
+override_dh_clean:
+	dh_clean -XCargo.toml.orig
+
+# Cargo.toml's release profile strips the binary, so the automatic dbgsym package would be
+# empty; dh_strip is told not to make one.
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+
+# Upstream's Makefile (asusctl, supergfxctl) has a distclean target that deletes vendor/, and
+# dh_auto_clean runs it; debian/clean removes what the build writes instead.
+override_dh_auto_clean:

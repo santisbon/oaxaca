@@ -1,0 +1,6 @@
+qmk-hid (0.1.13-0oaxaca1) stonking; urgency=medium
+
+  * Initial Oaxaca package (docs/6, choice 67): Omarchy installs
+    qmk-hid on the machines it is for; Ubuntu's archive has none.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 16 Oct 2026 18:02:00 -0500

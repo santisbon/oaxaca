@@ -1,0 +1,6 @@
+qmk-hid (0.1.13-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
+  * Initial @DISTRO_NAME@ package (docs/6, choice 67): Omarchy installs
+    qmk-hid on the machines it is for; Ubuntu's archive has none.
+
+ -- @MAINTAINER@  Fri, 16 Oct 2026 18:02:00 -0500

@@ -5,6 +5,16 @@
 # then a rebuild of the initramfs, whose plymouth hook copies the selected theme in.
 # stonking ships no plymouth-set-default-theme.
 set -e
+# Ask for a reboot the way Ubuntu's packages do: /run/reboot-required, with the package's name in
+# /run/reboot-required.pkgs. oaxaca-update offers the reboot when the file exists, and /run
+# is a tmpfs, so the reboot clears it.
+request_reboot() {
+  if [ -d /run ]; then
+    touch /run/reboot-required
+    grep -qx 'oaxaca-config' /run/reboot-required.pkgs 2>/dev/null ||
+      echo 'oaxaca-config' >> /run/reboot-required.pkgs
+  fi
+}
 # Resume Hyprland's automatic config reload, paused by the preinst, with one reload of every
 # running session (docs/6, choice 44). Also on the abort paths, so a failed upgrade does not leave
 # the sessions paused.
@@ -30,6 +40,8 @@ case "$1" in
       ! { grep -qi XPS /sys/class/dmi/id/product_name /sys/class/dmi/id/product_family 2>/dev/null &&
           lspci 2>/dev/null | grep -iE 'vga|3d|display' | grep -qi 'panther lake'; }; then
       rm -f "$eht"
+      # iwlwifi keeps the option until it loads again.
+      request_reboot
     fi
     update-alternatives --install /usr/share/plymouth/themes/default.plymouth default.plymouth \
       /usr/share/plymouth/themes/oaxaca/oaxaca.plymouth 150

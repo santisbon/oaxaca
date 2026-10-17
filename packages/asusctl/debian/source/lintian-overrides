@@ -1,0 +1,7 @@
+# Import libraries inside the vendored windows_* crates, which cargo needs only when building
+# for Windows; they are in the source package because cargo vendor takes the whole lock file,
+# and nothing in this package builds or ships them.
+asusctl source: source-contains-prebuilt-windows-binary *
+# The ROG Control Center GUI's AppStream file (CC0-1.0 metadata in an MPL-2.0 project); the
+# GUI is not built.
+asusctl source: inconsistent-appstream-metadata-license *

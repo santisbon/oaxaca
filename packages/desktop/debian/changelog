@@ -1,3 +1,47 @@
+oaxaca-desktop (4.0.4+git20261017.77.8ae5b19b-0oaxaca1) stonking; urgency=medium
+
+  * oaxaca-update offers a reboot when a package created
+    /run/reboot-required, Ubuntu's way for a package to ask for one.
+  * oaxaca-config's postinst asks for a reboot that way when it removes
+    the Wi-Fi 7 fix from a machine it does not belong to.
+  * More hardware fixes for other machines, at install on a device match:
+    initramfs hooks that add the one keyboard module Ubuntu's initramfs
+    lacks for the disk encryption passphrase prompt (Surface:
+    surface_aggregator_hub; MacBook8,1: spi_pxa2xx_pci), libcamera for the
+    Intel IPU7 camera (OV08X40), the Dell XPS haptic touchpad package with
+    Hardware > Touchpad Haptics, qmk_hid on the Framework Laptop 16, and
+    asusctl on ASUS ROG laptops.
+  * Hardware > Hybrid GPU is back on ASUS ROG laptops with two GPUs: it
+    installs supergfxctl and switches between Hybrid and Integrated. Its
+    scripts call GNU's gnutimeout, because Ubuntu's timeout does not stop a
+    wedged supergfxctl's child processes.
+  * mise is preinstalled from mise's own apt repository (mise.jdx.dev/deb),
+    as Omarchy preinstalls it, and apt updates it. The port's own
+    Install > Development > mise entry and oaxaca-mise-ensure are gone; the
+    commands that use mise call it as Omarchy's do.
+  * dua-cli is preinstalled again with Omarchy's Disk Usage launcher, which
+    opens "dua i /" in a floating terminal; a migration adds the launcher
+    for existing users.
+  * oaxaca-launch-openclaw, oaxaca-openclaw-onboard and oaxaca-install-font
+    are gone: OpenClaw and the extra Nerd Font installers are not part of
+    the desktop, and nothing called these commands.
+  * Install and Remove > Gaming > Heroic (Epic Games) are back, from
+    Flathub.
+  * Install and Remove > Gaming > Minecraft are back: Mojang's own .deb,
+    installed with oaxaca-gdk-pixbuf-compat, which provides the
+    GdkPixbuf library's old package name that Mojang's package needs.
+  * Install > Service > NordVPN and > Bitwarden are back, from the
+    vendors' own snaps.
+  * TCP MTU probing is on again (99-oaxaca-sysctl.conf,
+    net.ipv4.tcp_mtu_probing=1), so connections recover on networks that
+    drop path-MTU messages.
+  * Install > Development > Herdr and Install > Service > cliamp install
+    Omarchy's herdr and cliamp through mise, with Omarchy's bindings
+    (Super+Ctrl+Return, Super+Ctrl+K, Super+Shift+Alt+M), the h alias and
+    Learn > Herdr.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 16 Oct 2026 18:02:00 -0500
+
 oaxaca-desktop (4.0.4+git20261016.58.e69c287c-0oaxaca1) stonking; urgency=medium
 
   * Share > Receive opens LocalSend to receive files, and Install >
@@ -34,7 +78,7 @@ oaxaca-desktop (4.0.4+git20261016.58.e69c287c-0oaxaca1) stonking; urgency=medium
   * The pacman sample hook (pre-refresh-pacman.d) is gone: Ubuntu has no
     pacman and the port has no "refresh pacman".
 
- -- santisbon <santisbon@users.noreply.github.com>  Fri, 16 Oct 2026 21:00:00 -0500
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 16 Oct 2026 18:01:00 -0500
 
 oaxaca-desktop (4.0.4+git20261016.53.d0a9b09a-0oaxaca1) stonking; urgency=medium
 

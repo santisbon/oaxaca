@@ -1,0 +1,2 @@
+# qmk_hid prints its own usage (qmk_hid --help); upstream ships no manual page.
+qmk-hid: no-manual-page [usr/bin/qmk_hid]

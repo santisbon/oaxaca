@@ -1,0 +1,6 @@
+supergfxctl (5.2.7-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
+  * Initial @DISTRO_NAME@ package (docs/6, choice 68): Omarchy installs
+    supergfxctl on the machines it is for; Ubuntu's archive has none.
+
+ -- @MAINTAINER@  Fri, 16 Oct 2026 18:02:00 -0500

@@ -151,7 +151,7 @@ export UBUNTU_SOURCES="$ubuntu_sources"
 # removing it from the menu leaves the metapackage installed. The rest is the system half of
 # the menu entry: the managed-policy directory the theme switch writes color.json into, and
 # the first-run preferences (follow the system's light or dark setting, no terms dialog).
-browser_args=() browser_sources=()
+vendor_args=() vendor_sources=()
 if ((browser)); then
   ppa_uri=https://ppa.launchpadcontent.net/xtradeb/apps/ubuntu
   install -m 0644 "$here/scripts/keys/xtradeb.gpg" "$stage/xtradeb.gpg"
@@ -161,8 +161,7 @@ Suites: $BASE_SERIES
 Components: main
 Architectures: $arch
 Signed-By: /etc/apt/keyrings/xtradeb.gpg"
-  browser_args=(
-    --keyring="$stage/xtradeb.gpg"
+  vendor_args=(
     --setup-hook='mkdir -p "$1/etc/apt/preferences.d" && printf "Package: *\nPin: origin ppa.launchpadcontent.net\nPin-Priority: 400\n" > "$1/etc/apt/preferences.d/xtradeb"'
     --include=chromium
     --customize-hook='mkdir -p "$1/etc/apt/keyrings"'
@@ -171,8 +170,42 @@ Signed-By: /etc/apt/keyrings/xtradeb.gpg"
     --customize-hook='install -d -m 0755 "$1/etc/chromium/policies/managed" "$1/usr/lib/chromium"'
     --customize-hook='echo '"'"'{"distribution":{"require_eula":false},"browser":{"theme":{"color_scheme":0,"color_scheme2":0}}}'"'"' > "$1/usr/lib/chromium/initial_preferences"'
   )
-  browser_sources=("deb $ppa_uri $BASE_SERIES main")
+  vendor_sources=("deb $ppa_uri $BASE_SERIES main")
+
+  # mise, Omarchy's developer-tool manager, which Omarchy preinstalls and Ubuntu's archive does
+  # not carry, from mise's own apt repository (docs/6, choice 69): https://mise.jdx.dev/deb, suite
+  # "stable", the source Debian's extrepo names for mise. The image gets the files the port's
+  # oaxaca-mise-ensure writes through oaxaca-pkg-repo-add, byte for byte: the signing key
+  # (scripts/keys/mise.gpg, from https://mise.jdx.dev/gpg-key.pub, fingerprint
+  # 24853EC9F655CE80B48E6C3A8B81C9D17413A06D, the same key extrepo carries) and the deb822
+  # sources entry. No pin: the repository carries only mise. apt then updates mise with the system.
+  mise_uri=https://mise.jdx.dev/deb
+  install -m 0644 "$here/scripts/keys/mise.gpg" "$stage/mise.gpg"
+  export MISE_SOURCES="Types: deb
+URIs: $mise_uri
+Suites: stable
+Components: main
+Architectures: $arch
+Signed-By: /etc/apt/keyrings/mise.gpg"
+  vendor_args+=(
+    --include=mise
+    --customize-hook="upload $stage/mise.gpg /etc/apt/keyrings/mise.gpg"
+    --customize-hook='chmod 0644 "$1/etc/apt/keyrings/mise.gpg" && printf "%s\n" "$MISE_SOURCES" > "$1/etc/apt/sources.list.d/mise.sources"'
+  )
+  vendor_sources+=("deb $mise_uri stable main")
 fi
+
+# mmdebstrap's --keyring sets apt's single Dir::Etc::Trusted file, so given several files only
+# the last one counts (2026-10-16: with Ubuntu's, xtradeb's and mise's keys passed as three
+# files, apt read only mise.gpg and refused the xtradeb PPA, NO_PUBKEY 82BB6851C64F6880). Its
+# manual's answer for more than one archive is a directory holding every keyring, which apt reads
+# as Dir::Etc::TrustedParts: Ubuntu's archive keyring plus the vendors' keys staged above.
+keyring_dir="$stage/keyrings"
+mkdir -p "$keyring_dir"
+cp "$keyring" "$keyring_dir/ubuntu-archive-keyring.gpg"
+for vendor_key in "$stage"/*.gpg; do
+  if [[ -e $vendor_key ]]; then cp "$vendor_key" "$keyring_dir/"; fi
+done
 
 mkdir -p "$out_dir"
 rm -f "$tmp"
@@ -181,12 +214,12 @@ mmdebstrap \
   --mode=unshare \
   --variant=minbase \
   --architectures="$arch" \
-  --keyring="$keyring" \
+  --keyring="$keyring_dir" \
   --aptopt='APT::Install-Recommends "true"' \
   --setup-hook="upload $here/packages/base/apt-blocked-recommends.pref /etc/apt/preferences.d/zz-build-blocked-recommends" \
   --hook-dir=/usr/share/mmdebstrap/hooks/file-mirror-automount \
   "${includes[@]}" \
-  "${browser_args[@]}" \
+  "${vendor_args[@]}" \
   --essential-hook='printf "%s\n" "locales locales/default_environment_locale select en_US.UTF-8" "locales locales/locales_to_be_generated multiselect en_US.UTF-8 UTF-8" "tzdata tzdata/Areas select Etc" "tzdata tzdata/Zones/Etc select UTC" | chroot "$1" debconf-set-selections' \
   --customize-hook='echo "$DISTRO_ID" > "$1/etc/hostname"' \
   --customize-hook='printf "127.0.0.1\tlocalhost\n127.0.1.1\t%s\n::1\tlocalhost ip6-localhost ip6-loopback\n" "$DISTRO_ID" > "$1/etc/hosts"' \
@@ -202,6 +235,6 @@ mmdebstrap \
   "deb $mirror $BASE_SERIES $components" \
   "deb $mirror $BASE_SERIES-updates $components" \
   "deb $security $BASE_SERIES-security $components" \
-  "${browser_sources[@]}"
+  "${vendor_sources[@]}"
 mv "$tmp" "$out"
 echo "done: $(du -h "$out" | cut -f1) $out ($(wc -l < "$manifest") packages, list in $manifest)"

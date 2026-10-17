@@ -1,0 +1,8 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format: qmk_hid's tag tarball and its
+# SHA-256, computed on 2026-10-16. Framework publishes tags, not releases (v0.1.13 is the newest),
+# so there is no RELEASES= line for make upstream-check.
+URL=https://github.com/FrameworkComputer/qmk_hid/archive/refs/tags/v0.1.13.tar.gz
+SHA256=8a058395b8ba56ff54308a681223f11a6032c54df42b4d0223143ccf09d0c858
+
+# The crates from Cargo.lock, vendored on this host (see packages/asusctl/upstream).
+CARGO_VENDOR=1

@@ -1,0 +1,25 @@
+Source: qmk-hid
+Section: utils
+Priority: optional
+Maintainer: @MAINTAINER@
+Build-Depends:
+ debhelper-compat (= 13),
+ cargo,
+ rustc,
+ pkgconf,
+ libudev-dev
+Standards-Version: 4.7.2
+Homepage: https://github.com/FrameworkComputer/qmk_hid
+Rules-Requires-Root: no
+
+Package: qmk-hid
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Command-line tool for QMK keyboards over raw HID
+ qmk_hid talks to keyboards running the QMK firmware through their raw
+ HID interface: it reads the firmware version and sets the RGB lighting
+ (colour, brightness, effect), among other commands. Framework makes it
+ for the keyboard modules of the Framework Laptop 16.
+ .
+ The @DISTRO_NAME@ installer installs this package on a Framework Laptop
+ 16, and the desktop themes the keyboard lighting with it.

@@ -1,0 +1,35 @@
+#!/bin/bash
+# Generated from packages/dell-xps-touchpad-haptics/debian/postinst.in by scripts/render.py. Edit the .in file, not this one.
+# Omarchy's pacman install hook (dell-xps-touchpad-haptics.install), ported: the daemon runs as a
+# system service but reads one desktop user's setting, so pick that user, write their home to
+# /etc/dell-xps-touchpad-haptics.env (the unit's EnvironmentFile), and seed the setting at Omarchy's
+# default, high, if it is missing. debhelper's snippet below then enables and starts the service.
+# The user is the one running sudo, else the logged-in or active one, else the first account with
+# a login shell; at install time, inside the installer's target, that is the account just created.
+set -e
+env_path=/etc/dell-xps-touchpad-haptics.env
+
+target_user() {
+  if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != root ]; then echo "$SUDO_USER"; return; fi
+  local u
+  u=$(logname 2>/dev/null || true)
+  if [ -n "$u" ] && [ "$u" != root ]; then echo "$u"; return; fi
+  u=$(loginctl list-users --no-legend 2>/dev/null | awk '$2 != "root" && $4 == "active" { print $2; exit }' || true)
+  if [ -n "$u" ]; then echo "$u"; return; fi
+  getent passwd | awk -F: '$3 >= 1000 && $1 != "nobody" && $7 !~ /(nologin|false)$/ { print $1; exit }'
+}
+
+if [ "$1" = configure ]; then
+  user=$(target_user)
+  home=""
+  [ -n "$user" ] && home=$(getent passwd "$user" | cut -d: -f6)
+  if [ -n "$home" ] && [ -d "$home" ]; then
+    printf 'DELL_XPS_TOUCHPAD_HAPTICS_HOME=%s\n' "$home" > "$env_path"
+    if [ ! -f "$home/.config/oaxaca/dell-haptic.conf" ]; then
+      runuser --user "$user" -- env HOME="$home" dell-xps-touchpad-haptics set high >/dev/null || true
+    fi
+  else
+    echo "dell-xps-touchpad-haptics: no desktop user found; reinstall the package after logging in" >&2
+  fi
+fi
+#DEBHELPER#

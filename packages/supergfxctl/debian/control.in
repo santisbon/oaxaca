@@ -1,0 +1,26 @@
+Source: supergfxctl
+Section: utils
+Priority: optional
+Maintainer: @MAINTAINER@
+Build-Depends:
+ debhelper-compat (= 13),
+ cargo,
+ rustc,
+ pkgconf,
+ libudev-dev
+Standards-Version: 4.7.2
+Homepage: https://gitlab.com/asus-linux/supergfxctl
+Rules-Requires-Root: no
+
+Package: supergfxctl
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Graphics mode switching for hybrid-GPU laptops
+ supergfxd, a system daemon, and supergfxctl, its command-line client,
+ switch a laptop with an integrated and a dedicated GPU between modes:
+ Hybrid (both GPUs), Integrated (the dedicated GPU powered off) and
+ Vfio (the dedicated GPU handed to virtual machines). Made for ASUS ROG
+ laptops, it works with other hybrid laptops too.
+ .
+ The service is installed but not enabled: the @DISTRO_NAME@ desktop's
+ Hardware > Hybrid GPU writes /etc/supergfxd.conf first, then enables it.

@@ -1,0 +1,31 @@
+# Generated from packages/asusctl/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: asusctl
+Section: utils
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ cargo,
+ rustc,
+ pkgconf,
+ libudev-dev,
+ libusb-1.0-0-dev
+Standards-Version: 4.7.2
+Homepage: https://github.com/OpenGamingCollective/asusctl
+Rules-Requires-Root: no
+
+Package: asusctl
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Control daemon and tools for ASUS ROG laptops
+ asusd, a system daemon, and asusctl, its command-line client, control
+ the features of ASUS ROG, TUF, Zephyrus and similar laptops: keyboard
+ lighting (Aura), the AniMe and Slash LED displays, fan curves and power
+ profiles, the battery charge limit, and panel overdrive. asusd starts
+ from its own udev rule on the laptops it supports. asus-shutdown runs
+ asusd's deferred shutdown tasks, and asusd-user keeps per-user
+ lighting and display settings.
+ .
+ The Oaxaca installer installs this package on ASUS ROG laptops,
+ and the desktop themes the keyboard lighting with it. The ROG Control
+ Center GUI is not built.

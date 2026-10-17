@@ -1,0 +1,5 @@
+# supergfxd and supergfxctl print their own usage; upstream ships no manual pages.
+supergfxctl: no-manual-page *
+# Upstream wants supergfxd before the display manager and gettys, so the GPU mode is set
+# before anything draws; the package does not enable the unit (the desktop's toggle does).
+supergfxctl: systemd-service-file-refers-to-unusual-wantedby-target getty.target *

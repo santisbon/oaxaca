@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+# Generated from packages/dell-xps-touchpad-haptics/debian/rules.in by scripts/render.py. Edit the .in file, not this one.
+ID = oaxaca
+dest = debian/dell-xps-touchpad-haptics
+
+%:
+	dh $@
+
+# The orig tarball holds Omarchy's five files at its top. The user's setting moves from
+# Omarchy's ~/.config/omarchy to this desktop's ~/.config/$(ID), in the installed copies.
+override_dh_auto_install:
+	install -D -m 0755 -t $(dest)/usr/bin dell-xps-touchpad-haptics dell-xps-touchpad-haptics-daemon
+	install -D -m 0644 dell-xps-touchpad-haptics.service $(dest)/usr/lib/systemd/system/dell-xps-touchpad-haptics.service
+	install -D -m 0644 99-dell-xps-touchpad-haptics.rules $(dest)/usr/lib/udev/rules.d/99-dell-xps-touchpad-haptics.rules
+	install -D -m 0644 README.package.md $(dest)/usr/share/doc/dell-xps-touchpad-haptics/README.md
+	sed -i 's#\.config/omarchy/#.config/$(ID)/#g' $(dest)/usr/bin/dell-xps-touchpad-haptics \
+	  $(dest)/usr/bin/dell-xps-touchpad-haptics-daemon $(dest)/usr/share/doc/dell-xps-touchpad-haptics/README.md
+
+# The daemon's python3 shebang goes through env; Debian's packages name the interpreter.
+override_dh_fixperms:
+	dh_fixperms
+	sed -i '1s#^\#!/usr/bin/env python3#\#!/usr/bin/python3#' $(dest)/usr/bin/dell-xps-touchpad-haptics-daemon
+

@@ -1,0 +1,25 @@
+# Generated from packages/gdk-pixbuf-compat/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: oaxaca-gdk-pixbuf-compat
+Section: metapackages
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://github.com/santisbon/oaxaca
+Rules-Requires-Root: no
+
+Package: oaxaca-gdk-pixbuf-compat
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, libgdk-pixbuf-2.0-0
+Provides: libgdk-pixbuf2.0-0 (= 2.44.8)
+Description: Old package name of the GdkPixbuf library, for Mojang's Minecraft launcher
+ Ubuntu renamed the GdkPixbuf image-loading library's package from
+ libgdk-pixbuf2.0-0 to libgdk-pixbuf-2.0-0 and no longer provides the old
+ name. Mojang's Minecraft.deb still depends on the old name, so apt refuses
+ to install it. This empty package depends on the library under its
+ current name and provides the old one, the way Ubuntu's own transitional
+ packages bridge a rename.
+ .
+ The Oaxaca desktop's Install > Gaming > Minecraft installs it before
+ Mojang's package.

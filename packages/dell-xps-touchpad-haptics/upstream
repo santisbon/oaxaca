@@ -1,0 +1,5 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format. FILES= names a list of
+# "<url> <sha256>" lines, relative to this directory; build.sh downloads and checks each
+# file and packs them all, by basename, into build/<source>_<upstream version>.orig.tar.gz.
+# The upstream version 1.0.0 is the pkgver of Omarchy's recipe (pkgrel 4).
+FILES=sources.list

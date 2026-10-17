@@ -1,0 +1,16 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format: asusctl's release tarball and its
+# SHA-256. asusctl moved from gitlab.com/asus-linux to github.com/OpenGamingCollective, where 6.5.0
+# (2026-09-13) is the latest release; the SHA-256 is the one Arch's recipe records
+# (gitlab.archlinux.org, packaging/packages/asusctl, PKGBUILD, read 2026-10-16) and matched
+# sha256sum on the download the same day.
+URL=https://github.com/OpenGamingCollective/asusctl/archive/6.5.0.tar.gz
+SHA256=edceeab080df670a3851af9815c082949e5c0d14be20fc41216d4a7e84d8fca8
+
+# The crates from Cargo.lock, fetched on this host with "cargo vendor" and shipped as the
+# component "vendor", so that cargo builds offline in the chroot. The lock covers the whole
+# workspace, the ROG Control Center GUI included, so vendor/ carries crates the build never
+# compiles (Slint, Windows crates): about 1.1 GB unpacked on 2026-10-16.
+CARGO_VENDOR=1
+
+# make upstream-check compares this repository's latest release with debian/changelog.
+RELEASES=OpenGamingCollective/asusctl

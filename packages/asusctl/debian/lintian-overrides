@@ -1,0 +1,3 @@
+# asusd, asusctl, asus-shutdown and asusd-user print their own usage; upstream ships no
+# manual pages.
+asusctl: no-manual-page *

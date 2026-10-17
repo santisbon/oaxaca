@@ -1,0 +1,11 @@
+# Read by scripts/build.sh (FILES= in the "upstream" file next to this list): one
+# "<url> <sha256>" line per file. The files are Omarchy's package for the Dell XPS haptic
+# touchpad, omacom/omarchy-pkgs, pkgbuilds/dell-xps-touchpad-haptics at commit
+# b422d37fa25ed76e8f9ade1cc61438e098bb7118 (2026-09-18, the directory's last change); the SHA-256s were computed from
+# those downloads on 2026-10-16. Omarchy's pacman install hook is not taken: debian/postinst
+# does its job.
+https://raw.githubusercontent.com/omacom/omarchy-pkgs/b422d37fa25ed76e8f9ade1cc61438e098bb7118/pkgbuilds/dell-xps-touchpad-haptics/dell-xps-touchpad-haptics e98dc2fdb728ab676b17168ee1a691a50a8280b6e3c3f808b767ca64d9b49f71
+https://raw.githubusercontent.com/omacom/omarchy-pkgs/b422d37fa25ed76e8f9ade1cc61438e098bb7118/pkgbuilds/dell-xps-touchpad-haptics/dell-xps-touchpad-haptics-daemon 08da5275d8e8abe2e263e742c0cd86283c7fe526fb739d6cbfff7c389de25b72
+https://raw.githubusercontent.com/omacom/omarchy-pkgs/b422d37fa25ed76e8f9ade1cc61438e098bb7118/pkgbuilds/dell-xps-touchpad-haptics/dell-xps-touchpad-haptics.service 27620391718a115dccc728e41276cf70467c723d6fa2a8c222e44cad2e71242a
+https://raw.githubusercontent.com/omacom/omarchy-pkgs/b422d37fa25ed76e8f9ade1cc61438e098bb7118/pkgbuilds/dell-xps-touchpad-haptics/99-dell-xps-touchpad-haptics.rules 6666c37fcae6b746ae9f480eea4685d4a7adca7aefb5090ec29fc901c6d4e6ec
+https://raw.githubusercontent.com/omacom/omarchy-pkgs/b422d37fa25ed76e8f9ade1cc61438e098bb7118/pkgbuilds/dell-xps-touchpad-haptics/README.package.md df95f8d20de1d04cba5e67f42a033c9e2c1beca2f2e615e250575e2ddfcf0f77

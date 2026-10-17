@@ -1,0 +1,8 @@
+dell-xps-touchpad-haptics (1.0.0-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
+  * Initial release: Omarchy's package (omacom/omarchy-pkgs,
+    pkgbuilds/dell-xps-touchpad-haptics 1.0.0-4, commit b422d37f), with its
+    pacman install hook ported to debian/postinst and the user's setting
+    kept in ~/.config/@DISTRO_ID@/dell-haptic.conf.
+
+ -- @MAINTAINER@  Fri, 16 Oct 2026 18:02:00 -0500

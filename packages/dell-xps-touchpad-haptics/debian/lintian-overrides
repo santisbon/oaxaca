@@ -1,0 +1,3 @@
+# Omarchy's commands have no manual pages; dell-xps-touchpad-haptics prints its usage, and the
+# daemon is started only by its systemd unit.
+dell-xps-touchpad-haptics: no-manual-page *

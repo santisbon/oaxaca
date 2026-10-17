@@ -1,0 +1,9 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format: supergfxctl's release tarball
+# from GitLab's archive of the tag and its SHA-256, computed on 2026-10-16 (the AUR's recipe
+# downloads the same URL). 5.2.7 (2025-02-16) is the latest tag; the project did not move with
+# asusctl. No RELEASES= line: make upstream-check reads GitHub only.
+URL=https://gitlab.com/asus-linux/supergfxctl/-/archive/5.2.7/supergfxctl-5.2.7.tar.gz
+SHA256=bdd82f19094e11ede209830f62a2b408585b3994de800720ca23fb0a3dcd84a2
+
+# The crates from Cargo.lock, vendored on this host (see packages/asusctl/upstream).
+CARGO_VENDOR=1

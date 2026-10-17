@@ -1,0 +1,3 @@
+ Slint's commercial licence. The source package does not use it: the Slint
+ crates are redistributed under their GPL-3 option. The text is in each Slint
+ crate's LICENSE.md under vendor/.

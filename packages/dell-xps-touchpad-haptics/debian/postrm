@@ -1,0 +1,7 @@
+#!/bin/sh
+# The environment file postinst wrote is not a package file; remove it with the package.
+set -e
+if [ "$1" = remove ] || [ "$1" = purge ]; then
+  rm -f /etc/dell-xps-touchpad-haptics.env
+fi
+#DEBHELPER#

@@ -1,0 +1,6 @@
+oaxaca-gdk-pixbuf-compat (0.1.0) stonking; urgency=medium
+
+  * Initial release (docs/6, choice 76): provides libgdk-pixbuf2.0-0, the
+    GdkPixbuf library's old package name, for Mojang's Minecraft.deb.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 16 Oct 2026 20:20:00 -0500

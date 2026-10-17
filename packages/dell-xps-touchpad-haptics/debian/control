@@ -1,0 +1,23 @@
+# Generated from packages/dell-xps-touchpad-haptics/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: dell-xps-touchpad-haptics
+Section: utils
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://github.com/omacom/omarchy-pkgs/tree/master/pkgbuilds/dell-xps-touchpad-haptics
+Rules-Requires-Root: no
+
+Package: dell-xps-touchpad-haptics
+Architecture: all
+Depends: ${misc:Depends}, python3
+Description: Haptic feedback presets for the Dell XPS Synaptics touchpad
+ Omarchy's driver for the haptic touchpad of Dell XPS 14 and 16 laptops
+ (Synaptics, i2c id 06CB): a daemon that talks to the touchpad over
+ hidraw and plays its click feedback at the chosen strength, a systemd
+ service that runs it, a udev rule that keeps the touchpad's I2C
+ controller powered, and the command dell-xps-touchpad-haptics, with
+ three presets: low, mid and high.
+ .
+ The Oaxaca installer installs this package on the machines it is
+ for; the desktop's menu offers the presets under Hardware.
