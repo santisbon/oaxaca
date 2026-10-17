@@ -49,6 +49,39 @@ The display's brightness has no standard control on Linux: the Studio Display ta
 
 [Omarchy](https://github.com/omacom/omarchy) is a Linux distribution: Arch Linux's base (kernel, pacman, boot loader, snapshots) with Omarchy's own layer on top, shipped as two Arch packages (the commands, the Quickshell shell, the themes, and the settings, units and starter files a new user gets) plus a package list and setup scripts that tune the Arch base. @DISTRO_NAME@ takes only that layer and puts Ubuntu underneath instead of Arch. It carries a fork of Omarchy @OMARCHY_TAG@ (<@OMARCHY_FORK@>, branch `@OMARCHY_PORT_REF@`) in which pacman and the AUR are replaced by apt (and, for the few applications Ubuntu does not ship as regular packages, the Snap Store or Flathub), the scripts that configured Arch's base are dropped in favor of Ubuntu's own configuration, and the package list is translated to Ubuntu's names. The build turns that fork into Debian packages, renamed at build time: `@DISTRO_ID@-desktop` (the metapackage that pulls in Hyprland, the applications and the rest), `@DISTRO_ID@-shell`, `@DISTRO_ID@-themes`, `@DISTRO_ID@-tools` and `@DISTRO_ID@-config`. Hyprland comes from Ubuntu's archive; Quickshell, which Ubuntu does not carry, is built for @DISTRO_NAME@'s repository. Updates arrive through apt like the rest of the system.
 
+## Plugins and themes written for Omarchy
+
+@DISTRO_NAME@ runs the plugins in Omarchy's plugin marketplace (<https://plugins.omarchy.org>) and the themes on Omarchy's theme list (<https://omarchy.org/themes/>). A plugin is a git repository of code that runs inside the desktop's shell (the bar, its panels, the menu); a theme is a git repository of colors, wallpapers and per-application settings. Add a plugin with Menu > Setup > Plugins > Add Plugin (or `@DISTRO_ID@ plugin add <git URL>`), and a theme with Menu > Install > Style > Theme (or `@DISTRO_ID@ theme install <git URL>`).
+
+Plugins and themes are written for Omarchy, so they call Omarchy's names. @DISTRO_NAME@ answers to those names through a compatibility layer, while everything you see says @DISTRO_NAME@:
+
+- every `@DISTRO_ID@-<name>` command also answers to `omarchy-<name>`, the `@DISTRO_ID@` command to `omarchy`, and `/usr/share/@DISTRO_ID@` to `/usr/share/omarchy`; your `~/.config/omarchy`, `~/.local/state/omarchy` and `~/.local/share/omarchy` are links to @DISTRO_NAME@'s folders. These are links: the commands the menu and the key bindings run are the `@DISTRO_ID@-*` ones, and the `@DISTRO_ID@` command introduces itself as @DISTRO_NAME@'s even when called as `omarchy`;
+- names you do not see keep Omarchy's spelling: the built-in plugins' IDs (`omarchy.clock`, `omarchy.weather`), `OMARCHY_*` environment variables, and app IDs such as `org.omarchy.terminal`.
+
+Omarchy runs on Arch Linux and @DISTRO_NAME@ on Ubuntu, so a plugin or theme that installs software the Arch way needs more than names. Three things handle that:
+
+- **A warning when you add one.** Before keeping a plugin or theme, @DISTRO_NAME@ looks through its files for Arch's package tools (`pacman`, `yay`, `paru`, `makepkg`, Omarchy's AUR commands) and pacman's files, shows up to 10 lines where they appear, and asks "Add it anyway?" with No as the default. A match is a hint: the words also appear in comments and messages, and such a plugin may work fine.
+- **Stand-ins for Arch's package tools.** `/usr/lib/@DISTRO_ID@/arch-standins/` holds `pacman`, `yay`, `paru` and `makepkg`, all running `@DISTRO_ID@-arch-standin`, and that folder comes last on your `PATH`, so a real program of the same name wins if you install one (Ubuntu's `pacman-package-manager` has a real `pacman`). A query such as `pacman -Q zip` answers "not installed" without a word, so a plugin that only checks takes its "missing" path. Anything else, such as `yay -S xray`, changes nothing: it prints the command that ran, says that @DISTRO_NAME@ installs software with apt, shows a desktop notification, and exits with status 1. Omarchy's AUR commands (`omarchy-pkg-aur-add`, `-install`, `-accessible`) do the same, and the last one answers that the AUR is not available.
+- **Package-name translations.** Omarchy's own package command, `omarchy-pkg-add <names>` (here `@DISTRO_ID@-pkg-add`), installs with apt on @DISTRO_NAME@, and so do the checks `omarchy-pkg-present` and `omarchy-pkg-missing`. When a plugin gives them an Arch package name that Ubuntu does not use, they look it up in a translation table and use the Ubuntu packages listed there; `python-<name>` becomes `python3-<name>` when Ubuntu has that; any other name is used as it is.
+
+The translation table is a plain text file, one Arch name per line followed by its Ubuntu packages, lines starting with `#` ignored:
+
+- on an installed system: `/usr/share/@DISTRO_ID@/default/@DISTRO_ID@/arch-package-names`;
+- in the source: `default/omarchy/arch-package-names` in the Omarchy fork (<@OMARCHY_FORK@>, branch `@OMARCHY_PORT_REF@`).
+
+Lines from that file:
+
+```
+bluez-obex bluez-obexd
+github-cli gh
+qt6-declarative qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts qml6-module-qtquick-window qml6-module-qtqml-workerscript qml6-module-qtquick-templates
+ttf-jetbrains-mono-nerd @DISTRO_ID@-fonts
+```
+
+The table has 162 entries (2026-10-17), drawn from every package name that the 5602 plugins listed in Omarchy's marketplace ask for in their code, build files and messages (5575 of them could be fetched; 881 name a package), plus the Arch packages Omarchy itself installs. Each Ubuntu package was chosen by the files both distributions install (commands, libraries, Python modules), checked by hand, and is in Ubuntu @BASE_VERSION@'s archive or @DISTRO_NAME@'s own repository. An Arch name that is also an Ubuntu package name is never in the table, so the table cannot change what an Ubuntu name installs. Names with no entry are installed as they are, and apt says so when Ubuntu has no such package: software Ubuntu does not package (such as `ruff`, `croc`, `himalaya` or `spotifyd`), AUR-only packages, and vendors' own packages (Chrome, VS Code, 1Password, Spotify, Signal, Tailscale, Mullvad), which come from the vendors' repositories through the menu's Install > Browser, Editor and Service entries instead. To add a translation, edit the file in the fork and open a pull request against `@OMARCHY_PORT_REF@`; on your own machine you can also edit the installed copy, which the next update of `@DISTRO_ID@-config` replaces.
+
+What no layer reaches: plugins that need software Ubuntu does not package (for example `xray`, which is only in Arch's user repository, the AUR), features built on pacman's own files (a widget that watches pacman's log stays idle), and commands Omarchy added after the version @DISTRO_NAME@ carries (@OMARCHY_TAG@). The reasoning, and the sample of marketplace plugins it was measured on, is choice 86 in [docs/6 - omarchy-port.md](docs/6%20-%20omarchy-port.md).
+
 ## More
 
 - [docs/README.md](docs/README.md): the developer README. How the distro is built from source, the tools and their commands, the repository map and the status of each roadmap step.

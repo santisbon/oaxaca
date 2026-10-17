@@ -30,8 +30,11 @@ oaxaca-desktop (4.0.4+git20261017.78.dacbe9f9-0oaxaca1) stonking; urgency=medium
   * Adding a plugin or a theme warns when its files mention Arch Linux's
     package tools (pacman, yay, paru, makepkg), and asks before keeping
     it. Stand-ins for those tools, last on PATH, say that the distro uses
-    apt and change nothing. Omarchy's package command installs the Ubuntu
-    package for an Arch name it knows (bluez-obex is bluez-obexd).
+    apt and change nothing. Omarchy's package commands (add, present,
+    missing) use Ubuntu's packages for 162 Arch names, listed in
+    /usr/share/oaxaca/default/oaxaca/arch-package-names and drawn
+    from a scan of every plugin in Omarchy's marketplace (bluez-obex is
+    bluez-obexd).
 
  -- santisbon <santisbon@users.noreply.github.com>  Sat, 17 Oct 2026 01:10:00 -0500
 
