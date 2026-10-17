@@ -8,6 +8,9 @@
   * OBS Studio can be installed from the menu: Install > Productivity >
     OBS Studio installs the OBS project's Flatpak from Flathub, and Remove >
     Productivity > OBS Studio removes it with its data.
+  * Xournal++ and Kdenlive can be installed from the menu the same way:
+    Install > Productivity > Xournal++ and > Kdenlive install their
+    projects' Flatpaks from Flathub, and Remove > Productivity removes them.
 
  -- @MAINTAINER@  Sat, 17 Oct 2026 01:10:00 -0500
 
