@@ -2,6 +2,8 @@
 
   * live-boot-test reports the installer's default file system and the first
     one its partition page offers; both must be btrfs.
+  * When the installer is missing, the test prints how it ended (the journal's
+    exit and signal lines, and its core dumps).
 
  -- @MAINTAINER@  Sun, 18 Oct 2026 02:28:49 -0500
 

@@ -61,6 +61,13 @@ echo "shell layers: [$(as_user hyprctl layers -j 2>/dev/null | jq -r '.. | .name
 # The installer autostarts in the live session; give it time to draw its window.
 for _ in $(seq 1 60); do pgrep -x calamares >/dev/null && break; sleep 2; done
 echo "installer process: $(pgrep -x calamares >/dev/null && echo yes || echo no)"
+# When the installer is gone, how it ended: the journal's exit, signal and core dump lines for
+# it (one Secure Boot off run, 2026-10-18, lost it right after its requirements check, with
+# nothing in the lines below).
+if ! pgrep -x calamares >/dev/null; then
+  journalctl -b --no-pager -o short-monotonic 2>/dev/null | grep -iE 'calamares|@DISTRO_ID@-installer' | grep -iE 'exit|signal|dump|abort|segfault|terminat|quit|killed|status=' | tail -n 10 | cut -c1-200 | sed 's/^/installer end: /'
+  echo "installer core dumps: $(coredumpctl list --no-legend --no-pager calamares 2>/dev/null | wc -l)"
+fi
 for _ in $(seq 1 30); do as_user hyprctl clients -j 2>/dev/null | jq -e '.[] | select(.class | test("calamares"; "i"))' >/dev/null && break; sleep 2; done
 echo "installer window: $(as_user hyprctl clients -j 2>/dev/null | jq -r '[.[] | select(.class | test("calamares"; "i"))] | length')"
 echo "window classes: [$(as_user hyprctl clients -j 2>/dev/null | jq -r '.[].class' | paste -sd' ')]"
