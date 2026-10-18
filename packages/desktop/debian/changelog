@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.4+git20261018.98.e07d28a1-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.4+git20261018.99.c0c1d49b-0oaxaca1) stonking; urgency=medium
 
   * Caps Lock is Caps Lock again: Omarchy's Compose key on Caps Lock, and
     Caps Lock on both Shift keys, are gone (docs/6, choice 90).
