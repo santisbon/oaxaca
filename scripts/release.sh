@@ -83,6 +83,8 @@ make rootfs-test
 make iso
 make iso-test
 make iso-test SECURE_BOOT=off
+# The ISO installed on an encrypted btrfs disk, factory-reset, and handed to a new owner.
+make factory-reset-test
 
 # 7. The published packages upgraded to build/'s in a throwaway chroot, migrations included; then
 #    the published desktop booted in QEMU and updated to build/'s inside its running session.

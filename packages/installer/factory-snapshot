@@ -1,0 +1,58 @@
+#!/bin/bash
+# Generated from packages/installer/factory-snapshot.in by scripts/render.py. Edit the .in file, not this one.
+# factory-snapshot: on a btrfs root filesystem, take the read-only @factory snapshot of the
+# installed root (@) that oaxaca-system-factory-reset returns the machine to; on any other
+# root filesystem, do nothing. docs/7, choice 52.
+#
+# Anatomy: Calamares's shellprocess@factory runs this from the live system (dontChroot), after
+# the initramfs step and before the umount step, with the target's root as $1, so the snapshot
+# holds the finished system. The script mounts the btrfs top level (subvolid=5) of the root's
+# device in a temporary directory and runs "btrfs subvolume snapshot -r" of @ as @factory there.
+# The other subvolumes (@home, @cache, @log, @swap) are not part of a snapshot of @, which is what
+# the reset wants: it recreates them empty. An encrypted install keeps /boot on its own
+# partition, outside @, so its contents (kernels, initramfs, GRUB's files; not efi/, the EFI
+# System Partition's mount point) are copied into the root under /var/lib/oaxaca/factory/boot
+# first and removed from the running root after the snapshot, which keeps them. The installing
+# user's account is in the snapshot; the reset removes it from @factory before anything else
+# can use it. The log goes to /var/log/oaxaca/factory-snapshot.log in the target.
+# Usage: factory-snapshot <target root>
+set -u
+root=${1:?target root}
+mkdir -p "$root/var/log/oaxaca"
+exec > >(tee -a "$root/var/log/oaxaca/factory-snapshot.log") 2>&1
+
+fstype=$(findmnt -no FSTYPE --mountpoint "$root")
+if [ "$fstype" != btrfs ]; then
+    echo "oaxaca-factory-snapshot: root filesystem is ${fstype:-unknown}; no factory snapshot"
+    exit 0
+fi
+
+# findmnt prints a btrfs subvolume mount as "<device>[/<subvolume>]".
+source=$(findmnt -no SOURCE --mountpoint "$root")
+device=${source%%\[*}
+subvol=$(findmnt -no OPTIONS --mountpoint "$root" | tr ',' '\n' | sed -n 's/^subvol=//p')
+if [ "$subvol" != /@ ]; then
+    echo "oaxaca-factory-snapshot: the root is subvolume '${subvol:-none}', not /@; no factory snapshot" >&2
+    exit 1
+fi
+
+copy=/var/lib/oaxaca/factory/boot
+if findmnt -n --mountpoint "$root/boot" >/dev/null; then
+    echo "oaxaca-factory-snapshot: /boot is its own partition; copying it into the root at $copy"
+    mkdir -p "$root$copy"
+    find "$root/boot" -mindepth 1 -maxdepth 1 ! -name efi -exec cp -a {} "$root$copy/" \; || exit 1
+fi
+
+top=$(mktemp -d)
+mount -o subvolid=5 "$device" "$top" || exit 1
+if [ -e "$top/@factory" ]; then
+    echo "oaxaca-factory-snapshot: $device already has @factory; leaving it" >&2
+    status=1
+else
+    btrfs subvolume snapshot -r "$top/@" "$top/@factory"
+    status=$?
+fi
+umount "$top" && rmdir "$top"
+rm -rf "$root/var/lib/oaxaca/factory"
+[ "$status" = 0 ] && echo "oaxaca-factory-snapshot: @factory taken on $device"
+exit "$status"

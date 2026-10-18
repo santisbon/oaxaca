@@ -1,3 +1,14 @@
+@DISTRO_ID@-installer (0.1.8) @BASE_SERIES@; urgency=medium
+
+  * btrfs is the partition page's default file system (docs/7, choice 52);
+    ext4 and xfs stay on offer.
+  * factory-snapshot, run as shellprocess@factory after the initramfs step:
+    on a btrfs root, takes the read-only @factory snapshot of @ that
+    @DISTRO_ID@-system-factory-reset returns the machine to, with a copy of
+    a separate /boot inside it.
+
+ -- @MAINTAINER@  Sat, 17 Oct 2026 17:22:48 -0500
+
 @DISTRO_ID@-installer (0.1.7) @BASE_SERIES@; urgency=medium
 
   * The system step sets OMARCHY_LOG_TO_STDOUT, Omarchy's variable name,

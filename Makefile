@@ -1,5 +1,5 @@
 # Entry points for the build. See docs/2 - build-infra.md, docs/3 - rootfs.md and docs/4 - session.md.
-.PHONY: render check-render check-versions upstream-check chroot build lint publish repo-seed machine-setup release apt-infra apt-infra-check rootfs rootfs-test drivers-check iso iso-test upgrade-test session-upgrade-test clean
+.PHONY: render check-render check-versions upstream-check chroot build lint publish repo-seed machine-setup release apt-infra apt-infra-check rootfs rootfs-test drivers-check iso iso-test upgrade-test session-upgrade-test factory-reset-test clean
 
 # Root filesystem profile for rootfs, rootfs-test and drivers-check: base (step 3), session (step 4),
 # desktop (step 6) or live (step 7, the desktop plus casper and the installer: what the ISO ships).
@@ -68,6 +68,9 @@ upgrade-test:      ## Upgrade the published packages to build/ in a throwaway ch
 session-upgrade-test: ## Boot the published desktop, update it to build/ inside its running session, and check the desktop
 	PROFILE=desktop SOURCE=published scripts/rootfs-create.sh
 	PROFILE=desktop UPGRADE=1 scripts/rootfs-boot-test.sh
+
+factory-reset-test: ## Install the test ISO on an encrypted btrfs disk in QEMU, factory-reset it, and check the new owner's machine
+	scripts/factory-reset-test.sh
 
 clean:
 	rm -rf build

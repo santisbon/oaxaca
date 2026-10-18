@@ -1,0 +1,21 @@
+#!/bin/bash
+# A stand-in for gum in scripts/factory-reset-test.sh: the prompts that wait for a person
+# (input, choose, filter, confirm) take their answers, in order, from $GUM_ANSWERS, one
+# "status:output" line per prompt ("0:newowner" answers, "1:" is No or Esc); the counter lives in
+# $GUM_COUNT. The rest (style, table, spin) print what they were given. Each call is logged on
+# the serial console.
+case ${1:-} in
+  input | choose | filter | confirm)
+    [[ $1 == choose || $1 == filter ]] && cat >/dev/null
+    n=$(( $(cat "$GUM_COUNT" 2>/dev/null || echo 0) + 1 ))
+    echo "$n" >"$GUM_COUNT"
+    line=$(sed -n "${n}p" "$GUM_ANSWERS")
+    echo "factory gum: $1 #$n -> ${line:-<none>}" >/dev/ttyS0
+    [[ -n $line ]] || exit 1
+    [[ $1 == confirm ]] || printf '%s\n' "${line#*:}"
+    exit "${line%%:*}"
+    ;;
+  table) cat ;;
+  spin) while [[ $# -gt 0 && $1 != -- ]]; do shift; done; shift; exec "$@" ;;
+  *) for a in "$@"; do [[ $a == -* ]] || last=$a; done; printf '%s\n' "${last:-}" ;;
+esac

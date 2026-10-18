@@ -6,6 +6,14 @@ oaxaca-desktop (4.0.4+git20261017.93.86706132-0oaxaca1) stonking; urgency=medium
     has never had the firewall set up. A user who turns ufw off afterwards
     keeps it off.
   * Docker Desktop is the first entry of Install > Development.
+  * Setup > Reset Computer is back on btrfs installs (docs/6, choice 87):
+    oaxaca-system-factory-reset returns the machine to the installer's
+    @factory snapshot, wipes the owner's accounts and data on the next
+    boot, and asks for a new owner on tty1 before the login screen,
+    re-keying an encrypted disk to the new owner's password. Needs
+    oaxaca-installer 0.1.8 or later for the snapshot.
+  * A keyboard layout chosen in the installer reaches the desktop:
+    Hyprland reads /etc/default/keyboard, where Ubuntu keeps it.
 
  -- santisbon <santisbon@users.noreply.github.com>  Sat, 17 Oct 2026 16:51:52 -0500
 

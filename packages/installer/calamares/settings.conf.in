@@ -26,6 +26,9 @@ instances:
 - id: fallback
   module: shellprocess
   config: shellprocess_fallback.conf
+- id: factory
+  module: shellprocess
+  config: shellprocess_factory.conf
 
 sequence:
 - show:
@@ -62,6 +65,7 @@ sequence:
   - bootloader
   - shellprocess@fallback
   - initramfs
+  - shellprocess@factory
   - umount
 - show:
   - finished

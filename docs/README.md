@@ -31,6 +31,7 @@ Nothing is ever installed and then stripped out: the root filesystem is assemble
   - [`qemu-system-x86_64` with `mke2fs` (`make rootfs-test`)](#qemu-system-x86_64-with-mke2fs-make-rootfs-test)
   - [`mksquashfs`, `mkfs.vfat` with `mtools`, and `xorriso` (`make iso`)](#mksquashfs-mkfsvfat-with-mtools-and-xorriso-make-iso)
   - [`qemu-system-x86_64` with OVMF (`make iso-test`)](#qemu-system-x86_64-with-ovmf-make-iso-test)
+  - [`qemu-system-x86_64` with OVMF, four boots (`make factory-reset-test`)](#qemu-system-x86_64-with-ovmf-four-boots-make-factory-reset-test)
   - [`unshare` with `chroot` (`make drivers-check`)](#unshare-with-chroot-make-drivers-check)
   - [`git` with `dpkg --compare-versions` (`make check-versions`)](#git-with-dpkg---compare-versions-make-check-versions)
   - [`mmdebstrap` with `dpkg-scanpackages` (`make upgrade-test`)](#mmdebstrap-with-dpkg-scanpackages-make-upgrade-test)
@@ -170,7 +171,7 @@ Next: the roadmap's eight steps are done. Pending, as of 2026-10-15 (details in 
 
 ```
 distro.conf          the only place the distro's name and identity live
-Makefile             entry points: render, check-versions, upstream-check, chroot, build, publish, rootfs, rootfs-test, drivers-check, iso, iso-test, upgrade-test, session-upgrade-test
+Makefile             entry points: render, check-versions, upstream-check, chroot, build, publish, rootfs, rootfs-test, drivers-check, iso, iso-test, upgrade-test, session-upgrade-test, factory-reset-test
 sbuild.conf          sbuild settings for this repo (loaded through SBUILD_CONFIG)
 scripts/
   render.py          fills @TOKEN@ templates (*.in) from distro.conf
@@ -193,6 +194,7 @@ scripts/
   drivers-check.sh   runs ubuntu-drivers inside the tarball against this machine's GPU (step 4)
   iso-create.sh      turns the live tarball into the installation ISO: squashfs, signed shim and GRUB in an EFI image, xorriso (step 7)
   iso-boot-test.sh   boots the test ISO in QEMU under OVMF, Secure Boot on or off, and checks the live session and the installer
+  factory-reset-test.sh  installs the test ISO on an encrypted btrfs disk in QEMU, factory-resets it, and checks the new owner's machine
   suspend-baseline.sh  one measured suspend/resume cycle, used for the baseline
 packages/
   archive-keyring/   oaxaca-archive-keyring and oaxaca-apt-source
@@ -223,6 +225,7 @@ packages/
 .github/workflows/upstream-check.yml   CI, weekly: make upstream-check
 docs/                the developer README (this file), plan, policy, build infrastructure, root filesystem, session layer, Hyprland and Quickshell, the Omarchy port, image and installer, update path, suspend baseline
 tests/
+  factory-reset/       the guest's side of make factory-reset-test: the scripted install, the reset, the checks, a stand-in for gum
   iso-drive/<name>/    driven installer and live-session checks: DRIVE=tests/iso-drive/<name> make iso-test puts the folder's run.sh on a disk the guest runs (docs/7, choices 26, 38, 41, 42)
   gpu-env/run.sh       the session's GPU script against made-up machines (docs/7, choice 43); runs directly, no build
   launch-dgpu/run.sh   the port's menu launcher and discrete-GPU launcher, from a fork checkout (docs/7, choice 43); runs directly
@@ -337,6 +340,14 @@ KEEP=1 make rootfs-test            # keep build/rootfs/boot-test/ with the seria
 ### `qemu-system-x86_64` with OVMF (`make iso-test`)
 
 `scripts/iso-boot-test.sh` boots the test ISO under OVMF, Ubuntu's UEFI firmware for QEMU: `OVMF_CODE_4M.secboot.fd` with Microsoft's keys enrolled (`SECURE_BOOT=on`, the default) or the same firmware with no keys enrolled (`SECURE_BOOT=off`). The guest's test unit, from `oaxaca-live`, prints its checks on the serial console; the script compares them: Secure Boot state, casper, the live user, the session with the shell, the installer running with its window.
+
+### `qemu-system-x86_64` with OVMF, four boots (`make factory-reset-test`)
+
+`scripts/factory-reset-test.sh` checks the factory reset (docs/6, choice 87) end to end in four QEMU runs under OVMF with Secure Boot on, sharing one firmware variable file and a sparse 40 GiB disk. A Python watcher on the guest's serial console types the disk encryption passphrase when the initramfs asks and turns `=== KEYS` lines into key presses. Boot A is the test ISO: after the live session's own checks, `tests/factory-reset/run.sh` installs the distro on the disk with the encrypted btrfs layout the installer's settings describe and the installer's own scripts, ending with `factory-snapshot`; Calamares has no unattended mode, so this is a scripted install, not the installer's pages. Boot B unlocks the disk with the first owner's passphrase and runs `oaxaca-system-factory-reset` with its prompts answered by a stand-in for gum. Boot C must not ask for a passphrase: the reset's wipe runs, the owner form takes its answers from the stand-in, and `check.sh` prints the users, groups, files, LUKS key slots, `crypttab`, conf-hook, initramfs, subvolumes, swap, hostname, timezone, keyboard and login. Boot D unlocks with the new owner's password and checks that the one-boot autologin is gone. Logs stay in `build/factory-reset-test/` when the test fails.
+
+```
+make factory-reset-test           # needs the test ISO from make iso, and KVM
+```
 
 ### `unshare` with `chroot` (`make drivers-check`)
 
@@ -555,7 +566,7 @@ What `make release` does, stopping at the first failure:
 3. Builds the packages whose version is not published yet (`make build PKG=...`). Release tags (`v*`) have not been used so far, so `make check-versions` has nothing to compare against; instead, a package needs building when the version at the top of its rendered `debian/changelog` is missing from the published source index (`dists/stonking/main/source/Sources.gz`). A package changed without a version bump is therefore not built. When every version is published, the release ends here with "nothing to release".
 4. Runs `make upstream-check` and reports a newer upstream release without stopping.
 5. Builds the live root filesystem and boots it in QEMU (`make rootfs`, `make rootfs-test`: the base, session and desktop checks).
-6. Builds the ISO and boots it under OVMF with Secure Boot on, then off (`make iso`, `make iso-test`, `make iso-test SECURE_BOOT=off`).
+6. Builds the ISO and boots it under OVMF with Secure Boot on, then off (`make iso`, `make iso-test`, `make iso-test SECURE_BOOT=off`), then installs it on an encrypted btrfs disk and factory-resets it (`make factory-reset-test`).
 7. Upgrades the published packages to `build/`'s in a throwaway chroot, migrations included (`make upgrade-test`), then boots the published desktop and updates it to `build/`'s inside its running session (`make session-upgrade-test`).
 8. Commits this repository (git opens the editor; an empty message stops the release) and pushes.
 9. Signs the repository locally with `make publish` (pinentry asks for the apt signing key passphrase), lists what the upload would change, and asks `Upload to oaxaca-apt? [y/N]`.
