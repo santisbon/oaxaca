@@ -1,5 +1,18 @@
 oaxaca-desktop (4.0.4+git20261018.96.8741a76d-0oaxaca1) stonking; urgency=medium
 
+  * A new user is no longer offered every migration: first-run marks the
+    migrations the packages ship as done at the user's first login, and the
+    migration notice waits for first-run to finish, so it no longer shows
+    twice. The live session, too, offered all 12.
+  * The live session shows no keybinding lesson and no update prompt.
+  * oaxaca-config provides sddm-theme, so sddm's Recommends no longer
+    bring budgie-sddm-theme and Qt's on-screen keyboard; it needs
+    oaxaca-session 0.1.8, which turns that keyboard off.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sat, 17 Oct 2026 22:42:51 -0500
+
+oaxaca-desktop (4.0.4+git20261018.96.8741a76d-0oaxaca1) stonking; urgency=medium
+
   * The firewall comes on for systems installed before it was turned on at
     install (docs/6, choice 40): on an upgrade, oaxaca-config's postinst
     allows LocalSend's port and enables ufw when it is off and the system

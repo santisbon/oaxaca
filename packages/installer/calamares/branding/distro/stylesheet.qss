@@ -1,0 +1,11 @@
+/* Calamares reads stylesheet.qss from the branding directory and applies it to its main window
+   (CalamaresWindow.cpp, setStyleSheet(Branding::stylesheet())). The sidebar's colors in
+   branding.desc cover only the list of steps; the About and Debug buttons below that list keep
+   the application's text color, which on the dark sidebar was nearly invisible. These give them
+   the sidebar's text color (branding.desc's SidebarText), and white on hover. */
+#aboutButton, #debugButton {
+    color: #c0caf5;
+}
+#aboutButton:hover, #debugButton:hover {
+    color: #ffffff;
+}

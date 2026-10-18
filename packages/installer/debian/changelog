@@ -1,3 +1,17 @@
+oaxaca-installer (0.1.9) stonking; urgency=medium
+
+  * The About and Debug buttons under the installer's list of steps use the
+    sidebar's text color (a branding stylesheet.qss); they had the
+    application's dark text color on the dark sidebar.
+  * The installer starts without the session's input method
+    (QT_IM_MODULE=fcitx): with it, a dropdown's list stayed open after
+    Return, so the time zone could not be chosen with the keyboard.
+  * The installer starts without the session's QT_QPA_PLATFORMTHEME=gtk3:
+    since Recommends brought qt6-gtk-platformtheme, it made the installer
+    take GTK's default font, larger than its usual one.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sat, 17 Oct 2026 22:42:42 -0500
+
 oaxaca-installer (0.1.8) stonking; urgency=medium
 
   * btrfs is the partition page's default file system (docs/7, choice 52);

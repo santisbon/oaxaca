@@ -1,3 +1,15 @@
+@DISTRO_ID@-session (0.1.8) @BASE_SERIES@; urgency=medium
+
+  * The login screen shows no on-screen keyboard: InputMethod is empty in
+    SDDM's configuration. With Qt's virtual keyboard installed (it comes
+    with budgie-sddm-theme, which apt picks for sddm's Recommends), SDDM's
+    default input method covered half the login screen and lost keys.
+  * nvidia-settings' autostart entry is masked: it loads settings into the
+    X server's NVIDIA driver, and the Wayland session has no such server,
+    so the unit failed at every login.
+
+ -- @MAINTAINER@  Sat, 17 Oct 2026 22:42:16 -0500
+
 @DISTRO_ID@-session (0.1.7) @BASE_SERIES@; urgency=medium
 
   * The GPU environment generator exports OMARCHY_GPU_OFFLOAD and

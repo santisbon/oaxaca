@@ -6,5 +6,19 @@
 # /etc/sudoers.d/casper), and -E keeps the session's environment, which an ALL rule permits
 # (sudoers(5): a command matching ALL implies SETENV). -D8 is Calamares's full debug log,
 # the level Lubuntu's launcher uses, kept in the journal for the ISO boot test and bug reports.
+#
+# No input method: the session sets QT_IM_MODULE=fcitx for fcitx5, and with it a dropdown's list
+# stayed open after Return (the time zone list on the Location page: typing "den" and Return
+# highlighted Denver and moved the map, but left the list open; reproduced in QEMU with
+# tests/iso-drive/timezone, 2026-10-17; without QT_IM_MODULE the list closed and Denver was set).
+# The installer's text fields take a user name, passwords and a host name, and the keyboard layout
+# comes from the compositor, so it loses only typing a full name through an input method.
+#
+# No GTK platform theme: the session sets QT_QPA_PLATFORMTHEME=gtk3 (Omarchy's Hyprland
+# environment, so Qt applications follow the GTK theme), and since Recommends are on, libqt6gui6's
+# Recommends install qt6-gtk-platformtheme, which makes that setting take effect. The installer,
+# running as root, then took GTK's default font and size: larger, and not the look it had before
+# (the laptop's install, 2026-10-17). Without it, Qt's own defaults apply, as before.
 export QT_QPA_PLATFORM=wayland
+unset QT_IM_MODULE QT_IM_MODULES QT_QPA_PLATFORMTHEME
 exec sudo -E calamares -D8

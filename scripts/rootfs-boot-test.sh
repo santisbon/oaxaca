@@ -374,6 +374,13 @@ echo "first-run done: \$([ -f /home/tester/.local/state/$id/done/first-run-user 
 echo "first-run log: \$(grep -c 'Failed' /home/tester/.local/state/$id/first-run.log 2>/dev/null) failed steps"
 grep 'Failed' /home/tester/.local/state/$id/first-run.log 2>/dev/null | sed 's/^/first-run: /'
 echo "theme: \$(cat /home/tester/.local/state/$id/current/theme.name 2>/dev/null)"
+# A new user has no migrations to run: first-run marks the shipped ones done (2026-10-17: a new
+# install offered all 12, twice). Then the login screen's input method (SDDM's default would show
+# Qt's on-screen keyboard), the packages that brought that keyboard, and the user's failed units.
+echo "pending migrations: \$(runuser -u tester -- env HOME=/home/tester $id-migrate --pending 2>/dev/null | grep -c .)"
+echo "sddm input method: [\$(grep -h '^InputMethod=' /etc/sddm.conf.d/*.conf 2>/dev/null | tail -n 1)]"
+echo "virtual keyboard packages: \$(dpkg-query -W -f='\${db:Status-Status}\n' budgie-sddm-theme qml6-module-qtquick-virtualkeyboard 2>/dev/null | grep -cx installed)"
+echo "user failed units: [\$(as_user systemctl --user --failed --no-legend --plain 2>/dev/null | awk '{print \$1}' | paste -sd' ')]"
 echo "background: \$(readlink /home/tester/.local/state/$id/current/background 2>/dev/null | sed 's|.*/themes/||')"
 for u in $id-sleep-lock $id-migrate-notify $id-crash-watch; do
     echo "user unit \$u: \$(as_user systemctl --user is-enabled \$u.service 2>&1) \$(as_user systemctl --user is-active \$u.service 2>&1)"
@@ -728,6 +735,10 @@ if [[ $profile == desktop ]]; then
   check "^shell layers: \\[.*$DISTRO_ID-bar"
   check "^first-run done: yes$"
   check "^first-run log: 0 failed steps$"
+  check "^pending migrations: 0$"
+  check "^sddm input method: \[InputMethod=\]$"
+  check "^virtual keyboard packages: 0$"
+  check "^user failed units: \[\]$"
   check "^theme: tokyo-night$"
   check "^user unit $DISTRO_ID-sleep-lock: enabled active$"
   check "^theme-set exit: 0$"

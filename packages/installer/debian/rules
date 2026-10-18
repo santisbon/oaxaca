@@ -20,7 +20,7 @@ override_dh_auto_install:
 	install -d $(dest)/etc/calamares/modules
 	install -m 0644 calamares/modules/*.conf $(dest)/etc/calamares/modules/
 	install -d $(brand)
-	install -m 0644 calamares/branding/distro/branding.desc calamares/branding/distro/show.qml logo.png icon.png welcome.png $(brand)/
+	install -m 0644 calamares/branding/distro/branding.desc calamares/branding/distro/show.qml calamares/branding/distro/stylesheet.qss logo.png icon.png welcome.png $(brand)/
 	install -D -m 0755 installer $(dest)/usr/bin/$(ID)-installer
 	install -D -m 0755 keep-previous-loader $(dest)/usr/libexec/$(ID)/keep-previous-loader
 	install -D -m 0755 sddm-last-user $(dest)/usr/libexec/$(ID)/sddm-last-user

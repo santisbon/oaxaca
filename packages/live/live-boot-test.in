@@ -246,6 +246,12 @@ journalctl -b -o short-iso _UID=$uid 2>/dev/null | grep -iE 'uwsm-app|xdg-termin
 # configuration includes; its log and the state directory, for the cause of a missing theme.
 echo "user state: [$(ls /home/$user/.local/state/$id 2>/dev/null | paste -sd' ')] current: [$(ls /home/$user/.local/state/$id/current 2>/dev/null | paste -sd' ')]"
 tail -n 4 /home/$user/.local/state/$id/first-run.log 2>/dev/null | sed 's/^/first-run log: /'
+# The live user has no migrations to run, and the live session is for installing: no keybinding
+# lesson (2026-10-17: the live session offered 12 migrations, twice, and the lesson). first-run
+# runs at login, so wait for it to finish before reading what it did.
+for _ in $(seq 1 60); do [[ -f /home/$user/.local/state/$id/done/first-run-user ]] && break; sleep 1; done
+echo "live pending migrations: $(runuser -u "$user" -- env HOME=/home/$user $id-migrate --pending 2>/dev/null | grep -c .)"
+echo "live welcome step: $(grep -c 'show welcome notification' /home/$user/.local/state/$id/first-run.log 2>/dev/null)"
 # Plymouth under the distro's script theme (splash plymouth.debug on the test entry): the
 # crash seen on the Legion laptop (docs/7, choice 14) printed "backtrace:" from plymouthd and
 # would show as a kernel segfault line; both counts must be 0. The log lines are information.

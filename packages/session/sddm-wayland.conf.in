@@ -6,6 +6,12 @@
 # No X server runs for the login screen.
 [General]
 DisplayServer=wayland
+# No on-screen keyboard: SDDM's default input method is qtvirtualkeyboard (man sddm.conf), which
+# shows Qt's on-screen keyboard over the login screen whenever that module is installed. Since
+# Recommends are on (@DISTRO_ID@-base 0.1.6), apt installs it with budgie-sddm-theme, which it picks
+# for sddm's "Recommends: sddm-theme-debian-breeze | sddm-theme"; the laptop's login screen came
+# up half covered by the keyboard, flickering, with keys lost (2026-10-17).
+InputMethod=
 
 [Wayland]
 CompositorCommand=start-hyprland -- --config /usr/share/@DISTRO_ID@/sddm/hyprland.lua

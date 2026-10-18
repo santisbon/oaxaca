@@ -89,10 +89,14 @@ Description: @DISTRO_NAME@ theme bundles and templates
 Package: @DISTRO_ID@-config
 Architecture: all
 Depends: ${misc:Depends},
- @DISTRO_ID@-session (>= 0.1.7),
+ @DISTRO_ID@-session (>= 0.1.8),
  @DISTRO_ID@-tools (= ${binary:Version}),
  @DISTRO_ID@-themes (= ${binary:Version}),
  hicolor-icon-theme, fontconfig, bluez-tools
+# The package ships the distro's SDDM theme, so it satisfies sddm's "Recommends:
+# sddm-theme-debian-breeze | sddm-theme"; without this apt picked budgie-sddm-theme, which brings
+# Qt's on-screen keyboard to the login screen (session 0.1.8 also turns that keyboard off).
+Provides: sddm-theme
 Description: @DISTRO_NAME@ configuration and defaults
  Everything that has to be on the system for the desktop to come up: the
  Hyprland configuration and the defaults under /usr/share/@DISTRO_ID@/default,

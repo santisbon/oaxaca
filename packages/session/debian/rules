@@ -13,3 +13,9 @@ override_dh_auto_install:
 	install -D -m 0644 sddm-greeter-hyprland.lua $(dest)/usr/share/$(ID)/sddm/hyprland.lua
 	install -D -m 0755 gpu-env $(dest)/usr/lib/systemd/user-environment-generators/50-$(ID)-gpu
 	install -D -m 0644 volume-monitors.service $(dest)/usr/lib/systemd/user/$(ID)-volume-monitors.service
+	# nvidia-settings' autostart entry runs "nvidia-settings --load-config-only", which loads the
+	# user's settings into the X server's NVIDIA driver; the session is Wayland, so the unit the XDG
+	# autostart generator makes of it fails at every login. Masked here, in /usr/lib, which outranks
+	# the generator's units.
+	install -d $(dest)/usr/lib/systemd/user
+	ln -s /dev/null '$(dest)/usr/lib/systemd/user/app-nvidia\x2dsettings\x2dautostart@autostart.service'
