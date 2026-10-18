@@ -1,5 +1,18 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * The Dictation installer's "Voxtype Dictation Ready" toast has its title
+    again: the port had dropped the toast's glyph, so the title took the
+    glyph's place and only the keys' line showed. The installer also names
+    the dictation keys (hold F9; Super + Ctrl + X to start and stop) in its
+    terminal, where they stay until the done screen's key press (docs/6,
+    choice 30).
+  * The font change toasts ("You must restart Ghostty to see font change")
+    have their title again; Omarchy's -g there had no glyph after it.
+
+ -- @MAINTAINER@  Sun, 18 Oct 2026 17:30:00 -0500
+
+@DISTRO_ID@-desktop (4.0.4+git20261018.99.c0c1d49b-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Caps Lock is Caps Lock again: Omarchy's Compose key on Caps Lock, and
     Caps Lock on both Shift keys, are gone (docs/6, choice 90).
   * The "NVIDIA X Server Settings" launcher is hidden through the launcher's
