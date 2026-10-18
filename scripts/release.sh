@@ -13,7 +13,8 @@
 # The first failing step stops the release. Prompts: sudo (none expected), git's commit editor,
 # gpg's pinentry for the apt signing key passphrase, and the question before the upload.
 #
-# Before running: commit the fork's changes; when the fork changed, give the desktop package a
+# Before running: commit the fork's changes and this repository's (step 8 commits with git add -A,
+# so anything uncommitted lands in the release commit); when the fork changed, give the desktop package a
 # new changelog entry; bump every other package that changed (docs/README.md, "Releasing").
 #
 # Usage: scripts/release.sh   (make release; make machine-setup first on a new workstation)

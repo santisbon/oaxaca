@@ -552,6 +552,7 @@ These steps change files by hand, so they come before `make release`:
 
    `make release` stops with this instruction when the fork moved and the entry is missing.
 3. **Bump every other package that changed**: a new entry at the top of its `debian/changelog.in` with a higher version, following [docs/1, Version scheme](1%20-%20policy.md).
+4. **Document each change and commit this repository.** Each change gets its bullets in the changed packages' `debian/changelog.in` entries (steps 2 and 3) and, when it is a decision, a numbered choice in the `docs/` document of its roadmap step, with `docs/README.md` updated where it describes the changed behavior. Then commit and push this repository. `make release` commits with `git add -A` (its step 8), so anything left uncommitted goes into the release commit, mixed with the files the release itself rewrites.
 
 ### Each release
 
@@ -562,17 +563,27 @@ cd ~/Projects/mydistro && make release
 What `make release` does, stopping at the first failure:
 
 1. Pushes the fork, after checking it is on `oaxaca` with nothing uncommitted: the desktop build clones the fork's branch from GitHub, not the local checkout.
-2. Sets `OMARCHY_PORT_DATE`, `_COUNT` and `_COMMIT` in `distro.conf` from the fork's HEAD (commit date in UTC, commits since `v4.0.4`, short hash: together the desktop's version) and runs `make render`.
+2. Sets `OMARCHY_PORT_DATE`, `_COUNT` and `_COMMIT` in `distro.conf` from the fork's HEAD (commit date in UTC, commits since `v4.0.4`, short hash: together the desktop's version) and runs `make render`. When the fork moved, the render rewrites four files, which the release commit (step 8) carries; none of them is edited by hand:
+   - `distro.conf`: the three `OMARCHY_PORT_` values;
+   - `packages/desktop/upstream`, from `upstream.in`: `DATE=`, `COUNT=` and `COMMIT=`, which `scripts/build.sh` checks against the commit it fetches;
+   - `packages/desktop/debian/changelog`, from `changelog.in`: the top entry's version;
+   - `packages/desktop/README.md`, from `README.md.in`: the desktop's version.
 3. Builds the packages whose version is not published yet (`make build PKG=...`). Release tags (`v*`) have not been used so far, so `make check-versions` has nothing to compare against; instead, a package needs building when the version at the top of its rendered `debian/changelog` is missing from the published source index (`dists/stonking/main/source/Sources.gz`). A package changed without a version bump is therefore not built. When every version is published, the release ends here with "nothing to release".
 4. Runs `make upstream-check` and reports a newer upstream release without stopping.
 5. Builds the live root filesystem and boots it in QEMU (`make rootfs`, `make rootfs-test`: the base, session and desktop checks).
 6. Builds the ISO and boots it under OVMF with Secure Boot on, then off (`make iso`, `make iso-test`, `make iso-test SECURE_BOOT=off`), then installs it on an encrypted btrfs disk and factory-resets it (`make factory-reset-test`).
 7. Upgrades the published packages to `build/`'s in a throwaway chroot, migrations included (`make upgrade-test`), then boots the published desktop and updates it to `build/`'s inside its running session (`make session-upgrade-test`).
-8. Commits this repository (git opens the editor; an empty message stops the release) and pushes.
+8. Commits this repository with `git add -A` (git opens the editor; an empty message stops the release) and pushes. The release commit's message names the desktop's version and each other package step 3 built, short names without the `oaxaca-` prefix, in the form of the commit of 2026-10-18:
+
+   ```
+   Release: desktop 4.0.4+git20261018.98.e07d28a1, installer 0.1.10, live 0.1.7, calamares 3.3.14-0ubuntu30oaxaca3
+   ```
+
+   The `Release:` prefix matters: since the ISO is built before this commit, the ISO is current when it is newer than the last commit that is not a release commit (`git log -1 --format=%ci --invert-grep --grep='^Release:'`).
 9. Signs the repository locally with `make publish` (pinentry asks for the apt signing key passphrase), lists what the upload would change, and asks `Upload to oaxaca-apt? [y/N]`.
 10. On `y`, uploads with `make publish PUBLISH_FLAGS=--push` and checks the uploaded signature with `gpgv`, which must print `Good signature from "Oaxaca Archive Signing Key"` ([docs/2, One-time setup](2%20-%20build-infra.md#one-time-setup-in-order), step 5, explains the other results).
 
-A release that stopped resumes with another `make release`: `distro.conf` already names the fork's commit, and the packages built so far are rebuilt. After the release: `oaxaca-update` on each installed system, and for a new install, the ISO in `build/iso/` written to a USB stick as in [Building the distro from source](#building-the-distro-from-source), step 7.
+A release that stopped resumes with another `make release`: `distro.conf` already names the fork's commit, and the packages built so far are rebuilt. Until then, the four files of step 2 show as changed in `git status`; leave them for the release commit. After the release: `oaxaca-update` on each installed system, and for a new install, the ISO in `build/iso/` written to a USB stick as in [Building the distro from source](#building-the-distro-from-source), step 7.
 
 ## Conventions
 
