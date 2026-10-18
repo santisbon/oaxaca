@@ -1,3 +1,21 @@
+oaxaca-desktop (4.0.4+git20261018.101.ad5ded1c-0oaxaca1) stonking; urgency=medium
+
+  * The Dictation installer's "Voxtype Dictation Ready" toast has its title
+    again: the port had dropped the toast's glyph, so the title took the
+    glyph's place and only the keys' line showed. The installer also names
+    the dictation keys (hold F9; Super + Ctrl + X to start and stop) in its
+    terminal, where they stay until the done screen's key press (docs/6,
+    choice 30).
+  * The font change toasts ("You must restart Ghostty to see font change")
+    have their title again; Omarchy's -g there had no glyph after it.
+  * The keyboard's model and options come from the installer's
+    /etc/default/keyboard (XKBMODEL, XKBOPTIONS), as on any other system,
+    so the keyboard works exactly as chosen at installation. A switching
+    key chosen there replaces Left Alt + Right Alt for a non-Latin layout
+    (docs/6, choice 90).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sun, 18 Oct 2026 18:00:00 -0500
+
 oaxaca-desktop (4.0.4+git20261018.99.c0c1d49b-0oaxaca1) stonking; urgency=medium
 
   * Caps Lock is Caps Lock again: Omarchy's Compose key on Caps Lock, and
