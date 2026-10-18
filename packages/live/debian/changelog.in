@@ -1,3 +1,10 @@
+@DISTRO_ID@-live (0.1.7) @BASE_SERIES@; urgency=medium
+
+  * live-boot-test reports the installer's default file system and the first
+    one its partition page offers; both must be btrfs.
+
+ -- @MAINTAINER@  Sun, 18 Oct 2026 02:28:49 -0500
+
 @DISTRO_ID@-live (0.1.6) @BASE_SERIES@; urgency=medium
 
   * live-boot-test reports the live user's pending migrations and whether

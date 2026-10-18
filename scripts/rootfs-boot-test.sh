@@ -749,7 +749,8 @@ if [[ $profile == desktop ]]; then
   check "^dns provider: Cloudflare$"
   check "^dns reset: DHCP$"
   check "^dns sudoers rule: 0$"
-  check "^apps split: removed=0 launchers=4$"
+  # Five launcher files: Omarchy's four, plus the one that hides NVIDIA's settings launcher.
+  check "^apps split: removed=0 launchers=5$"
   check "^restored tools missing: \[\]$"
   check "^stores: snapd=enabled flathub=1$"
   check "^theme after switch: nord$"

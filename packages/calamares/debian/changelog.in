@@ -1,3 +1,14 @@
+calamares (3.3.14-0ubuntu30oaxaca3) @BASE_SERIES@; urgency=medium
+
+  * keep-python-results-alive.patch: Calamares reads a Python step's status
+    message through Boost.Python's extract<>, which keeps only a raw pointer
+    to the object the step returned; a message the step built afresh was
+    freed before it was read, and the installer showed "Removing 5
+    p<box>ckages." in place of "Removing 5 packages." The patch keeps the
+    object alive until the text is read.
+
+ -- @MAINTAINER@  Sun, 18 Oct 2026 02:21:36 -0500
+
 calamares (3.3.14-0ubuntu30oaxaca2) @BASE_SERIES@; urgency=medium
 
   * revert-device-on-gui-thread.patch: the partition page reverts the device

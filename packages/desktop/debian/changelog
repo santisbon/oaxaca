@@ -1,5 +1,17 @@
 oaxaca-desktop (4.0.4+git20261018.97.aaffd727-0oaxaca1) stonking; urgency=medium
 
+  * The first login's "Update System" prompt shows only when updates are
+    available; a fresh install from a current ISO has none, and the
+    prompt's update only took a snapshot.
+  * The "NVIDIA X Server Settings" launcher is hidden from the app list (a
+    NoDisplay entry in each user's applications folder, and a migration for
+    existing users): its settings configure an X server, and the session is
+    Wayland. nvidia-settings stays installed.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sun, 18 Oct 2026 09:00:00 -0500
+
+oaxaca-desktop (4.0.4+git20261018.97.aaffd727-0oaxaca1) stonking; urgency=medium
+
   * A new user is no longer offered every migration: first-run marks the
     migrations the packages ship as done at the user's first login, and the
     migration notice waits for first-run to finish, so it no longer shows

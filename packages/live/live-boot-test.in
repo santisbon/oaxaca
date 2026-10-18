@@ -68,6 +68,9 @@ pid=$(pgrep -x calamares | head -1)
 echo "installer env: $(tr '\0' '\n' < /proc/${pid:-0}/environ 2>/dev/null | grep -E '^(WAYLAND_DISPLAY|XDG_RUNTIME_DIR|QT_QPA_PLATFORM|USER|HOME)=' | paste -sd' ')"
 journalctl -b --no-pager -o cat 2>/dev/null | grep -iE 'calamares|@DISTRO_ID@-installer' | grep -viE '^\s*$' | tail -n 8 | sed 's/^/installer journal: /'
 echo "installer config: $(ls /etc/calamares/modules/*.conf 2>/dev/null | wc -l) module files"
+# The partition page starts its file system dropdowns on the first entry of
+# availableFileSystemTypes, whatever defaultFileSystemType says (docs/7, choice 52).
+echo "installer default file system: $(sed -n 's/^defaultFileSystemType: *"\(.*\)"/\1/p' /etc/calamares/modules/partition.conf) first offered: $(sed -n 's/^availableFileSystemTypes: *\["\([^"]*\)".*/\1/p' /etc/calamares/modules/partition.conf)"
 echo "installer log: $(journalctl -b --no-pager -o cat 2>/dev/null | grep -ciE 'calamares.*(error|fail)')"
 echo "failed units: [$(systemctl --failed --no-legend --plain | awk '{print $1}' | paste -sd' ')]"
 # Groups casper's user-setup gave the live user; "video" is what the backlight udev rule grants.

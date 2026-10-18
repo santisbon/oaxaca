@@ -1,3 +1,12 @@
+@DISTRO_ID@-installer (0.1.10) @BASE_SERIES@; urgency=medium
+
+  * The partition page starts on btrfs: availableFileSystemTypes lists btrfs
+    first. Calamares fills the file system dropdowns from that list in order
+    and starts on its first entry, whatever defaultFileSystemType says, so
+    0.1.8 and 0.1.9 still offered ext4 first.
+
+ -- @MAINTAINER@  Sun, 18 Oct 2026 02:28:49 -0500
+
 @DISTRO_ID@-installer (0.1.9) @BASE_SERIES@; urgency=medium
 
   * The About and Debug buttons under the installer's list of steps use the

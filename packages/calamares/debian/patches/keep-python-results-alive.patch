@@ -1,0 +1,41 @@
+Description: Keep a Python function's result alive while its string is extracted
+ PythonJob reads a Python module's pretty_status_message() (and other string methods) as
+ bp::extract< std::string > result( func() ). The object func() returns is a temporary that is
+ released at the end of that statement, but Boost.Python's extract<> keeps only a raw pointer to
+ it (extract_rvalue's PyObject* m_source, boost/python/extract.hpp) and converts it later, when
+ result() is called. A string the module builds afresh, such as the packages module's
+ "Removing %(num)d packages." % {...}, has no other owner, so it is freed before the conversion,
+ and the text read back can be damaged: with Python 3.14 the installer showed
+ "Removing 5 p�ckages." (a replacement character for the first "a"; Oaxaca, 2026-10-18). A string
+ literal the module keeps as a constant stays alive and is read correctly, which is why most
+ messages looked fine. Holding the result in a named bp::object keeps it alive until the
+ conversion is done.
+Author: santisbon <santisbon@users.noreply.github.com>
+Forwarded: no
+Last-Update: 2026-10-18
+---
+--- a/src/libcalamares/pyboost/PythonJob.cpp	2026-10-18 02:21:28.185723887 -0500
++++ b/src/libcalamares/pyboost/PythonJob.cpp	2026-10-18 02:21:28.200768573 -0500
+@@ -247,7 +247,10 @@
+     bp::object func = script.get( funcName, bp::object() );
+     if ( !func.is_none() )
+     {
+-        bp::extract< std::string > result( func() );
++        // Named, so the returned object outlives the extraction: extract<> keeps only a raw
++        // pointer and converts when result() is called.
++        bp::object value = func();
++        bp::extract< std::string > result( value );
+         return result.check() ? QString::fromStdString( result() ).trimmed() : QString();
+     }
+     return QString();
+@@ -361,7 +364,9 @@
+     if ( m_d && !m_d->m_prettyStatusMessage.is_none() )
+     {
+         QString r;
+-        bp::extract< std::string > result( m_d->m_prettyStatusMessage() );
++        // Named, so the returned object outlives the extraction (see pythonStringMethod()).
++        bp::object value = m_d->m_prettyStatusMessage();
++        bp::extract< std::string > result( value );
+         r = result.check() ? QString::fromStdString( result() ).trimmed() : QString();
+         if ( !r.isEmpty() )
+         {

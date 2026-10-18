@@ -1,2 +1,3 @@
 replace-read-selection-before-revert.patch
 revert-device-on-gui-thread.patch
+keep-python-results-alive.patch
