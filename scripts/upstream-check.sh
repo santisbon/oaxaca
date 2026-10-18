@@ -11,7 +11,9 @@
 # Why: these packages repackage a project's release, and nothing else would notice a new one.
 # LocalSend receives files over the network, so a fix release left unpackaged matters.
 # GitHub allows 60 unauthenticated API requests an hour per address; with GITHUB_TOKEN or
-# GH_TOKEN in the environment (CI sets one) the request is authenticated.
+# GH_TOKEN in the environment (CI sets one), or else the token of a logged-in GitHub CLI
+# ("gh auth token", as on the workstation), the request is authenticated (5000 an hour). The
+# unauthenticated quota ran out during a release on 2026-10-17 (HTTP 403 for every package).
 #
 # Usage: scripts/upstream-check.sh        (make upstream-check; the weekly CI workflow
 #                                          .github/workflows/upstream-check.yml)
@@ -21,6 +23,9 @@ here=$(cd "$(dirname "$0")/.." && pwd)
 cd "$here"
 
 token=${GITHUB_TOKEN:-${GH_TOKEN:-}}
+if [[ -z $token ]] && command -v gh >/dev/null; then
+  token=$(gh auth token 2>/dev/null || true)
+fi
 auth=(); [[ -n $token ]] && auth=(-H "Authorization: Bearer $token")
 
 status=0
@@ -32,7 +37,7 @@ for upstream in packages/*/upstream; do
   ours=${ours#*:}; ours=${ours%-*}
   if ! latest=$(curl -fsSL "${auth[@]}" -H 'Accept: application/vnd.github+json' \
       "https://api.github.com/repos/$releases/releases/latest" |
-      python3 -c 'import json, sys; print(json.load(sys.stdin).get("tag_name", ""))'); then
+      python3 -c 'import json, sys; print(json.load(sys.stdin).get("tag_name", ""))' 2>/dev/null); then
     echo "!! $(basename "$dir"): could not ask GitHub for $releases's latest release" >&2
     status=2; continue
   fi

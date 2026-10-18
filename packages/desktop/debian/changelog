@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.4+git20261017.93.86706132-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.4+git20261018.96.8741a76d-0oaxaca1) stonking; urgency=medium
 
   * The firewall comes on for systems installed before it was turned on at
     install (docs/6, choice 40): on an upgrade, oaxaca-config's postinst
