@@ -403,6 +403,7 @@ echo "restored tools missing: [\$(for c in btop eza inxi lazygit starship zoxide
 echo "stores: snapd=\$(systemctl is-enabled snapd.socket 2>/dev/null) flathub=\$(flatpak remotes --system --columns=name 2>/dev/null | grep -cx flathub)"
 # dpkg-query -W prints a line for a package it merely knows of, so the status field is tested exactly.
 echo "apps split: removed=\$(dpkg-query -W -f='\${db:Status-Status}\n' libreoffice kdenlive obs-studio xournalpp docker.io 2>/dev/null | grep -cx installed) launchers=\$(ls /usr/share/$id/applications | wc -l)"
+echo "launcher hides nvidia-settings: \$(grep -cx nvidia-settings /usr/share/$id/default/$id/launcher.hides)"
 sleep 3
 echo "theme after switch: \$(cat /home/tester/.local/state/$id/current/theme.name 2>/dev/null)"
 echo "shell ping after switch: \$(run_user $id-shell shell ping 2>&1 | paste -sd'|')"
@@ -749,8 +750,9 @@ if [[ $profile == desktop ]]; then
   check "^dns provider: Cloudflare$"
   check "^dns reset: DHCP$"
   check "^dns sudoers rule: 0$"
-  # Five launcher files: Omarchy's four, plus the one that hides NVIDIA's settings launcher.
-  check "^apps split: removed=0 launchers=5$"
+  check "^apps split: removed=0 launchers=4$"
+  # The launcher hide list hides NVIDIA's settings launcher (docs/6, choice 89).
+  check "^launcher hides nvidia-settings: 1$"
   check "^restored tools missing: \[\]$"
   check "^stores: snapd=enabled flathub=1$"
   check "^theme after switch: nord$"
