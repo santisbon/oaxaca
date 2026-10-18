@@ -737,7 +737,10 @@ if [[ $profile == desktop ]]; then
   check "^first-run log: 0 failed steps$"
   check "^pending migrations: 0$"
   check "^sddm input method: \[InputMethod=\]$"
-  check "^virtual keyboard packages: 0$"
+  # A fresh image only: a system updated from an older release keeps budgie-sddm-theme and the
+  # virtual keyboard it brought (apt removes nothing a new Provides makes unneeded); there
+  # InputMethod= keeps the keyboard off the login screen (docs/4, choice 15).
+  [[ $upgrade == 1 ]] || check "^virtual keyboard packages: 0$"
   check "^user failed units: \[\]$"
   check "^theme: tokyo-night$"
   check "^user unit $DISTRO_ID-sleep-lock: enabled active$"
