@@ -20,7 +20,7 @@ check-render: render   ## Fail if committed rendered files don't match distro.co
 check-versions:    ## Fail if a package directory changed since the last v* tag without a version bump (CI)
 	scripts/version-check.sh
 
-upstream-check:    ## Fail if a repackaged program (RELEASES= in packages/*/upstream) has a newer GitHub release
+upstream-check:    ## Fail if a repackaged program has a newer GitHub release (RELEASES=), or Ubuntu a newer upload of a rebuilt package (DSC=)
 	scripts/upstream-check.sh
 
 chroot:            ## Create or refresh the clean build chroot (~/.cache/sbuild)

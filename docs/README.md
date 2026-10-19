@@ -44,7 +44,7 @@ Nothing is ever installed and then stripped out: the root filesystem is assemble
   - [`git` with `dpkg --compare-versions` (`make check-versions`)](#git-with-dpkg---compare-versions-make-check-versions)
   - [`mmdebstrap` with `dpkg-scanpackages` (`make upgrade-test`)](#mmdebstrap-with-dpkg-scanpackages-make-upgrade-test)
   - [`qemu-system-x86_64` on the published desktop (`make session-upgrade-test`)](#qemu-system-x86_64-on-the-published-desktop-make-session-upgrade-test)
-  - [`curl` with GitHub's API (`make upstream-check`)](#curl-with-githubs-api-make-upstream-check)
+  - [`curl` with GitHub's API (`make upstream-check`)](#curl-with-githubs-and-launchpads-apis-make-upstream-check)
   - [GitHub Actions (`.github/workflows/build.yml`)](#github-actions-githubworkflowsbuildyml)
   - [`scripts/suspend-baseline.sh` (measurement, not build)](#scriptssuspend-baselinesh-measurement-not-build)
 - [How the pieces fit together](#how-the-pieces-fit-together)
@@ -475,16 +475,29 @@ The upgrade test above upgrades packages in a chroot, where no desktop runs. An 
 make session-upgrade-test          # needs build/*.deb, KVM, and network access to the published archive
 ```
 
-### `curl` with GitHub's API (`make upstream-check`)
+### `curl` with GitHub's and Launchpad's APIs (`make upstream-check`)
 
-`scripts/upstream-check.sh` covers the packages that repackage a program's GitHub release, the ones whose `upstream` file sets `RELEASES=<owner>/<repo>` (today `packages/localsend`, `packages/ttfx` and `packages/voxtype`). For each one it asks GitHub's API for the repository's latest release (drafts and pre-releases skipped), drops a leading `v` from the release's tag and compares it with the upstream part of the version in the package's `debian/changelog`. A newer release fails the check and names the file to update; a package can sit behind its upstream unnoticed otherwise, and LocalSend receives files over the network. The weekly workflow `.github/workflows/upstream-check.yml` (Mondays 14:00 UTC, plus a "Run workflow" button) runs the same target, so a new release turns up as GitHub's failed-workflow notification. Exit status: 0 current, 1 a newer release, 2 GitHub could not be asked.
+`scripts/upstream-check.sh` covers the packages that repackage a program's GitHub release, the ones whose `upstream` file sets `RELEASES=<owner>/<repo>` (today `packages/asusctl`, `packages/localsend`, `packages/ttfx` and `packages/voxtype`). For each one it asks GitHub's API for the repository's latest release (drafts and pre-releases skipped), drops a leading `v` from the release's tag and compares it with the upstream part of the version in the package's `debian/changelog`. A newer release fails the check and names the file to update; a package can sit behind its upstream unnoticed otherwise, and LocalSend receives files over the network. The weekly workflow `.github/workflows/upstream-check.yml` (Mondays 14:00 UTC, plus a "Run workflow" button) runs the same target, so a new release turns up as GitHub's failed-workflow notification. Exit status: 0 current, 1 a newer release, 2 GitHub could not be asked.
 
 ```
 make upstream-check
+-- asusctl: 6.5.0 is current (OpenGamingCollective/asusctl's latest release is 6.5.0)
 -- localsend: 1.18.2 is current (localsend/localsend's latest release is 1.18.2)
 -- ttfx: 0.5.0 is current (omacom/ttfx's latest release is 0.5.0)
--- voxtype: 1.1.0 is current (peteonrails/voxtype's latest release is 1.1.0)
+!! voxtype: peteonrails/voxtype released 1.1.1; this repository builds 1.1.0.
+   Update the version and the SHA-256s in packages/voxtype/upstream, add a changelog entry, make build PKG=packages/voxtype
 ```
+
+That is the output of 2026-10-18; the GitHub check's lines come first.
+
+The same command also covers the Ubuntu source packages this repository rebuilds with a patch, the ones whose `upstream` file sets `DSC=` to a source file on Launchpad (today `packages/plymouth` and `packages/calamares`). For each one it asks Launchpad's API which versions of that source package are published in `stonking`, and fails when the release, `-updates` or `-security` pocket has a version above the one the rebuild starts from (the version in the `DSC=` URL). A rebuild's version ranks below Ubuntu's next upload ([docs/1, Version scheme](1%20-%20policy.md)), so apt replaces the rebuild with Ubuntu's package once the upload is published, and the distro's patch survives only if Ubuntu's upload carries it. Since `stonking`'s release on 2026-10-15, such an upload is a stable update. A version only in `-proposed` is printed and does not fail the check, since apt does not install from `-proposed`. The same run's last lines:
+
+```
+-- calamares: 3.3.14-0ubuntu30 is Ubuntu's newest calamares in stonking
+-- plymouth: 24.004.60+git20250831.4a3c171d-0ubuntu10 is Ubuntu's newest plymouth in stonking
+```
+
+A newer Ubuntu upload of a rebuilt package: read its changelog for the distro's patch (the patch's upstream commit, named in the patch's DEP-3 header). If the upload carries the fix, the rebuild can go, since apt already prefers Ubuntu's package. If not, rebase: in the package's `upstream`, point `DSC=` at the new `.dsc` and set `SHA256=` from `sha256sum` of the download, add a changelog entry with the new base version, `make build PKG=packages/<package>`, then publish.
 
 A new LocalSend release: in `packages/localsend/upstream`, change the version in both URLs and both SHA-256s (GitHub shows each file's SHA-256 on the release page), add a changelog entry, `make build PKG=packages/localsend`, then publish. A new ttfx release: see `packages/ttfx/README.md`. A new Voxtype release: in `packages/voxtype/sources.list`, change the version in the URL and the SHA-256, add a changelog entry, `make build PKG=packages/voxtype`, then publish.
 

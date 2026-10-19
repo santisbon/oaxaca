@@ -141,6 +141,7 @@ The distro's name is not "Omarchy" or a play on that name. Omarchy's code is MIT
 **Ubuntu 26.10 `stonking` now. Move to a newer [series](#series-lts-and-interim-release) on a trigger, not on a whim.**
 
 - Status on 2026-09-30: `stonking` is in Pre-release Freeze on [Launchpad](#launchpad) with no release date set yet. Ubuntu 26.10 is due in October 2026. Development starts against the frozen [archive](README.md#archive) now; nothing changes on the [Ubuntu release](#the-word-release-in-this-document) day except that the `-updates` and `-security` [pockets](README.md#suite-and-pocket) start receiving packages.
+- Status on 2026-10-18: Ubuntu 26.10 was released on 2026-10-15; Launchpad's API gives `stonking` the status "Current Stable Release", `datereleased` `2026-10-15T13:06:23Z`, and names `tenacious` as Ubuntu's development series. As planned, nothing in the build or the installed system changed with the release: both already read the release, `-updates` and `-security` pockets. One thing became more likely: Ubuntu's fixes now arrive as stable updates in `-updates` and `-security`, and an update to a source package the distro rebuilds with a patch (`plymouth`, `calamares`) outranks the rebuild (section 4, Version scheme), so `make upstream-check` reports such an update (docs/README.md, "`curl` with GitHub's and Launchpad's APIs").
 - The apt sources entries from the first build onward, in the build [chroot](README.md#chroot)'s `/etc/apt/sources.list` and in the distro image's `/etc/apt/sources.list.d/ubuntu.sources`: suites `stonking`, `stonking-updates` and `stonking-security`, [components](README.md#component) `main restricted universe multiverse` (plan, "Kernel and security updates come from Ubuntu"). `restricted` is needed for the NVIDIA packages and `multiverse` for `nvtop` and `intel-media-va-driver-non-free`.
 - **Move triggers.** Move to the next series when either happens first:
   1. `stonking` has three months of support left. Its 9-month window ends around July 2027, so that is about April 2027, which is when 27.04 ships.
@@ -260,14 +261,14 @@ Decided 2026-10-16, writing down why GRUB was kept from the start (the plan's ro
 
 ### Timeshift snapshots on btrfs installs
 
-**On a btrfs install, [Timeshift](#timeshift) takes a snapshot of `/` before every `oaxaca-update`; ext4, the installer's default, and xfs installs have no snapshots.** The installer keeps Timeshift and `btrfs-progs` on btrfs installs and configures Timeshift (`7 - image-installer.md`, choice 51); the desktop's `oaxaca-snapshot` takes and prunes the snapshots (`6 - omarchy-port.md`, choice 38). Timeshift was chosen over Snapper because Timeshift is made for the `@`/`@home` layout the installer creates and restores by itself, while Snapper's rollback does not take effect on Ubuntu's layout; the subvolume layout requirement and LUKS support are from Timeshift's README (`github.com/linuxmint/timeshift`, read 2026-10-16). Snapshots do not cover the separate `/boot` partition.
+**On a btrfs install, [Timeshift](#timeshift) takes a snapshot of `/` before every `oaxaca-update`; ext4 and xfs installs have no snapshots; btrfs is the installer's default since docs/7 choice 52.** The installer keeps Timeshift and `btrfs-progs` on btrfs installs and configures Timeshift (`7 - image-installer.md`, choice 51); the desktop's `oaxaca-snapshot` takes and prunes the snapshots (`6 - omarchy-port.md`, choice 38). Timeshift was chosen over Snapper because Timeshift is made for the `@`/`@home` layout the installer creates and restores by itself, while Snapper's rollback does not take effect on Ubuntu's layout; the subvolume layout requirement and LUKS support are from Timeshift's README (`github.com/linuxmint/timeshift`, read 2026-10-16). Snapshots do not cover the separate `/boot` partition.
 
 ## Facts checked on 2026-09-30
 
 | Fact | Value | Source |
 |---|---|---|
 | Newest Omarchy release tag | `v4.0.4`, published 2026-09-15, MIT | GitHub API, `omacom/omarchy` |
-| `stonking` status | Pre-release Freeze, `datereleased` empty | Launchpad API |
+| `stonking` status | Pre-release Freeze, `datereleased` empty; since 2026-10-15, Current Stable Release (checked 2026-10-18) | Launchpad API |
 | `stonking` `hyprland` | 0.56.2+ds-1 (universe) | Launchpad API |
 | `stonking` `quickshell` | 0.3.0-1build1 (universe); Debian sid 0.3.1-1; upstream 0.3.2 released 2026-10-08; Omarchy builds 0.3.2 | Launchpad API; Debian's `Packages` index; GitHub releases; `omacom/omarchy-pkgs` (2026-10-09) |
 | `stonking` `uwsm` / `xdg-desktop-portal-hyprland` / `sddm` | 0.26.6 / 1.4.1 / 0.21.0+git20251101 (universe) | Launchpad API |
