@@ -1,3 +1,13 @@
+@DISTRO_ID@-live (0.1.9) @BASE_SERIES@; urgency=medium
+
+  * live-boot-test reads the gvfs volume monitors once the session's
+    @DISTRO_ID@-volume-monitors.service has finished, waiting up to 60 s, and
+    reports whether the unit's process exited: a release run read the
+    camera monitor still starting and the Apple monitor not yet started
+    while the unit's "gio mount -l" was still waiting on the camera monitor.
+
+ -- @MAINTAINER@  Mon, 19 Oct 2026 09:30:00 -0500
+
 @DISTRO_ID@-live (0.1.8) @BASE_SERIES@; urgency=medium
 
   * live-boot-test checks the medium's layers: no live package in the

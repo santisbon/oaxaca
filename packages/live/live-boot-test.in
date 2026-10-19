@@ -47,8 +47,20 @@ echo "generator output: [$(sh /usr/lib/systemd/user-environment-generators/50-$i
 if [[ -z $sig ]]; then for log in /run/user/$uid/hypr/*/hyprland.log; do [[ -f $log ]] && tail -n 30 "$log" | grep -v 'RTKit' | cut -c1-200 | sed 's/^/hyprland log: /'; done; fi
 echo "user env gpu: $(as_user systemctl --user show-environment 2>/dev/null | grep '^AQ_DRM' || echo none)"
 # The session starts gvfs's volume monitors in the background at login (docs/7, choice 46): the
-# unit ran, and the monitors are up, Apple's (gvfs-afc, through usbmuxd) included.
-echo "volume monitors unit: $(as_user systemctl --user show $id-volume-monitors.service -p Result --value 2>&1) enabled=$(as_user systemctl --user is-enabled $id-volume-monitors.service 2>&1)"
+# unit ran, and the monitors are up, Apple's (gvfs-afc, through usbmuxd) included. The unit's
+# "gio mount -l" starts the monitors one after another, each through a blocking IsSupported
+# call, and under QEMU the camera monitor's start can take longer than the session's first
+# seconds (2026-10-19, a release run read gphoto2=activating afc=inactive while gio was still
+# waiting). So the monitors are read once the unit's process has exited, waiting up to 60 s;
+# Result alone reads "success" before the unit has run, which is why exited= is reported.
+waited=0
+while (( waited < 60 )); do
+  exit_ts=$(as_user systemctl --user show $id-volume-monitors.service -p ExecMainExitTimestampMonotonic --value 2>/dev/null)
+  (( ${exit_ts:-0} > 0 )) && break
+  sleep 1; waited=$((waited + 1))
+done
+echo "volume monitors unit: $(as_user systemctl --user show $id-volume-monitors.service -p Result --value 2>&1) enabled=$(as_user systemctl --user is-enabled $id-volume-monitors.service 2>&1) exited=$( (( waited < 60 )) && echo yes || echo no)"
+echo "volume monitors wait: ${waited}s"
 # Packages a stock Ubuntu gets through Recommends, named by our metapackages since Recommends are
 # off (docs/7, choice 47): the list of those missing from the image, empty when all are there.
 echo "named recommends missing: [$(for p in systemd-cryptsetup systemd-tpm tpm-udev libtss2-rc0t64 systemd-hwe-hwdb libnss-systemd linux-sysctl-defaults rtkit steam-devices libmtp-runtime libimobiledevice-utils ipp-usb cups-browsed system-config-printer-udev usbmuxd; do dpkg-query -W -f='${Status}' $p 2>/dev/null | grep -q 'ok installed' || printf '%s ' $p; done)]"
