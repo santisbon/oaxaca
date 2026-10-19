@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.4+git20261019.103.0362ae1d-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.4+git20261019.105.30b5ac12-0oaxaca1) stonking; urgency=medium
 
   * Setup > Reset Computer is in the menu again, on installs with the
     default btrfs file system: the factory reset came back without its menu
