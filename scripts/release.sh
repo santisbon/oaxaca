@@ -75,12 +75,14 @@ make build PKG="${changed[*]}"
 # 4. Newer upstream releases of the repackaged programs: reported, not a reason to stop.
 make upstream-check || echo "== a newer upstream release is listed above: package it in a later release"
 
-# 5. The live root filesystem from Ubuntu's archive plus build/'s newest packages, booted in QEMU
-#    (the base, session and desktop checks).
+# 5. The desktop and live root filesystems from Ubuntu's archive plus build/'s newest packages: the
+#    desktop one is the installed system's layer of the ISO, the live one the live session (docs/7,
+#    choice 55). The live one is booted in QEMU (the base, session and desktop checks).
+make rootfs PROFILE=desktop
 make rootfs
 make rootfs-test
 
-# 6. The installation ISO from that root filesystem, booted under OVMF with Secure Boot on, then off.
+# 6. The installation ISO from those root filesystems, booted under OVMF with Secure Boot on, then off.
 make iso
 make iso-test
 make iso-test SECURE_BOOT=off

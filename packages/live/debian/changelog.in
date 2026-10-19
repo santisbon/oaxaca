@@ -1,3 +1,12 @@
+@DISTRO_ID@-live (0.1.8) @BASE_SERIES@; urgency=medium
+
+  * live-boot-test checks the medium's layers: no live package in the
+    installed system's layer (/rofs), the four in the live view; and no
+    installer step inside the target runs a program that only the live
+    layer has (docs/7, choice 55).
+
+ -- @MAINTAINER@  Sun, 18 Oct 2026 21:00:00 -0500
+
 @DISTRO_ID@-live (0.1.7) @BASE_SERIES@; urgency=medium
 
   * live-boot-test reports the installer's default file system and the first

@@ -11,9 +11,9 @@ instances:
 - id: system
   module: shellprocess
   config: shellprocess_system.conf
-- id: snapshots
+- id: filesystem
   module: shellprocess
-  config: shellprocess_snapshots.conf
+  config: shellprocess_filesystem.conf
 - id: drivers
   module: shellprocess
   config: shellprocess_drivers.conf
@@ -55,8 +55,7 @@ sequence:
   - networkcfg
   - hwclock
   - services-systemd
-  - shellprocess@snapshots
-  - packages
+  - shellprocess@filesystem
   - shellprocess@system
   - shellprocess@drivers
   - shellprocess@hardware

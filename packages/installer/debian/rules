@@ -25,7 +25,7 @@ override_dh_auto_install:
 	install -D -m 0755 keep-previous-loader $(dest)/usr/libexec/$(ID)/keep-previous-loader
 	install -D -m 0755 sddm-last-user $(dest)/usr/libexec/$(ID)/sddm-last-user
 	install -D -m 0755 hardware-install $(dest)/usr/libexec/$(ID)/hardware-install
-	install -D -m 0755 snapshots-setup $(dest)/usr/libexec/$(ID)/snapshots-setup
+	install -D -m 0755 filesystem-setup $(dest)/usr/libexec/$(ID)/filesystem-setup
 	install -D -m 0755 factory-snapshot $(dest)/usr/libexec/$(ID)/factory-snapshot
 	install -D -m 0644 installer.desktop $(dest)/usr/share/applications/$(ID)-installer.desktop
 	install -D -m 0644 installer.desktop $(dest)/etc/xdg/autostart/$(ID)-installer.desktop

@@ -91,19 +91,26 @@ for t in rsync unsquashfs sfdisk mkfs.ext4 mkfs.btrfs mkfs.xfs mkfs.vfat cryptse
   command -v "$t" >/dev/null || missing+=("$t")
 done
 echo "installer tools missing: [${missing[*]}]"
+# The medium's two layers (docs/7, choice 55): casper/filesystem.squashfs is the installed system
+# and must not carry the live session's packages; the live layer above it carries them. casper
+# moves the first squashfs it mounted, the installed system's layer, to /rofs (its mount of the
+# live layer stays out of the live system's view), so the installed layer is read there and the
+# stacked view from the running system, by each one's dpkg database.
+live_re='^Package: (casper|calamares|'"$id"'-live|'"$id"'-installer)$'
+echo "live packages: installed layer $(grep -c -E "$live_re" /rofs/var/lib/dpkg/status 2>/dev/null) live view $(grep -c -E "$live_re" /var/lib/dpkg/status)"
 # Installer steps that run inside the target (shellprocess with dontChroot false) must not call
-# a program from a package the packages step removes from the target before them (packages.conf,
-# try_remove); sddm-last-user, shipped in the installer package, failed that way on 2026-10-12.
-removed=$(sed -n '/try_remove:/,/^[^ ]/s/^ *- *//p' /etc/calamares/modules/packages.conf | tr '\n' ' ')
+# a program from a package only the live layer has: the target is the installed system's layer
+# (casper/filesystem.manifest); sddm-last-user, shipped in the installer package, failed that way
+# on 2026-10-12.
 bad=()
 for conf in /etc/calamares/modules/shellprocess_*.conf; do
   grep -q '^dontChroot: *true' "$conf" && continue
   for prog in $(sed -n 's/^ *- *"\(.*\)"$/\1/p' "$conf" | tr ' ' '\n' | grep '^/\|^-/' | sed 's/^-//'); do
     owner=$(dpkg -S "$prog" 2>/dev/null | cut -d: -f1 | head -1)
-    for r in $removed; do [[ $owner == "$r" ]] && bad+=("$(basename "$conf"):$prog($owner)"); done
+    cut -f1 /cdrom/casper/filesystem.manifest | grep -qx "$owner" || bad+=("$(basename "$conf"):$prog($owner)")
   done
 done
-echo "chroot steps on removed packages: [${bad[*]}]"
+echo "chroot steps on live-only packages: [${bad[*]}]"
 # The installer's own scripts must exit 0 in the cases that keep nothing: keep-previous-loader
 # printed its work and then exited 1 from a failing cleanup trap, which failed an install on
 # 2026-10-12. Against a fake target: a stub naming no filesystem here, and no stub at all.

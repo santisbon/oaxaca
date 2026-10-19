@@ -1,16 +1,26 @@
 #!/usr/bin/env bash
-# iso-create.sh: build the live installation ISO from the live root filesystem tarball.
+# iso-create.sh: build the live installation ISO from the desktop and live root filesystem
+# tarballs.
 #
-# Anatomy: the input is build/rootfs/<id>-<version>-amd64-live.tar, the "live" profile of
-# scripts/rootfs-create.sh (the desktop plus casper, the live-session package and the
-# installer). This script turns that tarball into the three things a casper live medium
-# needs and one thing UEFI firmware needs:
-#   casper/filesystem.squashfs   the whole tarball as a squashfs, made by mksquashfs reading
+# Anatomy: the inputs are two profiles of scripts/rootfs-create.sh from the same build:
+# build/rootfs/<id>-<version>-amd64-desktop.tar, the system an installation puts on the disk, and
+# build/rootfs/<id>-<version>-amd64-live.tar, the same desktop plus casper, the live-session
+# package and the installer. This script turns them into what a casper live medium needs and one
+# thing UEFI firmware needs:
+#   casper/filesystem.squashfs   the desktop tarball as a squashfs, made by mksquashfs reading
 #                                the tar on standard input (no extraction, no root; file
-#                                ownership comes from the tar)
-#   casper/vmlinuz, casper/initrd  the kernel and the initramfs from the tarball; the initramfs
-#                                carries casper's scripts because the live profile rebuilt it
-#                                after installing casper
+#                                ownership comes from the tar). The installer copies this layer
+#                                alone onto the disk (unpackfs.conf), so nothing of the live
+#                                session reaches an installed system (docs/7, choice 55).
+#   casper/filesystem.live.squashfs  the live layer: what the live tarball has on top of the
+#                                desktop one, written by scripts/layer-diff.py. The boot option
+#                                layerfs-path=filesystem.live.squashfs makes casper mount
+#                                filesystem.squashfs and this layer above it; without that
+#                                option casper would stack every *.squashfs in name order and
+#                                put the live layer underneath.
+#   casper/vmlinuz, casper/initrd  the kernel and the initramfs from the live tarball; the
+#                                initramfs carries casper's scripts because the live profile
+#                                rebuilt it after installing casper
 #   boot/grub/grub.cfg           the menu: one entry booting the kernel with boot=casper
 #   an EFI System Partition image (FAT) holding Ubuntu's Microsoft-signed shim as
 #                                EFI/boot/bootx64.efi, Ubuntu's Canonical-signed CD GRUB
@@ -28,7 +38,7 @@
 # boot test unit; xorriso copies the first ISO and replaces that one file, so the squashfs
 # is compressed once. scripts/iso-boot-test.sh boots the test ISO.
 #
-# Usage: scripts/iso-create.sh        (make iso)
+# Usage: scripts/iso-create.sh        (make iso; make rootfs PROFILE=desktop and make rootfs first)
 # Needs: squashfs-tools (mksquashfs 4.5 or newer for -tar), xorriso, dosfstools, mtools.
 set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
@@ -38,7 +48,22 @@ source "$here/distro.conf"
 arch=amd64
 tarball="$here/build/rootfs/$DISTRO_ID-$BASE_VERSION-$arch-live.tar"
 manifest="${tarball%.tar}.manifest"
+desktop="$here/build/rootfs/$DISTRO_ID-$BASE_VERSION-$arch-desktop.tar"
+desktop_manifest="${desktop%.tar}.manifest"
 [[ -f $tarball ]] || { echo "no live root filesystem at $tarball: run 'make rootfs PROFILE=live' first" >&2; exit 1; }
+[[ -f $desktop ]] || { echo "no desktop root filesystem at $desktop: run 'make rootfs PROFILE=desktop' first" >&2; exit 1; }
+# The two tarballs must come from the same packages: every package both have at the same version.
+# A desktop tarball left over from an older build would otherwise become the installed system
+# under a live session built from newer packages. A package only one of them has is no drift:
+# with the live packages in the same install, apt satisfies plymouth's theme dependency with
+# plymouth-theme-hamara instead of the desktop's plymouth-theme-ubuntu-text.
+drift=$(join -t $'\t' <(sort "$desktop_manifest") <(sort "$manifest") -o 0,1.2,2.2 | awk -F'\t' '$2 != $3')
+if [[ -n $drift ]]; then
+  echo "the desktop and live root filesystems differ (package, desktop version, live version):" >&2
+  echo "$drift" | head -20 >&2
+  echo "rebuild both: make rootfs PROFILE=desktop && make rootfs" >&2
+  exit 1
+fi
 for t in mksquashfs xorriso mkfs.vfat mmd mcopy; do
   command -v "$t" >/dev/null || { echo "$t is not installed (squashfs-tools, xorriso, dosfstools, mtools)" >&2; exit 1; }
 done
@@ -59,7 +84,7 @@ tar -xOf "$tarball" "./boot/vmlinuz-$kver" > "$tree/casper/vmlinuz"
 tar -xOf "$tarball" "./boot/initrd.img-$kver" > "$tree/casper/initrd"
 echo "   kernel $kver, initrd $(du -h "$tree/casper/initrd" | cut -f1)"
 
-echo "== squashfs"
+echo "== squashfs: the installed system's layer, from $desktop"
 # mmdebstrap's tarball has the right entry for "./" (drwxr-xr-x 0/0), but mksquashfs -tar skips
 # it ("Empty tar filename after skipping leading /, ./, or ../, ignoring") and makes the root
 # directory up: mode 0777, owned by the user running this script (mksquashfs 4.7.5 -help-all:
@@ -68,30 +93,39 @@ echo "== squashfs"
 # create anything under it ("Detected unsafe path transition / (owned by <user>) -> /var",
 # tpm-udev's postinst, 2026-10-14). The root directory is set to root:root 0755 here, and the
 # build stops if the result says otherwise.
-mksquashfs - "$tree/casper/filesystem.squashfs" -tar -comp zstd -Xcompression-level 15 -noappend -quiet \
-  -root-mode 0755 -root-uid 0 -root-gid 0 < "$tarball"
-# sed reads the whole listing; head would close the pipe early and pipefail would stop the build.
-root_entry=$(unsquashfs -lln -d / "$tree/casper/filesystem.squashfs" 2>/dev/null | sed -n 1p)
-if [[ $root_entry != "drwxr-xr-x 0/0 "* ]]; then
-  echo "!! the squashfs root directory is not root:root 0755: $root_entry" >&2; exit 1
-fi
-echo "   root directory: ${root_entry%% *} 0/0"
-cp "$manifest" "$tree/casper/filesystem.manifest"
-tar -tvf "$tarball" | awk '{s+=$3} END {print s}' > "$tree/casper/filesystem.size"
-echo "   $(du -h "$tree/casper/filesystem.squashfs" | cut -f1)"
+# The live layer's root directory sets the stacked root's attributes as well (the uppermost layer
+# holding a directory does), so both layers get the same options.
+squash() {
+  mksquashfs - "$1" -tar -comp zstd -Xcompression-level 15 -noappend -quiet \
+    -root-mode 0755 -root-uid 0 -root-gid 0
+  # sed reads the whole listing; head would close the pipe early and pipefail would stop the build.
+  local root_entry
+  root_entry=$(unsquashfs -lln -d / "$1" 2>/dev/null | sed -n 1p)
+  if [[ $root_entry != "drwxr-xr-x 0/0 "* ]]; then
+    echo "!! the root directory of $1 is not root:root 0755: $root_entry" >&2; exit 1
+  fi
+  echo "   root directory: ${root_entry%% *} 0/0, $(du -h "$1" | cut -f1)"
+}
+squash "$tree/casper/filesystem.squashfs" < "$desktop"
+cp "$desktop_manifest" "$tree/casper/filesystem.manifest"
+tar -tvf "$desktop" | awk '{s+=$3} END {print s}' > "$tree/casper/filesystem.size"
+echo "== squashfs: the live layer, $tarball on top of the desktop"
+python3 -I "$here/scripts/layer-diff.py" "$desktop" "$tarball" | squash "$tree/casper/filesystem.live.squashfs"
+cp "$manifest" "$tree/casper/filesystem.live.manifest"
 
 printf '%s %s "%s" - Release %s (%s)\n' "$DISTRO_NAME" "$BASE_VERSION" "$BASE_SERIES" "$arch" "$stamp" > "$tree/.disk/info"
 
 # The NVIDIA driver's packages, so the installer's drivers step works without a network
 # (scripts/driver-pool.sh, docs/7 choice 20). DRIVER_POOL=0 leaves them out.
+# The pool is resolved against the desktop tarball, the system the installer's steps install into.
 if [[ ${DRIVER_POOL:-1} != 0 ]]; then
   echo "== driver pool"
-  "$here/scripts/driver-pool.sh" "$tarball" "$tree/pool"
+  "$here/scripts/driver-pool.sh" "$desktop" "$tree/pool"
 fi
 
 # The kernel command line: casper's own parameters (username=, hostname= are read by its
 # initramfs script, the live user's full name stays casper.conf's "Live session user").
-cmdline="boot=casper username=$DISTRO_ID hostname=$DISTRO_ID quiet splash"
+cmdline="boot=casper layerfs-path=filesystem.live.squashfs username=$DISTRO_ID hostname=$DISTRO_ID quiet splash"
 # The test entry keeps "splash" so that Plymouth runs the distro's script theme in QEMU as it
 # does on hardware (a crash in that theme on the Legion laptop, 2026-10-11, went unseen while
 # the test entry had no splash), and adds plymouth.debug so the guest test can read Plymouth's
@@ -100,7 +134,7 @@ cmdline="boot=casper username=$DISTRO_ID hostname=$DISTRO_ID quiet splash"
 # <id>.gpu=boot: the live package's GPU environment generator then sets AQ_DRM_DEVICES even
 # on QEMU's single GPU, so the test exercises Hyprland's explicit-device path, the one a
 # dual-GPU laptop takes in the live session (docs/7, choice 17).
-test_cmdline="boot=casper username=$DISTRO_ID hostname=$DISTRO_ID splash plymouth.debug console=ttyS0 systemd.mask=serial-getty@ttyS0.service $DISTRO_ID.boottest $DISTRO_ID.gpu=boot"
+test_cmdline="boot=casper layerfs-path=filesystem.live.squashfs username=$DISTRO_ID hostname=$DISTRO_ID splash plymouth.debug console=ttyS0 systemd.mask=serial-getty@ttyS0.service $DISTRO_ID.boottest $DISTRO_ID.gpu=boot"
 grub_cfg() {
   local default_cmdline=$1 timeout=$2
   cat <<GRUB

@@ -56,7 +56,7 @@ rootfs-test:       ## Boot the root filesystem tarball in QEMU and check the bas
 drivers-check:     ## Ask ubuntu-drivers, inside the tarball, what it would install for this machine's GPU (step 4)
 	PROFILE=$(PROFILE) scripts/drivers-check.sh
 
-iso:               ## Build the live installation ISO (and its test variant) from the live root filesystem: make rootfs first
+iso:               ## Build the live installation ISO (and its test variant) from the desktop and live root filesystems: make rootfs PROFILE=desktop and make rootfs first
 	scripts/iso-create.sh
 
 iso-test:          ## Boot the test ISO in QEMU under OVMF and check the live session: make iso-test [SECURE_BOOT=on|off]

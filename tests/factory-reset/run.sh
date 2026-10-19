@@ -8,8 +8,9 @@
 # installer's own scripts where it has them. The layout is the encrypted btrfs one: an EFI System
 # Partition, a 4 GiB ext4 /boot, and LUKS2 holding btrfs with the subvolumes of mount.conf (@,
 # @home, @cache, @log, @swap) mounted with its options; fstab and crypttab as the fstab module
-# writes them ("luks" in crypttab); the user "seller" with users.conf's groups; the live packages
-# removed as packages.conf removes them; then snapshots-setup, <id>-apply-system, keep-previous-loader,
+# writes them ("luks" in crypttab); the user "seller" with users.conf's groups; the installed
+# system's layer of the medium (casper/filesystem.squashfs, without the live session's packages,
+# as unpackfs.conf copies it); then filesystem-setup, <id>-apply-system, keep-previous-loader,
 # GRUB on the EFI System Partition under the "ubuntu" ID, loader-fallback, sddm-last-user, the
 # initramfs, and factory-snapshot, last, as shellprocess@factory runs it. Two departures, both for
 # the test: the kernel command line sends the console to the serial port without the splash, so
@@ -91,9 +92,7 @@ FSTAB
     tgt() { chroot "$T" "$@"; }
     tgt useradd -m -G adm,cdrom,dip,lpadmin,plugdev,sudo,video -s /bin/bash -c Seller seller
     printf "seller:%s\n" sellerpass1 | tgt chpasswd
-    /usr/libexec/$id/snapshots-setup "$T"
-    tgt env DEBIAN_FRONTEND=noninteractive apt-get -q -y purge casper $id-live $id-installer calamares calamares-data
-    tgt env DEBIAN_FRONTEND=noninteractive apt-get -q -y autoremove --purge
+    /usr/libexec/$id/filesystem-setup "$T"
     tgt env OMARCHY_LOG_TO_STDOUT=1 $id-apply-system --install-user seller --first-install
     /usr/libexec/$id/keep-previous-loader "$T"
     tgt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ubuntu --uefi-secure-boot

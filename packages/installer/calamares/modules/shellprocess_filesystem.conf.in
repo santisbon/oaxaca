@@ -1,0 +1,11 @@
+# shellprocess@filesystem: from the live system (dontChroot), after unpackfs: the tools for the
+# target's root filesystem (btrfs-progs and Timeshift with its configuration on btrfs, xfsprogs on
+# xfs), from the medium's package pool (filesystem-setup's header). Before the initramfs step, so
+# the target's initramfs gets the btrfs and xfs hooks those packages carry. The leading "-" keeps
+# a failure from aborting the installation; the target keeps the log in
+# /var/log/@DISTRO_ID@/filesystem-setup.log. ${ROOT} is the target.
+---
+dontChroot: true
+timeout: 300
+script:
+    - "-/usr/libexec/@DISTRO_ID@/filesystem-setup ${ROOT}"

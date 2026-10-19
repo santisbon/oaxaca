@@ -1,3 +1,17 @@
+oaxaca-installer (0.1.11) stonking; urgency=medium
+
+  * The installation copies only the medium's installed-system layer
+    (casper/filesystem.squashfs), so the live session's packages never reach
+    the disk, and the packages step that removed them ("Removing 5
+    packages") is gone, with the network it needed for apt-get update
+    (docs/7, choice 55).
+  * snapshots-setup is now filesystem-setup (shellprocess@filesystem): it
+    installs the root filesystem's tools from the medium's package pool,
+    btrfs-progs and Timeshift on btrfs, xfsprogs on xfs, which the layer
+    copied to the disk does not carry.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sun, 18 Oct 2026 21:00:00 -0500
+
 oaxaca-installer (0.1.10) stonking; urgency=medium
 
   * The partition page starts on btrfs: availableFileSystemTypes lists btrfs

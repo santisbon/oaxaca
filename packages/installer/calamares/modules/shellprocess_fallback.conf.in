@@ -9,5 +9,6 @@ timeout: 60
 script:
     - "/usr/libexec/@DISTRO_ID@/loader-fallback ${ROOT}"
     # The login screen's last user (sddm-last-user's header); from the live system as well,
-    # because the packages step has removed this installer's files from the target by now.
+    # because this installer's files are in the live layer only, never in the target (docs/7,
+    # choice 55).
     - "/usr/libexec/@DISTRO_ID@/sddm-last-user ${ROOT} ${gs[username]}"

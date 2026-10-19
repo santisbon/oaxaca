@@ -3,7 +3,7 @@
 # boots QEMU with the firmware strings in ./smbios (vendor LENOVO, model "Legion Pro 7
 # 16IAX10H"), so the guest's /sys/class/dmi/id names the Legion laptop.
 #
-# The check: the live system's root (casper's read-only squashfs layer) is copied onto the
+# The check: the installed system's layer (casper's lower squashfs) is copied onto the
 # target disk's 25 GiB partition as a stand-in for an installed system, the mounts Calamares's
 # mount step makes are made (proc, sys, dev, a fresh /run, /cdrom), the network is turned off,
 # and the installer's hardware step runs against that root exactly as shellprocess@hardware runs
@@ -17,8 +17,9 @@ part=$(readlink -f /dev/disk/by-label/existing)
 mkfs.ext4 -q -F -L hwtarget "$part"
 mkdir -p $t && mount "$part" $t
 start=$(date +%s)
-# casper's lower layer: the squashfs mount whose source is the medium's filesystem.squashfs.
-lower=$(findmnt -rn -t squashfs -o TARGET | while read -r m; do [ -x "$m/usr/bin/apt-get" ] && echo "$m" && break; done)
+# casper's lower layer, the installed system's: casper moves its first squashfs mount, the
+# medium's filesystem.squashfs, to /rofs (the live layer above it is not in view).
+lower=/rofs
 echo "drive: live root's lower layer: $lower"
 rsync -aHAX "$lower/" $t/
 echo "drive: copied the live root in $(( $(date +%s) - start )) s"

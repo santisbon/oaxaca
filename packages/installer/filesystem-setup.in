@@ -1,0 +1,66 @@
+#!/bin/bash
+# filesystem-setup: install the tools for the target's root filesystem into the target: on btrfs,
+# btrfs-progs and Timeshift, with Timeshift pointed at that filesystem so @DISTRO_ID@-update can
+# take a snapshot before every update (@DISTRO_ID@-snapshot); on xfs, xfsprogs; on ext4, nothing,
+# since e2fsprogs is in every system. docs/7, choices 51 and 55.
+#
+# Anatomy: Calamares's shellprocess@filesystem runs this from the live system (dontChroot), after
+# the unpackfs step has copied the installed system's layer of the medium
+# (casper/filesystem.squashfs) onto the disk. That layer is the desktop alone, without the live
+# session's packages, so none of these tools is in the target yet. apt runs inside the target with
+# chroot. When the installation medium carries its package pool (scripts/driver-pool.sh puts the
+# three packages and their dependencies there; /cdrom/pool, bound into the target by the mount
+# step), apt reads only that pool, through an apt configuration of its own (APT_CONFIG, as
+# hardware-install does), so the step needs no network and leaves the target's sources and package
+# lists untouched; without the pool apt uses the target's own sources. Timeshift's configuration,
+# /etc/timeshift/timeshift.json (JSON), is written from Timeshift's own /etc/timeshift/default.json
+# with the root filesystem's UUID and, on an encrypted install, the LUKS partition's UUID; no
+# schedule is turned on. The log goes to /var/log/@DISTRO_ID@/filesystem-setup.log in the target.
+# Usage: filesystem-setup <target root>
+set -u
+root=${1:?target root}
+mkdir -p "$root/var/log/@DISTRO_ID@"
+exec > >(tee -a "$root/var/log/@DISTRO_ID@/filesystem-setup.log") 2>&1
+fstype=$(findmnt -no FSTYPE --mountpoint "$root")
+case $fstype in
+    btrfs) packages="btrfs-progs timeshift" ;;
+    xfs) packages="xfsprogs" ;;
+    *) echo "@DISTRO_ID@-filesystem-setup: root filesystem is ${fstype:-unknown}; nothing to add"
+       exit 0 ;;
+esac
+
+pool=/cdrom/pool
+state=/run/@DISTRO_ID@-filesystem-pool
+apt_env=(DEBIAN_FRONTEND=noninteractive)
+if [ -f "$root$pool/Packages" ]; then
+    mkdir -p "$root$state/lists/partial"
+    printf 'Types: deb\nURIs: file:%s\nSuites: ./\nTrusted: yes\n' "$pool" > "$root$state/pool.sources"
+    printf 'Dir::Etc::SourceList "%s/pool.sources";\nDir::Etc::SourceParts "%s/no-parts";\nDir::State::Lists "%s/lists";\n' \
+        "$state" "$state" "$state" > "$root$state/apt.conf"
+    apt_env+=(APT_CONFIG=$state/apt.conf)
+    echo "@DISTRO_ID@-filesystem-setup: $fstype root; packages: $packages; pool: $pool"
+else
+    echo "@DISTRO_ID@-filesystem-setup: $fstype root; packages: $packages; pool: none (the target's apt sources)"
+fi
+chroot "$root" env "${apt_env[@]}" apt-get -q update || exit 1
+# shellcheck disable=SC2086 # the package list is split on purpose
+chroot "$root" env "${apt_env[@]}" apt-get -q -y install $packages || exit 1
+[ "$fstype" = btrfs ] || exit 0
+
+# findmnt prints a btrfs subvolume mount as "<device>[/<subvolume>]".
+source=$(findmnt -no SOURCE --mountpoint "$root")
+device=${source%%\[*}
+fs_uuid=$(blkid -s UUID -o value "$device")
+luks=$(lsblk -nrps -o NAME,FSTYPE "$device" | awk '$2 == "crypto_LUKS" { print $1; exit }')
+luks_uuid=""
+[ -n "$luks" ] && luks_uuid=$(blkid -s UUID -o value "$luks")
+echo "@DISTRO_ID@-filesystem-setup: btrfs root $device (UUID $fs_uuid); LUKS partition: ${luks:-none}"
+template="$root/etc/timeshift/default.json"
+[ -f "$template" ] || { echo "@DISTRO_ID@-filesystem-setup: $template is missing" >&2; exit 1; }
+sed -e "s|\"backup_device_uuid\" : \"[^\"]*\"|\"backup_device_uuid\" : \"$fs_uuid\"|" \
+    -e "s|\"parent_device_uuid\" : \"[^\"]*\"|\"parent_device_uuid\" : \"$luks_uuid\"|" \
+    -e 's|"do_first_run" : "[^"]*"|"do_first_run" : "false"|' \
+    -e 's|"btrfs_mode" : "[^"]*"|"btrfs_mode" : "true"|' \
+    "$template" > "$root/etc/timeshift/timeshift.json" || exit 1
+echo "@DISTRO_ID@-filesystem-setup: wrote /etc/timeshift/timeshift.json:"
+cat "$root/etc/timeshift/timeshift.json"

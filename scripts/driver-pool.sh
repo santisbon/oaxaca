@@ -3,7 +3,7 @@
 # installer's drivers step works without a network (docs/7, choice 20).
 #
 # Anatomy: unshare opens an unprivileged user namespace (as scripts/drivers-check.sh does),
-# extracts the live root filesystem tarball into build/iso/pool-work/root, mounts /proc and
+# extracts the desktop root filesystem tarball into build/iso/pool-work/root, mounts /proc and
 # binds /dev, copies the host's resolv.conf in, and chroots. Inside, apt-get update fetches
 # Ubuntu's package lists (the tarball ships none), apt-cache finds the newest NVIDIA open
 # branch that has Canonical's prebuilt signed modules for the tarball's kernel (the choice
@@ -24,6 +24,11 @@
 # dependency closure from Ubuntu's archive, resolved in the same apt call as the driver, so that the installer's
 # hardware step (packages/installer/hardware-install) installs the matching one without a
 # network (docs/7, choice 41).
+#
+# And the root filesystem tools the installer's snapshots step adds for the filesystem chosen
+# (packages/installer/snapshots-setup): btrfs-progs and Timeshift on btrfs, xfsprogs on xfs, which
+# the installed system's layer does not carry (docs/7, choice 55). The tarball given is the
+# desktop one, that installed system, so every closure is relative to what an installation has.
 #
 # Usage: scripts/driver-pool.sh <tarball> <pool dir>
 # Env:   DRIVER_POOL=0 skips the pool (an ISO without the driver, for quick test builds).
@@ -101,7 +106,8 @@ echo "branch: $best (nvidia-driver-$best-open, linux-modules-nvidia-$best-open-$
 # (Legion laptop, 2026-10-12, docs/7 choice 36).
 flavour=${kver#*-*-}
 apt-get -q -y --install-recommends --download-only -o Dir::Cache::archives=/pool \
-    install "nvidia-driver-$best-open" "linux-modules-nvidia-$best-open-$flavour" "linux-modules-nvidia-$best-open-$kver" nvidia-vaapi-driver /local/*.deb >/tmp/apt-download.log 2>&1 \
+    install "nvidia-driver-$best-open" "linux-modules-nvidia-$best-open-$flavour" "linux-modules-nvidia-$best-open-$kver" nvidia-vaapi-driver \
+    btrfs-progs timeshift xfsprogs /local/*.deb >/tmp/apt-download.log 2>&1 \
     || { echo "apt download: FAILED"; tail -20 /tmp/apt-download.log; exit 1; }
 echo "$best" > /pool/branch
 ls /pool/*.deb | wc -l | sed 's/^/debs: /'
