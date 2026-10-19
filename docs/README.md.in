@@ -72,7 +72,7 @@ Nothing is ever installed and then stripped out: the root filesystem is assemble
   - [Installing software: Recommends are on, with exceptions](#installing-software-recommends-are-on-with-exceptions)
   - [Secure Boot](#secure-boot)
   - [NVIDIA and AMD GPUs](#nvidia-and-amd-gpus)
-  - [Apple Studio Display](#apple-studio-display)
+  - [Apple hardware](#apple-hardware)
   - [The Omarchy desktop](#the-omarchy-desktop)
   - [Plugins and themes written for Omarchy](#plugins-and-themes-written-for-omarchy)
 - [Repository map](#repository-map)
@@ -270,9 +270,40 @@ On laptops with hybrid graphics, where the built-in screen hangs off the Intel o
 
 The AMD path is tested against simulated machines only, not yet on AMD hardware.
 
-### Apple Studio Display
+### Apple hardware
 
-The display's brightness has no standard control on Linux: the Studio Display takes brightness commands over its USB connection. @DISTRO_NAME@ packages `asdcontrol`, the program that sends them (Ubuntu's archive does not have it), and the desktop's brightness keys and controls use it for the display, as Omarchy does on Arch. Ubuntu's `bolt` handles Thunderbolt device authorization for the display's Thunderbolt connection.
+The [top-level README](../README.md) lists what @DISTRO_NAME@ does on Apple hardware; this section gives each item's mechanism and the file it comes from. Only the Studio Display has been tried, on the Legion laptop; no Mac has run @DISTRO_NAME@ yet.
+
+How the Mac fixes are applied: the installer's system step runs `@DISTRO_ID@-apply-system`, which runs `@DISTRO_ID@-apply-hardware`, which runs the Omarchy fork's `install/hardware/all.sh`, and that script runs one script per hardware fix. Each script reads the machine's model name (`/sys/class/dmi/id/product_name`, such as `MacBook8,1`) or its PCI IDs (the vendor and device numbers each chip reports, listed by `lspci -nn`, such as `14e4:4331`), and changes nothing on other machines. Every path below that starts with `install/` or `bin/` is in the fork (<@OMARCHY_FORK@>, branch `@OMARCHY_PORT_REF@`).
+
+#### Apple Studio Display
+
+- **Brightness.** The Studio Display takes brightness commands over its USB connection, as USB HID reports through the kernel's `hiddev` devices; Linux has no standard brightness control for an external display connected this way. `asdcontrol` sends those commands (`packages/asdcontrol`, built from `omakasui/asdcontrol`; Ubuntu's archive does not carry it). The brightness keys and the bar's brightness control run `@DISTRO_ID@-brightness-display-apple` (`bin/omarchy-brightness-display-apple`), which runs `asdcontrol` through sudo, because opening a `hiddev` device needs root. The asdcontrol package's sudoers rule, `/etc/sudoers.d/50-asdcontrol` (from `packages/asdcontrol/debian/asdcontrol.sudoers`), lets members of the `sudo` group run `asdcontrol` without a password, and only with `hiddev` device paths and a brightness value as arguments.
+- **Thunderbolt.** The display connects over Thunderbolt, and Ubuntu's `bolt` authorizes the connection.
+- **Dark display after boot.** `@DISTRO_ID@-base` 0.1.8 ships `/usr/lib/modprobe.d/@DISTRO_ID@-thunderbolt.conf` with `options thunderbolt dprx_timeout=-1`, so the kernel's Thunderbolt driver waits for the GPU driver without a time limit before giving up on the display's DisplayPort connection; without the option, the Studio Display sometimes stayed dark until its cable was replugged ([docs/7](7%20-%20image-installer.md), choice 49).
+- **Speakers, microphones and camera.** No @DISTRO_NAME@ package or setting is specific to them, and no test checks them on their own.
+
+#### MacBooks from 2012 and early 2013: the BCM4331 Wi-Fi
+
+`install/hardware/fix-bcm43xx.sh`, on PCI ID `14e4:4331`, installs Ubuntu's `firmware-b43-installer`. The kernel's `b43` driver runs the chip but needs Broadcom's firmware, which may not be redistributed, so the package downloads Broadcom's driver during installation and extracts the firmware from it: installing on these MacBooks needs a network connection. Omarchy installs `broadcom-wl-dkms` for this chip instead; the port changed the script because of the Secure Boot reason under "Not supported" below.
+
+#### Macs from 2015 on with Broadcom Wi-Fi: the WPA handshake
+
+`brcmfmac` is the kernel's driver for Broadcom's newer Wi-Fi chips, whose firmware can perform the WPA four-way handshake (the exchange that checks the network password) itself. On Apple's parts that offload fails against an access point in WPA2/WPA3 transition mode (one that accepts both): the handshake never completes, and NetworkManager reports the password as wrong. `install/hardware/apple/fix-brcmfmac-supplicant.sh` (Omarchy's script, unchanged) writes `/etc/modprobe.d/brcmfmac.conf` with `options brcmfmac feature_disable=0x82000`, which turns off the firmware supplicant (`0x2000`) and authenticator (`0x80000`), so `wpa_supplicant` performs the handshake in software. The script acts on a Mac with the T2 bridge (PCI IDs `106b:1801` or `106b:1802`), or on a machine whose vendor is Apple with one of brcmfmac's chip IDs `14e4:43ba`, `43bb`, `43bc`, `43a3`, `43dc`, `4464`, `4488`, `4425` or `4433`: the BCM43602 of 2015 to 2017 Macs, the BCM4350, BCM4355 and BCM4364 of 2018 and 2019 Macs (the iMac19,1 and iMac19,2 have no T2 chip), and the BCM4377, BCM4378 and BCM4387 of the T2 Macs.
+
+#### The 12-inch MacBook and the 2016 and 2017 MacBook Pros: the keyboard at the encryption prompt
+
+These models' keyboards connect over SPI (a chip-to-chip bus) instead of USB, through the kernel's `applespi` driver and the `spi_pxa2xx_platform` and `intel_lpss_pci` modules. The disk encryption passphrase prompt runs from the initramfs (the small file system the kernel starts from, before the encrypted root is unlocked), so those modules have to be in the initramfs. Omarchy installs `macbook12-spi-driver-dkms` and lists the modules in a mkinitcpio drop-in. Ubuntu's kernel already has the driver as signed modules, and Ubuntu's initramfs (built by initramfs-tools with `MODULES=most`) already carries the three modules (read from the image's initramfs on 2026-10-16). The one module on Omarchy's lists that Ubuntu's initramfs lacks is `spi_pxa2xx_pci`, which Omarchy adds for the `MacBook8,1` only, so `install/hardware/apple/fix-spi-keyboard.sh` puts a hook in `/etc/initramfs-tools/hooks/` on that model that adds the module and loads it at boot.
+
+#### The same models: the SSD waking from sleep
+
+`install/hardware/apple/fix-suspend-nvme.sh` (Omarchy's script, unchanged) acts on the `MacBook8,1`, `MacBook9,1` and `MacBook10,1` (the 12-inch MacBooks) and the `MacBookPro13,1` to `13,3` and `MacBookPro14,1` to `14,3` (the 2016 and 2017 MacBook Pros). When the SSD sits at PCI address `0000:01:00.0`, the script enables a systemd unit that writes `0` to the SSD's `d3cold_allowed` at every boot, which keeps the SSD out of D3cold, the deepest PCI power state, from which these drives fail to wake.
+
+#### Not supported
+
+- **Macs with Apple's T2 chip** (most Macs from 2018 to 2020). Omarchy's `install/hardware/apple/fix-t2.sh` sets these Macs up with an out-of-tree kernel and that kernel's pacman repository; the port removed the script (the fork's `PORT-REMOVALS.md`, "Apple T2").
+- **The Broadcom BCM4360 Wi-Fi** of 2013 to 2015 MacBooks. The chip's only driver is Broadcom's out-of-tree `wl`, packaged as `broadcom-sta-dkms`: DKMS builds the module on the machine, and with Secure Boot on the kernel loads such a module only when it is signed with a Machine Owner Key, which @DISTRO_NAME@ never asks the user to enroll (`PORT-REMOVALS.md`, "The BCM4360's Wi-Fi driver").
+- **Macs with Apple silicon** (M1 and later). @DISTRO_NAME@ is built only for 64-bit Intel and AMD processors (amd64).
 
 ### The Omarchy desktop
 
