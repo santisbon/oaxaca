@@ -33,6 +33,15 @@ def load_conf():
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]+", conf["DISTRO_ID"]):
         sys.exit(f"DISTRO_ID={conf['DISTRO_ID']!r} must be lowercase letters, digits and hyphens")
     conf["DISTRO_ID_UPPER"] = conf["DISTRO_ID"].upper().replace("-", "_")
+    # Each package's version, from the top line of packages/<dir>/debian/changelog.in, as
+    # VERSION_<DIR> (the directory's name in capitals, "-" as "_"), so the developer README's
+    # table follows every version bump at the next render. Tokens in that line (the desktop's
+    # version) are filled from distro.conf first.
+    for changelog in sorted((ROOT / "packages").glob("*/debian/changelog.in")):
+        m = re.match(r"\S+ \(([^)]*)\)", changelog.read_text())
+        if m:
+            key = "VERSION_" + changelog.parent.parent.name.upper().replace("-", "_")
+            conf[key] = TOKEN.sub(lambda t: f"@{t.group(1)}@" if t.group(1) else conf[t.group(2)], m.group(1))
     return conf
 
 

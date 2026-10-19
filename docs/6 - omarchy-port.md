@@ -66,22 +66,7 @@ The same targets as before, with new package directories, a new root filesystem 
 
 Why one source and one version for all five: the dependency list of the metapackage is Omarchy's package list ported line by line, and that list changes with the Omarchy tag, so the metapackage carries the tag's version like the content packages do. The policy's version table had `oaxaca-desktop` under "no upstream, native"; this step moves it to the first row, and the policy is updated to say so.
 
-The other packages of the step:
-
-| Package | Version | What | Source |
-|---|---|---|---|
-| `oaxaca-fonts` | `3.5.1+ia20261002-0oaxaca1` | JetBrains Mono Nerd Font (four faces) and iA Writer (16 faces) | the Nerd Fonts 3.5.1 release zip and the `iaolo/iA-Fonts` commits Omarchy's recipes pin, fetched through a `FILES=` list |
-| `asdcontrol` | `0.6.0-0oaxaca1` | Apple Studio Display brightness | `omakasui/asdcontrol` v0.6.0 tarball; a sudoers rule for the `sudo` group |
-| `localsend` | `1.18.2-0oaxaca1` | LocalSend, file sharing with nearby devices; the program behind the Share menu and Files' "Send via LocalSend" | LocalSend's prebuilt app and CLI tarballs from its v1.18.2 GitHub release (choice 19); a dependency of `oaxaca-desktop`, so preinstalled, as in Omarchy |
-| `voxtype` | `1.1.1-0oaxaca1` | Voxtype, push-to-talk dictation that types into the focused window; what Install > AI > Dictation installs and the bar's Dictation indicator shows | Voxtype's release `.deb` from its v1.1.1 GitHub release, without the ONNX GPU builds (choice 30); not on the image, installed from the menu |
-| `hyprland-preview-share-picker` | `0.2.1-0oaxaca1` | the screen-share picker with previews | `WhySoBad/hyprland-preview-share-picker` v0.2.1 tarball, the `hyprland-protocols` submodule as a component tarball, the crates vendored |
-| `nwg-displays` | `0.4.4-0oaxaca1` | the monitor layout GUI | Debian's 0.3.28-1 packaging on the 0.4.4 tarball |
-| `oaxaca-hw-legion` | `0.1.0` | the laptop's hardware set | native; see `packages/hw-legion/README.md` |
-| `dell-xps-touchpad-haptics` | `1.0.0-0oaxaca1` | Omarchy's haptic touchpad driver for Dell XPS 14 and 16 (choice 66) | Omarchy's five files from `omacom/omarchy-pkgs`, a file list; see `packages/dell-xps-touchpad-haptics/README.md` |
-| `asusctl` | `6.5.0-0oaxaca1` | ASUS ROG laptop control: asusd, asusctl, asus-shutdown, asusd-user (choice 68) | the release tarball from `github.com/OpenGamingCollective/asusctl`, crates vendored |
-| `supergfxctl` | `5.2.7-0oaxaca1` | graphics mode switching for hybrid laptops, used by Hardware > Hybrid GPU (choice 68) | the tag tarball from `gitlab.com/asus-linux/supergfxctl`, crates vendored |
-| `qmk-hid` | `0.1.13-0oaxaca1` | QMK keyboard control, for the Framework Laptop 16's lighting (choice 67) | the tag tarball from `github.com/FrameworkComputer/qmk_hid`, crates vendored |
-| `oaxaca-gdk-pixbuf-compat` | `0.1.0` | provides the GdkPixbuf library's old package name for Mojang's Minecraft launcher (choice 76) | native; an empty package |
+The other packages of the step (the fonts, the third-party programs, the hardware packages) are listed with their versions, sources and reasons in the developer README's ["At a glance"](README.md#at-a-glance) table.
 
 ## What the port changed in Omarchy's tree
 

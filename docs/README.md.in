@@ -1,11 +1,60 @@
 # @DISTRO_NAME@: the developer README
 
+## At a glance
+
+Where every part of @DISTRO_NAME@ comes from, then each package in @DISTRO_NAME@'s own apt repository. The versions are filled in by `make render` from each package's `packages/<dir>/debian/changelog.in`, so they are the versions this checkout builds. Linked words are defined under [Terms](#terms).
+
+| Part | What | Source | Why |
+|---|---|---|---|
+| Base | Ubuntu @BASE_VERSION@ (`@BASE_SERIES@`): the kernel (`linux-generic`), systemd, Mesa, Hyprland, the signed boot chain (`shim-signed`, `grub-efi-amd64-signed`), and every [package](#package) not named in the rows below | Ubuntu's [archive](#archive): `http://archive.ubuntu.com/ubuntu` with the [suites](#suite-and-pocket) `@BASE_SERIES@` and `@BASE_SERIES@-updates`, and `http://security.ubuntu.com/ubuntu` with `@BASE_SERIES@-security`, all four [components](#component). On an installed system: `/etc/apt/sources.list.d/ubuntu.sources` | @DISTRO_NAME@ is Ubuntu: Ubuntu's kernel, drivers, security updates and Secure Boot chain, unmodified |
+| Package set | The packages an installed system has, chosen by name; nothing is installed and then removed | The [metapackages](#metapackage) `@DISTRO_ID@-base`, `@DISTRO_ID@-session` and `@DISTRO_ID@-desktop` (next table), assembled into a root filesystem by mmdebstrap with [Recommends](#recommends) on, as on a stock Ubuntu, and two packages pinned out (`scripts/rootfs-create.sh`; [Installing software](#installing-software-recommends-are-on-with-exceptions)) | Each package is there for a recorded reason (docs/3 to docs/7) |
+| Added apt repository | @DISTRO_NAME@'s own: every package in the next table | <@APT_URL@>, suite `@BASE_SERIES@`, component `@APT_COMPONENT@`, signed with the key in `@DISTRO_ID@-archive-keyring`. On an installed system: `/etc/apt/sources.list.d/@DISTRO_ID@.sources` | What Ubuntu's archive lacks, has too old, or needs patched |
+| Added apt repository | `chromium`, `chromium-common` | The xtradeb PPA (a personal package archive: an apt repository a Launchpad user publishes), `https://ppa.launchpadcontent.net/xtradeb/apps/ubuntu`, pinned at priority 400 (an apt preferences entry in `/etc/apt/preferences.d/xtradeb`; Ubuntu's archive has apt's default 500), so Ubuntu's archive wins for any package both carry. On an installed system: `/etc/apt/sources.list.d/xtradeb.sources` | Omarchy's browser; Ubuntu's archive has only placeholder packages for Chromium (docs/6, choice 3) |
+| Added apt repository | `mise` | mise's own repository, `https://mise.jdx.dev/deb`, suite `stable`. On an installed system: `/etc/apt/sources.list.d/mise.sources` | Omarchy preinstalls mise, and Ubuntu's archive does not carry mise (docs/6, choice 69) |
+| App stores | Nothing preinstalled from either store | Ubuntu's `snapd` (the Snap Store) and `flatpak` with Flathub as a system remote | Applications Ubuntu does not ship as packages install without setup (docs/6, choice 17) |
+| Vendor repositories | Chrome, VS Code, 1Password, Spotify, Signal, Tailscale and others; none in the image | Each vendor's own apt repository, added by the menu's Install entries when the user picks one | The vendors' own packages, as on Ubuntu |
+| Omarchy port | Omarchy @OMARCHY_TAG@ on apt instead of pacman | The fork <@OMARCHY_FORK@>, branch `@OMARCHY_PORT_REF@` on top of the tag `@OMARCHY_TAG@`, built at commit `@OMARCHY_PORT_COMMIT@` into the `desktop` row of the next table; what the port leaves out, and why, is in the fork's [PORT-REMOVALS.md](@OMARCHY_FORK@/blob/@OMARCHY_PORT_REF@/PORT-REMOVALS.md) | Omarchy ships only for Arch Linux ([The Omarchy desktop](#the-omarchy-desktop)) |
+| Installation ISO | The live session and the installer (Calamares), which installs onto an encrypted disk by default | Two squashfs layers (compressed read-only file system images, the second stacked on the first): the installed system's (the desktop root filesystem) and the live session's on top (casper, Ubuntu's boot code for live sessions, and Calamares's dependencies from Ubuntu's archive, plus `calamares`, `@DISTRO_ID@-live` and `@DISTRO_ID@-installer` from the next table); a package pool on the medium holding Ubuntu's NVIDIA driver packages (`restricted`), the file system tools and the hardware packages | An install works offline and removes nothing (docs/7, choices 20, 41, 55) |
+
+The packages in @DISTRO_NAME@'s repository, one row per [source package](#source-package) (the directory under `packages/`). "This repository" means the package's files are all in its `packages/<dir>/`. A dash in the Patches column means none.
+
+| `packages/<dir>` | Version | Packages built | Built from | Patches | Why |
+|---|---|---|---|---|---|
+| `archive-keyring` | @VERSION_ARCHIVE_KEYRING@ | `@DISTRO_ID@-archive-keyring`, `@DISTRO_ID@-apt-source` | This repository | - | The key that signs @DISTRO_NAME@'s repository, and apt's sources entry for the repository |
+| `base` | @VERSION_BASE@ | `@DISTRO_ID@-base` | This repository | - | The base system metapackage (kernel, boot chain, init, network, sound) and the apt pins that keep `xdg-desktop-portal-gnome` and `sudo-rs` out |
+| `session` | @VERSION_SESSION@ | `@DISTRO_ID@-session` | This repository | - | The graphics and session metapackage (Mesa, Hyprland, Xwayland, uwsm, SDDM, portals, GNOME Keyring, Quickshell), the backlight udev rule, the GPU environment generator and the volume monitors unit |
+| `desktop` | @VERSION_DESKTOP@ | `@DISTRO_ID@-desktop`, `-tools`, `-shell`, `-themes`, `-config` | The Omarchy fork (above), renamed from `omarchy` to `@DISTRO_ID@` at build time | - (the port's changes are commits on the fork) | The Omarchy desktop: commands, shell, themes, settings, and the metapackage that pulls in the applications |
+| `fonts` | @VERSION_FONTS@ | `@DISTRO_ID@-fonts` | The Nerd Fonts 3.5.1 release zip (JetBrains Mono Nerd Font, four faces) and the `iaolo/iA-Fonts` commits Omarchy's recipes pin (iA Writer, 16 faces), downloaded from the file list in `sources.list` | - | Omarchy's fonts, which Ubuntu's archive does not carry |
+| `nvidia` | @VERSION_NVIDIA@ | `@DISTRO_ID@-nvidia` | This repository | - | The NVIDIA install path: `@DISTRO_ID@-drivers-install` picks the newest open driver branch with Canonical's signed prebuilt modules; an initramfs hook |
+| `hybrid-backlight` | @VERSION_HYBRID_BACKLIGHT@ | `@DISTRO_ID@-hybrid-backlight` | This repository | - | Hides the NVIDIA GPU's phantom backlight on hybrid-graphics laptops |
+| `hw-legion` | @VERSION_HW_LEGION@ | `@DISTRO_ID@-hw-legion` | This repository | - | The Lenovo Legion Pro 7 hardware set, installed on that model only |
+| `gdk-pixbuf-compat` | @VERSION_GDK_PIXBUF_COMPAT@ | `@DISTRO_ID@-gdk-pixbuf-compat` | This repository | - | An empty package that provides `libgdk-pixbuf2.0-0`, the GdkPixbuf library's old package name, which Mojang's `Minecraft.deb` depends on (docs/6, choice 76) |
+| `live` | @VERSION_LIVE@ | `@DISTRO_ID@-live` | This repository | - | The ISO's live session on casper, and the guest half of the ISO boot test |
+| `installer` | @VERSION_INSTALLER@ | `@DISTRO_ID@-installer` | This repository | - | Calamares's settings, module configuration and branding |
+| `calamares` | @VERSION_CALAMARES@ | `calamares`, `calamares-data`, `libcalamares3.3`, `libcalamaresui3.3`, `libcalamares-dev` | Ubuntu's source package `calamares 3.3.14-0ubuntu30` | `keep-python-results-alive`, `replace-read-selection-before-revert`, `revert-device-on-gui-thread` (written for @DISTRO_NAME@) | Two crashes in "Replace a partition" with encryption, and a garbled status message ("p<box>ckages") (docs/7) |
+| `plymouth` | @VERSION_PLYMOUTH@ | `plymouth`, `libplymouth5`, `plymouth-label` and the rest of Ubuntu's Plymouth packages | Ubuntu's source package `plymouth 24.004.60+git20250831.4a3c171d-0ubuntu10` | `script-check-console-viewer` (Plymouth's upstream commit 88c8dd8d) | The boot splash's script plugin crashed without a console viewer (docs/7) |
+| `quickshell` | @VERSION_QUICKSHELL@ | `quickshell` | Quickshell's v0.3.2 release tarball, with Debian's packaging | `session-lock-announce-unlock` (written for @DISTRO_NAME@) | Ubuntu's archive has no Quickshell, and the Omarchy shell runs on Quickshell; the patch makes the lock screen work more than once per login (docs/5) |
+| `nwg-displays` | @VERSION_NWG_DISPLAYS@ | `nwg-displays` | nwg-displays' v0.4.4 release tarball, with Debian's 0.3.28-1 packaging | - | The monitor layout tool; Ubuntu's archive has 0.3.28, older than 0.4.3, the first version that writes Hyprland's Lua configuration (docs/0) |
+| `hyprland-preview-share-picker` | @VERSION_HYPRLAND_PREVIEW_SHARE_PICKER@ | `hyprland-preview-share-picker` | The v0.2.1 release tarball of `WhySoBad/hyprland-preview-share-picker`, its `hyprland-protocols` submodule as a component tarball, Rust crates vendored at build time | `build-rs-no-git` (from Omarchy's own PKGBUILD) | Omarchy's screen-share picker, which Ubuntu's archive does not carry |
+| `asdcontrol` | @VERSION_ASDCONTROL@ | `asdcontrol` | The v0.6.0 release tarball from `omakasui/asdcontrol` | - | Apple Studio Display brightness; a sudoers rule lets the `sudo` group run `asdcontrol` |
+| `localsend` | @VERSION_LOCALSEND@ | `localsend` | LocalSend's prebuilt app and CLI from its v1.18.2 GitHub release | - | File sharing with nearby devices: the Share menu and Files' "Send via LocalSend"; `@DISTRO_ID@-desktop` depends on `localsend` (docs/6, choice 19) |
+| `ttfx` | @VERSION_TTFX@ | `ttfx` | The v0.5.0 release tarball from `omacom/ttfx`, Rust crates vendored at build time | - | Terminal text effects for Omarchy's screensaver |
+| `voxtype` | @VERSION_VOXTYPE@ | `voxtype` | Voxtype's release `.deb` (`peteonrails/voxtype`), without its ONNX GPU builds | - | Push-to-talk dictation that types into the focused window; installed by Install > AI > Dictation, and no package depends on `voxtype` |
+| `dell-xps-touchpad-haptics` | @VERSION_DELL_XPS_TOUCHPAD_HAPTICS@ | `dell-xps-touchpad-haptics` | Omarchy's five files from `omacom/omarchy-pkgs`, downloaded from the file list in `sources.list` | - | Omarchy's haptic touchpad driver for the Dell XPS 14 and 16; installed on those models only (docs/6, choice 66) |
+| `asusctl` | @VERSION_ASUSCTL@ | `asusctl` | The 6.5.0 release tarball from `OpenGamingCollective/asusctl`, Rust crates vendored at build time | - | ASUS ROG laptop control (`asusd`, `asusctl`, `asus-shutdown`, `asusd-user`); installed on those models only (docs/6, choice 68) |
+| `supergfxctl` | @VERSION_SUPERGFXCTL@ | `supergfxctl` | The 5.2.7 tag tarball from `gitlab.com/asus-linux/supergfxctl`, Rust crates vendored at build time | - | Graphics mode switching on hybrid laptops, used by Hardware > Hybrid GPU (docs/6, choice 68) |
+| `qmk-hid` | @VERSION_QMK_HID@ | `qmk-hid` | The v0.1.13 release tarball of `FrameworkComputer/qmk_hid`, Rust crates vendored at build time | - | QMK keyboard control, for the Framework Laptop 16's lighting; installed on that model only (docs/6, choice 67) |
+
+## About this document
+
 @DISTRO_NAME@ is a Linux distribution built from the Ubuntu [archive](#archive): Ubuntu @BASE_VERSION@ (`@BASE_SERIES@`) underneath, apt for packages, and on top a Wayland desktop made of Hyprland, Quickshell and the Omarchy shell, themes and fonts, ported from Arch to apt. @DISTRO_NAME@ works with Secure Boot on or off, with no key enrollment either way and never a requirement that Secure Boot be on, and @DISTRO_NAME@ installs onto an encrypted disk. The first machine @DISTRO_NAME@ is built for is a Lenovo Legion Pro 7 laptop with an Intel iGPU and an NVIDIA dGPU, so hybrid graphics and sleep are first-class concerns. @DISTRO_NAME@ is meant to run on other PCs too: Omarchy's fixes for other machines are applied at install where their device check matches ([docs/1, section 3](1%20-%20policy.md#3-omarchy-version-to-follow)).
 
 Nothing is ever installed and then stripped out: the root filesystem is assembled from Ubuntu's archive one package at a time, and the parts Ubuntu doesn't have come from a small apt repository of our own. The Omarchy port is built up the same way: it starts from Ubuntu's configuration plus the parts of Omarchy the desktop needs to run, and each further Omarchy feature is added by a recorded choice ([docs/6](6%20-%20omarchy-port.md#choices)). This document, the developer README (`docs/README.md`; the repository's top-level `README.md` is the introduction for people deciding whether to install @DISTRO_NAME@), explains the tools that produce that repository and how those tools fit together. The reasoning behind each decision lives in the numbered documents next to this one in `docs/`.
 
 ## Contents
 
+- [At a glance](#at-a-glance)
+- [About this document](#about-this-document)
 - [Terms](#terms)
   - [Package](#package)
   - [Source package](#source-package)
@@ -19,8 +68,7 @@ Nothing is ever installed and then stripped out: the root filesystem is assemble
   - [Chroot](#chroot)
 - [Status](#status)
 - [The installed system in detail](#the-installed-system-in-detail)
-  - [Built on Ubuntu](#built-on-ubuntu)
-  - [Installing software: Recommends are on, with two exceptions](#installing-software-recommends-are-on-with-two-exceptions)
+  - [Installing software: Recommends are on, with exceptions](#installing-software-recommends-are-on-with-exceptions)
   - [Secure Boot](#secure-boot)
   - [NVIDIA and AMD GPUs](#nvidia-and-amd-gpus)
   - [Apple Studio Display](#apple-studio-display)
@@ -130,11 +178,11 @@ Two markers every package in an archive carries. `Essential: yes` marks the hand
 
 ### Recommends
 
-A package declares its relationships at three strengths. `Depends` must be installed. `Recommends` is for packages that would be found together with the declaring package in all but unusual installations, and apt installs Recommends by default (`APT::Install-Recommends "true"` is apt's stock setting). `Suggests` is never installed automatically. Recommends chains are how a small tool drags in half a desktop, which is why this project turns Recommends off wherever it assembles a system: in the build chroot now, and in the distro image in step 3. The reasons are given in the mmdebstrap section.
+A package declares its relationships at three strengths. `Depends` must be installed. `Recommends` is for packages that would be found together with the declaring package in all but unusual installations, and apt installs Recommends by default (`APT::Install-Recommends "true"` is apt's stock setting). `Suggests` is never installed automatically. Recommends chains are how a small tool drags in half a desktop. In this project the build chroot has Recommends off (the reason is in the mmdebstrap section below); the distro image and an installed system have Recommends on, as a stock Ubuntu does, with the exceptions in [Installing software](#installing-software-recommends-are-on-with-exceptions).
 
 ### Metapackage
 
-A package that contains no files and exists only for its dependency list, so that installing one name pulls in a whole set of packages. `build-essential` and `linux-generic` are metapackages, and so is the planned `@DISTRO_ID@-desktop`.
+A package that contains no files and exists only for its dependency list, so that installing one name pulls in a whole set of packages. `build-essential` and `linux-generic` are metapackages, and so are `@DISTRO_ID@-base`, `@DISTRO_ID@-session` and `@DISTRO_ID@-desktop`.
 
 ### Build dependencies
 
@@ -178,18 +226,18 @@ Next: the roadmap's eight steps are done. Pending, as of 2026-10-15 (details in 
 
 What an installed @DISTRO_NAME@ system does differently from a stock Ubuntu, in more detail than the [top-level README](../README.md), which is the introduction for people deciding whether to install @DISTRO_NAME@. Each part names the files and commands involved.
 
-### Built on Ubuntu
+### Installing software: Recommends are on, with exceptions
 
-@DISTRO_NAME@ is Ubuntu @BASE_VERSION@ (`@BASE_SERIES@`), installed from Ubuntu's own package archive: the same kernel, systemd, Mesa, drivers and security updates, managed with apt. Both app stores are ready out of the box: Ubuntu's snapd (the Snap Store) and Flatpak with Flathub. Nothing is installed and then stripped out; the system is assembled from Ubuntu's archive one package at a time, the desktop is built up the same way (Ubuntu's own configuration plus the parts of Omarchy the desktop needs, with each further Omarchy feature added for a recorded reason), and the few parts Ubuntu lacks (the desktop, its fonts, a handful of tools) come from @DISTRO_NAME@'s own apt repository at <@APT_URL@>. The installer is a live USB image running Calamares, a graphical installer from Ubuntu's archive (rebuilt with two fixes), and it installs onto an encrypted disk by default.
-
-### Installing software: Recommends are on, with two exceptions
-
-apt on @DISTRO_NAME@ installs a package's required dependencies (`Depends`) and the packages it recommends ([Recommends](#recommends)), as on a stock Ubuntu, with two exceptions. `@DISTRO_ID@-base` ships apt pins in `/etc/apt/preferences.d/@DISTRO_ID@-blocked-recommends` (an apt preferences file: one stanza per package, `Pin-Priority: -1` meaning "never install") that keep out:
+apt on @DISTRO_NAME@ installs a package's required dependencies (`Depends`) and the packages it recommends ([Recommends](#recommends)), as on a stock Ubuntu, with the exceptions below. Two packages are never installed: `@DISTRO_ID@-base` ships apt pins in `/etc/apt/preferences.d/@DISTRO_ID@-blocked-recommends` (an apt preferences file: one stanza per package, `Pin-Priority: -1` meaning "never install") that keep out:
 
 - `xdg-desktop-portal-gnome`: Files recommends it, and it recommends `gnome-shell`, which would bring GNOME Shell, `gdm3` (a second login screen next to SDDM), the Ubuntu GNOME session and IBus.
 - `sudo-rs`: `sudo` recommends it, and it would take over the `sudo` command from classic sudo, whose sudoers rules @DISTRO_NAME@'s menus use.
 
-To allow one of them, delete its stanza from that file (dpkg asks about the edit when a new `@DISTRO_ID@-base` changes the file). To install a single package without its Recommends:
+To allow one of them, delete its stanza from that file (dpkg asks about the edit when a new `@DISTRO_ID@-base` changes the file).
+
+The desktop's own package command installs without Recommends: `@DISTRO_ID@-pkg-add` runs `apt-get install --no-install-recommends`, because its callers name every package they need. The menu's Install entries call `@DISTRO_ID@-pkg-add` (29 of the port's commands do), and so do plugins that use Omarchy's `omarchy-pkg-add`; `@DISTRO_ID@-reinstall-pkgs` does the same. Install > Package (`@DISTRO_ID@-pkg-install`, a picker over the whole archive) and the entries that install a vendor's downloaded `.deb` (Chrome, Minecraft, Docker Desktop) keep apt's default and install Recommends.
+
+To install a single package without its Recommends:
 
 ```sh
 sudo apt install --no-install-recommends <package>
@@ -223,7 +271,7 @@ The display's brightness has no standard control on Linux: the Studio Display ta
 
 ### The Omarchy desktop
 
-[Omarchy](https://github.com/omacom/omarchy) is a Linux distribution: Arch Linux's base (kernel, pacman, boot loader, snapshots) with Omarchy's own layer on top, shipped as two Arch packages (the commands, the Quickshell shell, the themes, and the settings, units and starter files a new user gets) plus a package list and setup scripts that tune the Arch base. @DISTRO_NAME@ takes only that layer and puts Ubuntu underneath instead of Arch. It carries a fork of Omarchy @OMARCHY_TAG@ (<@OMARCHY_FORK@>, branch `@OMARCHY_PORT_REF@`) in which pacman and the AUR are replaced by apt (and, for the few applications Ubuntu does not ship as regular packages, the Snap Store or Flathub), the scripts that configured Arch's base are dropped in favor of Ubuntu's own configuration, and the package list is translated to Ubuntu's names. The build turns that fork into Debian packages, renamed at build time: `@DISTRO_ID@-desktop` (the metapackage that pulls in Hyprland, the applications and the rest), `@DISTRO_ID@-shell`, `@DISTRO_ID@-themes`, `@DISTRO_ID@-tools` and `@DISTRO_ID@-config`. Hyprland comes from Ubuntu's archive; Quickshell, which Ubuntu does not carry, is built for @DISTRO_NAME@'s repository. Updates arrive through apt like the rest of the system.
+[Omarchy](https://github.com/omacom/omarchy) is a Linux distribution: Arch Linux's base (kernel, pacman, boot loader, snapshots) with Omarchy's own layer on top, shipped as two Arch packages (the commands, the Quickshell shell, the themes, and the settings, units and starter files a new user gets) plus a package list and setup scripts that tune the Arch base. @DISTRO_NAME@ takes only that layer and puts Ubuntu underneath instead of Arch. In @DISTRO_NAME@'s fork of Omarchy (the "Omarchy port" row of [At a glance](#at-a-glance), which names the fork, branch and commit), pacman and the AUR are replaced by apt (and, for the few applications Ubuntu does not ship as regular packages, the Snap Store or Flathub), the scripts that configured Arch's base are dropped in favor of Ubuntu's own configuration, and the package list is translated to Ubuntu's names. The build turns the fork into the five packages of the `desktop` row, and updates arrive through apt like the rest of the system.
 
 ### Plugins and themes written for Omarchy
 
@@ -287,31 +335,8 @@ scripts/
   iso-boot-test.sh   boots the test ISO in QEMU under OVMF, Secure Boot on or off, and checks the live session and the installer
   factory-reset-test.sh  installs the test ISO on an encrypted btrfs disk in QEMU, factory-resets it, and checks the new owner's machine
   suspend-baseline.sh  one measured suspend/resume cycle, used for the baseline
-packages/
-  archive-keyring/   @DISTRO_ID@-archive-keyring and @DISTRO_ID@-apt-source
-  hybrid-backlight/  @DISTRO_ID@-hybrid-backlight (phantom NVIDIA backlight hide)
-  base/              @DISTRO_ID@-base, the base system metapackage (kernel, boot chain, init, network, sound)
-  session/           @DISTRO_ID@-session, the graphics and session metapackage (Mesa, Hyprland, Xwayland, uwsm, SDDM, portals, GNOME Keyring, Quickshell), the backlight udev rule and the GPU environment generator
-  quickshell/        quickshell 0.3.2 backported from Debian's packaging (debian/ plus an "upstream" file naming the tarball; step 5)
-  nvidia/            @DISTRO_ID@-nvidia, the NVIDIA install path (drivers-install command: newest open branch with prebuilt modules; initramfs hook)
-  desktop/           @DISTRO_ID@-desktop, -tools, -shell, -themes, -config: the Omarchy port, built from the fork's branch ("upstream" names the git ref; step 6)
-  fonts/             @DISTRO_ID@-fonts: JetBrains Mono Nerd Font and iA Writer, fetched from a file list
-  asdcontrol/        asdcontrol (Apple Studio Display brightness), from its release tarball
-  localsend/         localsend 1.18.2 (file sharing, Omarchy's Share menu), LocalSend's prebuilt app and CLI from its GitHub release; @DISTRO_ID@-desktop depends on it
-  ttfx/              ttfx 0.5.0 (terminal text effects, the screensaver), Rust, with its crates vendored at build time; @DISTRO_ID@-desktop depends on it
-  voxtype/           voxtype 1.1.0 (dictation, Install > AI > Dictation), Voxtype's release .deb without its ONNX GPU builds; installed from the menu, nothing depends on it
-  hyprland-preview-share-picker/  the screen-share picker, Rust, with its crates vendored at build time
-  nwg-displays/      nwg-displays 0.4.4 on Debian's packaging (monitor layout GUI)
-  hw-legion/         @DISTRO_ID@-hw-legion, the Lenovo Legion Pro 7 hardware set (its /etc/@DISTRO_ID@/gpu names the Intel GPU for Hyprland)
-  dell-xps-touchpad-haptics/  dell-xps-touchpad-haptics 1.0.0 (Omarchy's haptic touchpad driver for Dell XPS 14 and 16), from a file list; installed on a match
-  asusctl/          asusctl 6.5.0 (ASUS ROG laptop control), Rust, crates vendored; installed on a match
-  supergfxctl/      supergfxctl 5.2.7 (hybrid GPU modes, Hardware > Hybrid GPU on ROG laptops), Rust, crates vendored
-  qmk-hid/          qmk_hid 0.1.13 (Framework Laptop 16 keyboard lighting), Rust, crates vendored; installed on a match
-  gdk-pixbuf-compat/  @DISTRO_ID@-gdk-pixbuf-compat, an empty package that provides libgdk-pixbuf2.0-0 for Mojang's Minecraft.deb
-  live/              @DISTRO_ID@-live: the ISO's live session on casper (autologin fix-up, the ISO boot test's guest half)
-  installer/         @DISTRO_ID@-installer: Calamares settings, module configuration and branding (step 7)
-  calamares/         calamares 3.3.14, the installer framework, rebuilt from Ubuntu's source package with two patches for the partition page's crashes ("upstream" names the .dsc; step 7)
-  plymouth/          plymouth 24.004.60, the boot splash, rebuilt from Ubuntu's source package with one upstream patch so its script plugin survives a missing console viewer ("upstream" names the .dsc; step 7)
+packages/<dir>/       one source package per directory: debian/, and an "upstream" file naming what a
+                     third-party package is built from; each one is a row of "At a glance"
 .github/workflows/build.yml   CI: the same make targets on an Ubuntu runner
 .github/workflows/upstream-check.yml   CI, weekly: make upstream-check
 docs/                the developer README (this file), plan, policy, build infrastructure, root filesystem, session layer, Hyprland and Quickshell, the Omarchy port, image and installer, update path, suspend baseline
@@ -338,7 +363,7 @@ make check-render      # what CI runs: render, then fail if anything changed
 
 ### `mmdebstrap` (`make chroot`)
 
-mmdebstrap builds a Debian or Ubuntu root filesystem straight from an archive, without root privileges, into a directory or a tarball. Give it a [suite](#suite-and-pocket) name, an output path (an empty directory to fill, or a `.tar` file to write; mmdebstrap's manual calls this the target) and one or more apt sources entries, and mmdebstrap downloads the chosen package set, unpacks and configures those packages, and writes the resulting root filesystem to that path. This project uses mmdebstrap twice. Today, `make chroot` uses it to make the clean build environment, saved as `~/.cache/sbuild/@BASE_SERIES@-amd64.tar` (about 430 MB, 118 packages). Later, in roadmap step 3, the same tool builds the distro's own root filesystem. The command in `scripts/chroot-create.sh` is, in words: the `buildd` variant of `@BASE_SERIES@`, from the `main` and `universe` [components](#component), with the `-updates` and `-security` [pockets](#suite-and-pocket), [Recommends](#recommends) off. The variants are explained below; the reasons for the other three options follow here. `main` and `universe` are where everything we build against lives, while the distro image additionally enables `restricted` and `multiverse`, as [docs/0 - plan.md](0%20-%20plan.md) explains. All three pockets are enabled because a [chroot](#chroot) built from the release pocket alone would build against package versions that users no longer run. Recommends are off so that a build only sees what its package declares: if a build quietly needed something a Recommends line happened to pull in, the build would pass in the chroot and fail on any system where that package is absent. The distro image uses the same setting, and in the image that setting is what keeps GNOME and KDE pieces from arriving through the Recommends of packages like `nautilus` or `sddm`.
+mmdebstrap builds a Debian or Ubuntu root filesystem straight from an archive, without root privileges, into a directory or a tarball. Give it a [suite](#suite-and-pocket) name, an output path (an empty directory to fill, or a `.tar` file to write; mmdebstrap's manual calls this the target) and one or more apt sources entries, and mmdebstrap downloads the chosen package set, unpacks and configures those packages, and writes the resulting root filesystem to that path. This project uses mmdebstrap twice. Today, `make chroot` uses it to make the clean build environment, saved as `~/.cache/sbuild/@BASE_SERIES@-amd64.tar` (about 430 MB, 118 packages). Later, in roadmap step 3, the same tool builds the distro's own root filesystem. The command in `scripts/chroot-create.sh` is, in words: the `buildd` variant of `@BASE_SERIES@`, from the `main` and `universe` [components](#component), with the `-updates` and `-security` [pockets](#suite-and-pocket), [Recommends](#recommends) off. The variants are explained below; the reasons for the other three options follow here. `main` and `universe` are where everything we build against lives, while the distro image additionally enables `restricted` and `multiverse`, as [docs/0 - plan.md](0%20-%20plan.md) explains. All three pockets are enabled because a [chroot](#chroot) built from the release pocket alone would build against package versions that users no longer run. Recommends are off so that a build only sees what its package declares: if a build quietly needed something a Recommends line happened to pull in, the build would pass in the chroot and fail on any system where that package is absent. The distro image does not share this setting: since 2026-10-14 the image installs Recommends, as a stock Ubuntu does, and keeps two packages out with apt pins ([Installing software](#installing-software-recommends-are-on-with-exceptions); [docs/3](3%20-%20rootfs.md), choice 4).
 
 ```
 make chroot                          # creates the chroot tarball, or keeps the existing one if under a week old
