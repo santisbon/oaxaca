@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.4+git20261019.106.fa8d462a-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.4+git20261019.107.5b441611-0oaxaca1) stonking; urgency=medium
 
   * Installing software from the menu works on a system that has no
     package lists yet: oaxaca-pkg-add, which the Install entries use, runs
