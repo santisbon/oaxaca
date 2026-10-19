@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.4+git20261019.107.5b441611-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.4+git20261019.108.aa6bd56b-0oaxaca1) stonking; urgency=medium
 
   * The screensaver fills the screen and takes the keyboard when it starts
     over an open bar panel or the menu: the launcher closes them first,
