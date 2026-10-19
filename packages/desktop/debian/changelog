@@ -1,5 +1,13 @@
 oaxaca-desktop (4.0.4+git20261019.103.0362ae1d-0oaxaca1) stonking; urgency=medium
 
+  * Setup > Reset Computer is in the menu again, on installs with the
+    default btrfs file system: the factory reset came back without its menu
+    entry, so it could be started only from a terminal (docs/6, choice 87).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sun, 18 Oct 2026 23:25:00 -0500
+
+oaxaca-desktop (4.0.4+git20261019.103.0362ae1d-0oaxaca1) stonking; urgency=medium
+
   * Commands run over SSH (ssh host cmd) find the tools installed through
     mise, as on Omarchy: PAM's environment file appends mise's shims and
     ~/.local/bin to the PATH every login session gets, after Ubuntu's own
