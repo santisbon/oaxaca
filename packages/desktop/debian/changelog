@@ -1,5 +1,15 @@
 oaxaca-desktop (4.0.4+git20261018.101.ad5ded1c-0oaxaca1) stonking; urgency=medium
 
+  * Commands run over SSH (ssh host cmd) find the tools installed through
+    mise, as on Omarchy: PAM's environment file appends mise's shims and
+    ~/.local/bin to the PATH every login session gets, after Ubuntu's own
+    PATH. New installs get the line at install, existing ones once on
+    upgrade (docs/6, choice 91).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sun, 18 Oct 2026 22:15:00 -0500
+
+oaxaca-desktop (4.0.4+git20261018.101.ad5ded1c-0oaxaca1) stonking; urgency=medium
+
   * The Dictation installer's "Voxtype Dictation Ready" toast has its title
     again: the port had dropped the toast's glyph, so the title took the
     glyph's place and only the keys' line showed. The installer also names

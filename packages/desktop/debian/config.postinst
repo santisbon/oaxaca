@@ -60,6 +60,22 @@ case "$1" in
       mkdir -p /var/lib/oaxaca
       touch "$marker"
     fi
+    # The PATH for SSH commands (docs/6, choice 91): install/config/ssh-command-path.sh appends
+    # mise's shims and ~/.local/bin to PAM's PATH in /etc/security/pam_env.conf at install; systems
+    # installed before that script came back have no such line, and migrations run as the user,
+    # without root. On an upgrade, a system without the marker the script writes gets the same line
+    # once, unless pam_env.conf already has a PATH line of its own (the administrator's). The
+    # marker then keeps a removed line removed. pam_env.conf is libpam-modules' conffile;
+    # oaxaca-update upgrades with --force-confold, which keeps the edited file.
+    marker=/var/lib/oaxaca/ssh-command-path
+    conf=/etc/security/pam_env.conf
+    if [ -n "$2" ] && [ ! -e "$marker" ] && [ -f "$conf" ]; then
+      if ! grep -qE '^PATH[[:space:]]' "$conf"; then
+        printf '\n# Oaxaca: give SSH commands and other non-shell logins the user-level tool paths\nPATH DEFAULT=${PATH}:@{HOME}/.local/share/mise/shims:@{HOME}/.local/bin\n' >> "$conf"
+      fi
+      mkdir -p /var/lib/oaxaca
+      touch "$marker"
+    fi
     update-alternatives --install /usr/share/plymouth/themes/default.plymouth default.plymouth \
       /usr/share/plymouth/themes/oaxaca/oaxaca.plymouth 150
     if command -v update-initramfs >/dev/null && [ -d /boot ] && ls /boot/vmlinuz-* >/dev/null 2>&1; then

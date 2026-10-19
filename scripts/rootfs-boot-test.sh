@@ -353,6 +353,11 @@ echo "oomd scope: user@=\$(systemctl show "user@\$(id -u tester).service" -p Man
 echo "ssh keepalive: \$(as_user ssh -G example.invalid 2>/dev/null | grep -E '^(serveraliveinterval|serveralivecountmax|connecttimeout) ' | sort | paste -sd' ')"
 echo "inotify watches: \$(sysctl -n fs.inotify.max_user_watches)"
 echo "tcp mtu probing: \$(sysctl -n net.ipv4.tcp_mtu_probing)"
+# The PATH for SSH commands (step 6, choice 91): apply-system's ssh-command-path.sh appends mise's
+# shims and ~/.local/bin to PAM's PATH. su runs Ubuntu's two pam_env passes, as sshd does, so its
+# session's PATH is the one an "ssh host cmd" session gets: Ubuntu's PATH, then the two directories.
+echo "pam ssh path line: \$(grep -cxF 'PATH DEFAULT=\${PATH}:@{HOME}/.local/share/mise/shims:@{HOME}/.local/bin' /etc/security/pam_env.conf)"
+echo "pam session path: \$(su tester -s /bin/sh -c 'echo \$PATH')"
 echo "font switch: \$(as_user sh -c 'mkdir -p /home/tester/.config/fontconfig && printf "%s\n" "<?xml version=\"1.0\"?><fontconfig><match target=\"pattern\"><test name=\"family\" qual=\"any\"><string>monospace</string></test><edit name=\"family\" mode=\"prepend_first\" binding=\"strong\"><string>Noto Mono</string></edit></match></fontconfig>" > /home/tester/.config/fontconfig/fonts.conf && fc-match monospace -f "%{family[0]}"; rm -f /home/tester/.config/fontconfig/fonts.conf')"
 echo "font list icon fonts: \$($id-font-list | grep -c -i -E 'material icons|font awesome')"
 echo "mise source: \$(apt-cache policy mise 2>/dev/null | awk '/\*\*\*/{getline; print \$2; exit}')"
@@ -724,6 +729,8 @@ if [[ $profile == desktop ]]; then
   check "^ssh keepalive: connecttimeout 10 serveralivecountmax 3 serveraliveinterval 15$"
   check "^inotify watches: 524288$"
   check "^tcp mtu probing: 1$"
+  check "^pam ssh path line: 1$"
+  check "^pam session path: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/tester/.local/share/mise/shims:/home/tester/.local/bin$"
   check "^font switch: Noto Mono$"
   check "^font list icon fonts: 0$"
   check "^mise source: https://mise.jdx.dev/deb$"
