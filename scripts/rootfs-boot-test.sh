@@ -406,6 +406,12 @@ echo "restored tools missing: [\$(for c in btop eza inxi lazygit starship zoxide
 # Both stores preconfigured (step 6, choice 17): snapd's socket enabled by its package, Flathub added
 # system-wide at install from the repository file Ubuntu's flatpak package ships.
 echo "stores: snapd=\$(systemctl is-enabled snapd.socket 2>/dev/null) flathub=\$(flatpak remotes --system --columns=name 2>/dev/null | grep -cx flathub)"
+# snapd's start-up check image (a loop device backed by /tmp/syscheck-squashfs-*) is hidden from
+# udisks2 by the config package's udev rule, so udiskie does not ask for an administrator's
+# password to mount it whenever snapd starts. A file of the same name, attached the same way.
+img=\$(mktemp /tmp/syscheck-squashfs-XXXXXX); truncate -s 4K "\$img"; loopdev=\$(losetup --find --show "\$img"); udevadm settle; sleep 1
+echo "snapd check image: udev=\$(udevadm info -q property "\$loopdev" | grep -cx 'UDISKS_IGNORE=1') udisks=\$(busctl get-property org.freedesktop.UDisks2 /org/freedesktop/UDisks2/block_devices/\${loopdev#/dev/} org.freedesktop.UDisks2.Block HintIgnore 2>&1)"
+losetup -d "\$loopdev"; rm -f "\$img"
 # dpkg-query -W prints a line for a package it merely knows of, so the status field is tested exactly.
 echo "apps split: removed=\$(dpkg-query -W -f='\${db:Status-Status}\n' libreoffice kdenlive obs-studio xournalpp docker.io 2>/dev/null | grep -cx installed) launchers=\$(ls /usr/share/$id/applications | wc -l)"
 echo "launcher hides nvidia-settings: \$(grep -cx nvidia-settings /usr/share/$id/default/$id/launcher.hides)"
@@ -495,17 +501,14 @@ while IFS="\$tab" read -r keys cmd; do
     esac
     echo "binding run: \$keys: exit=\$rc opened=[\$opened] closed=\$closed\$note"
     # A polkit password dialog (the shell's layer <id>-polkit) is no binding's doing: something else
-    # in the session asked for an administrator action while the binding ran (2026-10-19, a release
-    # run: the dialog stayed open and every later binding opened nothing; again on 2026-10-19 at
-    # a different binding). The logging rule in /etc/polkit-1/rules.d/00-boot-test-log.rules
-    # names each check's action and requesting process; each requester still running is printed
-    # with its parent, since the requester can be a short-lived client such as a snap command.
+    # in the session asked for an administrator action while the binding ran (2026-10-19, three
+    # release runs: udiskie automounting snapd's start-up check image, now hidden from udisks2 by
+    # the config package's udev rule). polkitd logs the action and the requester's bus name only
+    # when the request ends, so the dialog is cancelled by stopping its agent helper: that
+    # prints polkitd's line and lets the bindings after this one run.
     case " \$opened " in *" L:$id-polkit "*)
-        checks=\$(journalctl -b -u polkit --no-pager -o cat | grep 'boot-test check:' | tail -n 6)
-        echo "\$checks" | cut -c1-200 | sed "s/^/polkit check during \$keys: /"
-        for p in \$(echo "\$checks" | sed -n 's/.* pid=\([0-9]*\) .*/\1/p' | sort -u); do
-            echo "polkit requester during \$keys: pid \$p: [\$(ps -o user=,pid=,args= -p \$p | cut -c1-160)] parent: [\$(ps -o user=,pid=,args= -p \$(ps -o ppid= -p \$p 2>/dev/null) 2>/dev/null | cut -c1-160)]"
-        done ;;
+        systemctl stop 'polkit-agent-helper@*.service' 2>/dev/null; sleep 1
+        journalctl -b -u polkit --no-pager -o cat | grep 'to gain authorization for action' | tail -n 3 | cut -c1-220 | sed "s/^/polkit request during \$keys: /" ;;
     esac
 done < /tmp/bindings-run.tsv
 echo "shell ping after bindings: \$(run_user $id-shell shell ping 2>&1 | paste -sd'|')"
@@ -578,15 +581,6 @@ if [ "$profile" = session ] || [ "$profile" = desktop ]; then
     # (passwordless theme and DNS actions from the menu) are written for.
     sed -i 's/^sudo:x:27:$/sudo:x:27:tester/' "$root/etc/group"
     sed -i 's/^sudo:\*::$/sudo:*::tester/' "$root/etc/gshadow"
-    # polkitd logs no action and no requester for a check. This rule, read first (00-) and
-    # deciding nothing, logs both to polkitd's journal for every check, so a password dialog
-    # during the binding checks names its cause (the diagnostic there prints these lines).
-    mkdir -p "$root/etc/polkit-1/rules.d"
-    cat > "$root/etc/polkit-1/rules.d/00-boot-test-log.rules" <<'EOF'
-polkit.addRule(function(action, subject) {
-    polkit.log("boot-test check: " + action.id + " pid=" + subject.pid + " user=" + subject.user + " active=" + subject.active);
-});
-EOF
     mkdir -p "$root/home/tester"
     chown 1001:1001 "$root/home/tester"
     chmod 0750 "$root/home/tester"
@@ -784,6 +778,7 @@ if [[ $profile == desktop ]]; then
   check "^launcher hides nvidia-settings: 1$"
   check "^restored tools missing: \[\]$"
   check "^stores: snapd=enabled flathub=1$"
+  check "^snapd check image: udev=1 udisks=b true$"
   check "^theme after switch: nord$"
   check "^shell ping after switch: ok$"
   check "^shell layers after switch: \\[.*$DISTRO_ID-background.*$DISTRO_ID-bar"

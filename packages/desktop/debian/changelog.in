@@ -6,8 +6,14 @@
     installed by oaxaca-installer 0.1.11 had none until its first update,
     and Install > AI > Dictation failed with "Unable to locate package
     voxtype" (docs/7, choice 55).
+  * No administrator password dialog when snapd starts: a udev rule in
+    oaxaca-config hides snapd's start-up check image, a loop device backed
+    by /tmp/syscheck-squashfs-*, from udisks2. The session's udiskie
+    --automount tried to mount the image, and udisks2 asked for
+    org.freedesktop.udisks2.filesystem-mount-system. Opening a menu starts
+    snapd when snapd is idle, so the dialog could come up on any menu.
 
- -- @MAINTAINER@  Mon, 19 Oct 2026 02:15:00 -0500
+ -- @MAINTAINER@  Mon, 19 Oct 2026 10:45:00 -0500
 
 @DISTRO_ID@-desktop (4.0.4+git20261019.105.30b5ac12-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 

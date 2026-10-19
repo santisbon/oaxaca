@@ -113,6 +113,10 @@ install -D -m 0644 "$R/default/pam-configs/$id-fprintd" "$config/usr/share/pam-c
 # The polkit rule that lets Setup > DNS set NetworkManager's global DNS without a password, for
 # the users network-manager's own rule trusts with connections (docs/6, choice 54).
 install -D -m 0644 "$R/default/polkit-1/rules.d/$id-global-dns.rules" "$config/usr/share/polkit-1/rules.d/50-$id-global-dns.rules"
+# The udev rule that hides snapd's start-up check image from udisks2, so the session's udiskie
+# does not ask for an administrator's password to mount it whenever snapd starts. Numbered
+# before udisks2's own 80-udisks2.rules, which sets UDISKS_IGNORE for other devices.
+install -D -m 0644 "$R/default/udev/rules.d/$id-snapd-syscheck.rules" "$config/usr/lib/udev/rules.d/79-$id-snapd-syscheck.rules"
 install -m 0755 "$R/default/systemd/system-sleep/unmount-fuse" "$config/usr/lib/systemd/system-sleep/unmount-fuse"
 # systemd-oomd's scope (docs/6, choice 45): only the user's apps (app.slice) are kill candidates,
 # and the user manager, which Ubuntu's systemd-oomd marks, is set back to auto.
