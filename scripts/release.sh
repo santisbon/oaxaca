@@ -17,7 +17,13 @@
 # so anything uncommitted lands in the release commit); when the fork changed, give the desktop package a
 # new changelog entry; bump every other package that changed (docs/README.md, "Releasing").
 #
-# Usage: scripts/release.sh   (make release; make machine-setup first on a new workstation)
+# The release commit's message is computed, not typed: "Release: " and, comma-separated, the
+# desktop's version when the desktop is built and "<package directory> <version>" for each other
+# package built (release_message below). Step 8 opens git's editor with that message filled in;
+# --message prints it and stops, before step 1, with nothing pushed, written or built.
+#
+# Usage: scripts/release.sh             (make release; make machine-setup first on a new workstation)
+#        scripts/release.sh --message   (make release-message)
 # Env:   OMARCHY_FORK_DIR  the fork's checkout (default ~/Projects/omarchy)
 set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
@@ -27,18 +33,57 @@ source distro.conf
 fork=${OMARCHY_FORK_DIR:-$HOME/Projects/omarchy}
 changelog=packages/desktop/debian/changelog.in
 
+# The published versions, "<source> <version>" per line, from the repository's source index.
+published=$(curl -fsSL "$APT_URL/dists/$BASE_SERIES/$APT_COMPONENT/source/Sources.gz" | gunzip | awk '/^Package:/ {p=$2} /^Version:/ {print p" "$2}')
+# The fork's HEAD as the desktop's version parts: commit date in UTC, commits since Omarchy's tag,
+# short hash.
+d=$(TZ=UTC git -C "$fork" log -1 --format=%cd --date=format-local:%Y%m%d)
+n=$(git -C "$fork" rev-list --count "$OMARCHY_TAG"..HEAD)
+c=$(git -C "$fork" rev-parse --short=8 HEAD)
+
+# The package directories whose version at the top of the rendered debian/changelog is not
+# published. Before step 2 the desktop's rendered changelog still names distro.conf's commit, so
+# with --message the desktop counts as changed when the fork has moved past that commit.
+unpublished() {
+  local dir top
+  for dir in packages/*/; do
+    top=$(sed -n '1s/^\([^ ]*\) (\([^)]*\)).*/\1 \2/p' "$dir/debian/changelog")
+    if [[ $dir == packages/desktop/ && $c != "$OMARCHY_PORT_COMMIT" ]] || ! grep -qxF "$top" <<<"$published"; then
+      echo "${dir%/}"
+    fi
+  done
+}
+# The release commit's message from the package directories given: the desktop as
+# "desktop <OMARCHY_PORT_VERSION>" (the version without its Debian revision), first; every other
+# package as "<directory name> <version at the top of its debian/changelog>".
+release_message() {
+  local dir parts=()
+  for dir in "$@"; do
+    [[ $dir == packages/desktop ]] && parts+=("desktop $OMARCHY_VERSION+git$d.$n.$c")
+  done
+  for dir in "$@"; do
+    [[ $dir == packages/desktop ]] && continue
+    parts+=("${dir#packages/} $(sed -n '1s/^[^ ]* (\([^)]*\)).*/\1/p' "$dir/debian/changelog")")
+  done
+  local IFS=,
+  printf 'Release: %s\n' "${parts[*]}" | sed 's/,/, /g'
+}
+
+if [[ ${1:-} == --message ]]; then
+  [[ -z $(git -C "$fork" status --porcelain) ]] || { echo "!! $fork has uncommitted changes: commit them first, since the commit's hash is part of the desktop's version" >&2; exit 1; }
+  mapfile -t todo < <(unpublished)
+  ((${#todo[@]})) || { echo "every package's version is published: nothing to release" >&2; exit 1; }
+  release_message "${todo[@]}"
+  exit 0
+fi
+
 # 1. Push the fork: the desktop build clones the fork's branch from GitHub, not the local checkout.
 [[ $(git -C "$fork" branch --show-current) == "$OMARCHY_PORT_REF" ]] || { echo "!! $fork is not on $OMARCHY_PORT_REF" >&2; exit 1; }
 [[ -z $(git -C "$fork" status --porcelain) ]] || { echo "!! $fork has uncommitted changes: commit them first" >&2; exit 1; }
 git -C "$fork" push
 
-# 2. Point distro.conf at the fork's HEAD (commit date in UTC, commits since Omarchy's tag, short
-#    hash: together the desktop's version) and render every template.
-d=$(TZ=UTC git -C "$fork" log -1 --format=%cd --date=format-local:%Y%m%d)
-n=$(git -C "$fork" rev-list --count "$OMARCHY_TAG"..HEAD)
-c=$(git -C "$fork" rev-parse --short=8 HEAD)
-# The published versions, "<source> <version>" per line, from the repository's source index.
-published=$(curl -fsSL "$APT_URL/dists/$BASE_SERIES/$APT_COMPONENT/source/Sources.gz" | gunzip | awk '/^Package:/ {p=$2} /^Version:/ {print p" "$2}')
+# 2. Point distro.conf at the fork's HEAD (d, n and c above: together the desktop's version) and
+#    render every template.
 if [[ $c != "$OMARCHY_PORT_COMMIT" ]]; then
   # The desktop changelog's top entry carries the version placeholder; the entry below it has to
   # name the published version, or that version's entry would take the new version. Compared
@@ -60,11 +105,7 @@ source distro.conf
 echo "== desktop version: $OMARCHY_PORT_VERSION"
 
 # 3. Build the packages whose version is not published yet.
-changed=()
-for dir in packages/*/; do
-  top=$(sed -n '1s/^\([^ ]*\) (\([^)]*\)).*/\1 \2/p' "$dir/debian/changelog")
-  grep -qxF "$top" <<<"$published" || changed+=("${dir%/}")
-done
+mapfile -t changed < <(unpublished)
 if ((${#changed[@]} == 0)); then
   echo "== every package's version is published: nothing to release"
   exit 0
@@ -94,10 +135,11 @@ make factory-reset-test
 make upgrade-test
 make session-upgrade-test
 
-# 8. Commit this repository (git opens the editor; an empty message stops the release) and push.
+# 8. Commit this repository (git opens the editor with the release message filled in; an empty
+#    message stops the release) and push.
 git status -sb
 git add -A
-git diff --cached --quiet || git commit
+git diff --cached --quiet || git commit -e -m "$(release_message "${changed[@]}")"
 git push
 
 # 9. Sign the repository locally and list what the upload would change; upload only on "y".

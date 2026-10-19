@@ -179,7 +179,7 @@ scripts/
   chroot-create.sh   builds the clean build chroot with mmdebstrap
   build.sh           builds packages with sbuild, checks them with lintian
   machine-setup.sh   installs the tools, checks the credentials, builds the chroot and seeds aptly, once per workstation (make machine-setup)
-  release.sh         builds what is unpublished, tests the image, commits and publishes (make release)
+  release.sh         builds what is unpublished, tests the image, commits and publishes (make release); prints the release commit's message (make release-message)
   repo-publish.sh    publishes build/ into the apt repository with aptly; refuses a published version with different content; --seed fills a new workstation's aptly database from the published repository
   version-check.sh   fails when a package directory changed since the last v* tag without a version bump (step 8)
   upgrade-test.sh    upgrades the published packages to build/ in a throwaway chroot and runs the migrations (step 8)
@@ -478,7 +478,7 @@ The first time on a new workstation: `make machine-setup` ([Releasing, Once per 
 
 Adding a package: create `packages/<dir>` with a `debian/` directory, using `.in` templates wherever the distro's name or identifier appears, and debhelper's unprefixed file names (`debian/install`, `debian/service`, `debian/udev`), then `make build PKG=packages/<dir>` until lintian is quiet. A third-party package we rebuild (`packages/quickshell`) holds only `debian/` and an `upstream` file with the tarball's URL and SHA-256; `scripts/build.sh` downloads the tarball into `build/` and unpacks it around `debian/` before `dpkg-source`. The `upstream` file can instead name a git tree (`GIT=`, `REF=`; `packages/desktop`) or a list of files (`FILES=`; `packages/fonts`), or an Ubuntu source package rebuilt with our additions (`DSC=`; `packages/plymouth`, whose `debian/` holds only its patch, its series line and a changelog entry, laid over Ubuntu's `debian/` at build time, so a one-line fix to an archive package needs no fork and no copy of its packaging), and add component tarballs and `CARGO_VENDOR=1` (`packages/hyprland-preview-share-picker`); the header of `scripts/build.sh` documents each. Directory names never carry the distro name. Versions follow the scheme in [docs/1 - policy.md](1%20-%20policy.md).
 
-Releasing: `make release` ([Releasing](#releasing)).
+Releasing: the hand edits in [Before each release](#before-each-release), `make release-message` to see what the release will build, then `make release` ([Releasing](#releasing)).
 
 ## Shipping a change: the apt repository or a new ISO
 
@@ -531,9 +531,18 @@ Step 4 matters most on a new machine. The new machine's aptly database starts em
 
 ### Before each release
 
-These steps change files by hand, so they come before `make release`:
+`make release` edits only the files it renders (step 2 of [Each release](#each-release)); everything else that a release needs changed is edited by hand first, in this order.
 
-1. **Commit the fork's changes** on the `oaxaca` branch in `~/Projects/omarchy` (`make release` pushes them).
+| Step | Files edited by hand | Where |
+|---|---|---|
+| 1 | the port's changes | the fork, `~/Projects/omarchy`, branch `oaxaca` |
+| 2 | `packages/desktop/debian/changelog.in`, when the fork changed | this repository |
+| 3 | `packages/<package>/debian/changelog.in` of every other package that changed, where `<package>` is the package's directory name (`installer`, `live`, ...) | this repository |
+| 4 | the `docs/` documents that record each change, such as `docs/6 - omarchy-port.md`; `docs/README.md.in` where it describes changed behavior | this repository |
+
+Files with a `.in` template are never edited directly: `make render` writes each one from its template, and both are committed (CI's `make check-render` fails when they differ).
+
+1. **Commit the fork's changes** on the `oaxaca` branch in `~/Projects/omarchy` (`make release` pushes them, and refuses a fork with uncommitted changes).
 2. **When the fork changed, give the desktop package a new changelog entry.** The top entry of `packages/desktop/debian/changelog.in` carries the placeholder `@OMARCHY_PORT_VERSION@`, which `make render` fills from `distro.conf`, so the top entry always names the version being built. Before `make release` moves `distro.conf` to the fork's new commit, write the published version into the top entry, while `distro.conf` still names that version:
 
    ```sh
@@ -551,8 +560,27 @@ These steps change files by hand, so they come before `make release`:
    ```
 
    `make release` stops with this instruction when the fork moved and the entry is missing.
-3. **Bump every other package that changed**: a new entry at the top of its `debian/changelog.in` with a higher version, following [docs/1, Version scheme](1%20-%20policy.md).
-4. **Document each change and commit this repository.** Each change gets its bullets in the changed packages' `debian/changelog.in` entries (steps 2 and 3) and, when it is a decision, a numbered choice in the `docs/` document of its roadmap step, with `docs/README.md` updated where it describes the changed behavior. Then commit and push this repository. `make release` commits with `git add -A` (its step 8), so anything left uncommitted goes into the release commit, mixed with the files the release itself rewrites.
+3. **Bump every other package that changed**: a new entry at the top of its `debian/changelog.in` with a higher version, following [docs/1, Version scheme](1%20-%20policy.md). A package changed without a new version is not built.
+4. **Document each change, render, and commit this repository.** Each change gets its bullets in the changed packages' `debian/changelog.in` entries (steps 2 and 3) and, when it is a decision, a numbered choice in the `docs/` document of its roadmap step, with `docs/README.md.in` updated where it describes the changed behavior. Then render and commit:
+
+   ```sh
+   cd ~/Projects/mydistro && make render && git add -A && git commit -m "<what changed>" && git push
+   ```
+
+   `<what changed>` is the commit's message, in your own words. `make release` commits with `git add -A` (its step 8), so anything left uncommitted goes into the release commit, mixed with the files the release itself rewrites.
+5. **Print the release commit's message**, to check what the release will build before starting it:
+
+   ```sh
+   cd ~/Projects/mydistro && make release-message
+   ```
+
+   `make release-message` runs `scripts/release.sh --message`, which computes the message the way `make release` does and changes nothing: it pushes nothing, writes no file and builds nothing. The output on 2026-10-18, before the release of the layered ISO and the SSH PATH:
+
+   ```
+   Release: desktop 4.0.4+git20261019.103.0362ae1d, installer 0.1.11, live 0.1.8
+   ```
+
+   The desktop's version is computed from the fork's HEAD: `4.0.4` is Omarchy's tag, then the commit's date in UTC, the number of the fork's commits since the tag, and the commit's short hash. Every other entry is a package directory whose version at the top of `debian/changelog` is not published yet, with that version. A package missing from the list will not be built, usually because step 3 was skipped. The command stops with "has uncommitted changes" when the fork has uncommitted changes, since a commit changes the hash, and prints "nothing to release" when every version is published.
 
 ### Each release
 
@@ -573,7 +601,7 @@ What `make release` does, stopping at the first failure:
 5. Builds the live root filesystem and boots it in QEMU (`make rootfs`, `make rootfs-test`: the base, session and desktop checks).
 6. Builds the ISO and boots it under OVMF with Secure Boot on, then off (`make iso`, `make iso-test`, `make iso-test SECURE_BOOT=off`), then installs it on an encrypted btrfs disk and factory-resets it (`make factory-reset-test`).
 7. Upgrades the published packages to `build/`'s in a throwaway chroot, migrations included (`make upgrade-test`), then boots the published desktop and updates it to `build/`'s inside its running session (`make session-upgrade-test`).
-8. Commits this repository with `git add -A` (git opens the editor; an empty message stops the release) and pushes. The release commit's message names the desktop's version and each other package step 3 built, short names without the `oaxaca-` prefix, in the form of the commit of 2026-10-18:
+8. Commits this repository with `git add -A` and pushes. git opens the editor with the release commit's message already filled in, the same message `make release-message` prints (step 5 of [Before each release](#before-each-release)): saving the file accepts the message, and emptying the file stops the release. The message names the desktop's version and each other package step 3 built, short names without the `oaxaca-` prefix, in the form of the commit of 2026-10-18:
 
    ```
    Release: desktop 4.0.4+git20261018.98.e07d28a1, installer 0.1.10, live 0.1.7, calamares 3.3.14-0ubuntu30oaxaca3
