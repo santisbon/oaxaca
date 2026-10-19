@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.4+git20261018.101.ad5ded1c-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.4+git20261019.103.0362ae1d-0oaxaca1) stonking; urgency=medium
 
   * Commands run over SSH (ssh host cmd) find the tools installed through
     mise, as on Omarchy: PAM's environment file appends mise's shims and
