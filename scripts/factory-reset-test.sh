@@ -7,6 +7,8 @@
 # the guest powers off or reboots (-no-reboot); the guest's serial console goes through a socket to
 # a Python watcher, which logs it, types the disk encryption passphrase when the initramfs asks
 # ("Please unlock disk"), and turns "=== KEYS <key>" lines into key presses through QEMU's monitor.
+# A line after which the boot cannot go on (casper finding no live medium, a kernel panic) makes
+# the watcher quit QEMU, and a boot that ends without its report ends the test (reached below).
 #   A. The test ISO (build/iso/<id>-<version>-amd64-test.iso). Its live session runs its own boot
 #      test, then tests/factory-reset/run.sh from a small disk labelled OAXTEST: a scripted install
 #      that follows the installer's settings and runs its scripts, ending with factory-snapshot,
@@ -65,6 +67,7 @@ run() {
   python3 -I - "$sock" "$monitor" "$serial" "$pass" <<'PY' &
 import os, socket, sys, time
 sock_path, mon_path, log_path, passphrase = sys.argv[1:5]
+FATAL = ("Unable to find a medium containing a live file system", "Kernel panic - not syncing")
 def connect(path):
     for _ in range(300):
         try:
@@ -102,6 +105,12 @@ while True:
         if i < 0:
             break
         line, buf = buf[:i].decode("utf-8", "replace").strip("\r"), buf[i + 1:]
+        # A boot that cannot go on waits at a prompt nobody answers (casper's netboot question
+        # after it finds no live medium, 2026-10-19: a guest starved at start-up sat there until
+        # the 3000 s timeout). Such a line ends the run at once through the monitor's quit.
+        if any(f in line for f in FATAL):
+            log.write(("\n=== FATAL %s\n" % line.strip()).encode())
+            mon.sendall(b"quit\n")
         # Anywhere in the line: systemd's status lines end in a carriage return only, so a
         # KEYS line can follow one.
         if "=== KEYS " in line:
@@ -126,19 +135,34 @@ PY
   wait "$watcher" 2>/dev/null || true
 }
 section() { sed -n "/=== $1 BEGIN/,/=== $1 END/p" "$work/$2.serial.log" 2>/dev/null | tr -d '\r' | grep -av $'\e\\[' || true; }
+# Each boot works on what the one before it left on the disk, so a boot that ended without its
+# report's END line (a fatal line, a timeout, QEMU stopped by hand) ends the test there: boot B
+# on a disk that boot A never installed only waits for its own timeout at the firmware's
+# network boot.
+reached() {
+  grep -aq "=== $2 END" "$work/$1.serial.log" 2>/dev/null && return 0
+  echo "!! boot $1 ended without its report (no '=== $2 END'); last lines of $work/$1.serial.log:" >&2
+  tr -d '\r' < "$work/$1.serial.log" 2>/dev/null | sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g' | grep -avE '^[A-Za-z0-9+/=]{60,}$' | tail -n 15 >&2
+  echo "!! factory reset test FAILED (logs in $work)"
+  exit 1
+}
 
 run A 3000 none -cdrom "$iso" -boot d -drive "file=$work/drive.img,format=raw,if=virtio"
 reportA=$(section DRIVE A)
 echo "$reportA"
+reached A DRIVE
 run B 1200 factorytest1
 reportB=$(section FACTORY-B B)
 echo "$reportB"
+reached B FACTORY-B
 run C 1500 none
 reportC=$(section FACTORY-C C)
 echo "$reportC"
+reached C FACTORY-C
 run D 900 ownerpass1
 reportD=$(section FACTORY-D D)
 echo "$reportD"
+reached D FACTORY-D
 
 fail=0
 check() { grep -q -- "$2" <<< "$1" || { echo "!! expected: $2" >&2; fail=1; }; }
