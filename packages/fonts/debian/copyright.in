@@ -33,7 +33,7 @@ Comment: The LICENSE.md file next to each family in iaolo/iA-Fonts (identical fo
  text editor's default typeface.
 
 Files: debian/*
-Copyright: 2026 @DISTRO_NAME@ contributors
+Copyright: 2026 santisbon <santisbon@users.noreply.github.com>
 License: MIT
 
 License: OFL-1.1-no-RFN

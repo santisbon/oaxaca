@@ -3,7 +3,7 @@ Upstream-Name: @DISTRO_ID@-archive-keyring
 Source: @DISTRO_HOME_URL@
 
 Files: *
-Copyright: 2026 @DISTRO_NAME@ contributors
+Copyright: 2026 santisbon <santisbon@users.noreply.github.com>
 License: MIT
 
 License: MIT

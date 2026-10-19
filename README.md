@@ -34,6 +34,10 @@ Oaxaca has not been tried on a Mac yet.
 
 Oaxaca is new, and there is no download yet: the USB installer is built from this repository's source, as [docs/README.md, "Building the distro from source"](docs/README.md#building-the-distro-from-source) describes. Once installed, Oaxaca updates from its own package repository and Ubuntu's.
 
+## License
+
+Oaxaca's own files, the build scripts, configuration, packaging and documentation in this repository, are under the MIT license, copyright 2026 santisbon: see [LICENSE](LICENSE). The software Oaxaca installs keeps its own licenses. Ubuntu's packages carry theirs, and each package built in this repository lists its licenses, file by file, in its `debian/copyright`: the Omarchy desktop is MIT, like Omarchy itself, and the third-party programs Oaxaca packages keep their upstream licenses, such as GPL-2+ for `asdcontrol`, LGPL-3.0 for Quickshell and the SIL Open Font License for the fonts. The license covers the code, not the name Oaxaca.
+
 ## More
 
 - [docs/README.md](docs/README.md): the developer README. How Oaxaca is built, how the installed system differs from a stock Ubuntu in detail (software recommendations, Secure Boot, graphics, the Omarchy desktop and how Omarchy's plugins run on Ubuntu), and the status of each part of the project.

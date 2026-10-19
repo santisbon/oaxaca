@@ -3,7 +3,7 @@ Upstream-Name: oaxaca-nvidia
 Source: https://github.com/santisbon/oaxaca
 
 Files: *
-Copyright: 2026 Oaxaca contributors
+Copyright: 2026 santisbon <santisbon@users.noreply.github.com>
 License: MIT
 
 License: MIT

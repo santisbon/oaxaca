@@ -9,6 +9,7 @@ Comment: The port (the oaxaca branch of the fork named in distro.conf) keeps Oma
 
 Files: *
 Copyright: 2025-2026 Basecamp / Omacom (Omarchy contributors)
+           2026 santisbon <santisbon@users.noreply.github.com> (the Oaxaca port)
 License: MIT
 
 Files: default/fonts/*
@@ -20,7 +21,7 @@ Comment: The icon font's README names the origin of each glyph: Omarchy's own ma
  distro supplies its own glyph.
 
 Files: debian/*
-Copyright: 2026 @DISTRO_NAME@ contributors
+Copyright: 2026 santisbon <santisbon@users.noreply.github.com>
 License: MIT
 
 License: MIT
