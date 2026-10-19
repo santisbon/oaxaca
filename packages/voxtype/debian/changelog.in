@@ -1,3 +1,18 @@
+voxtype (1.1.1-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
+  * Voxtype 1.1.1 (voxtype_1.1.1-1_amd64.deb, SHA-256 matching GitHub's
+    digest), a fix release. VOXTYPE_VULKAN_DEVICE=nvidia, which the
+    Dictation installer sets on laptops with an NVIDIA GPU, now moves
+    Whisper to the NVIDIA GPU: 1.1.0 selected it and then initialized
+    device 0, the integrated GPU, anyway. A daemon started at login waits
+    for the GPU's render node before loading the model, instead of falling
+    back to the CPU. Also: quiet microphones no longer lose short
+    dictations, clipboard output no longer opens every input device, and
+    voxtype's own config edits keep the file valid. The release's files
+    are the same as 1.1.0's, so the package keeps the same ones.
+
+ -- @MAINTAINER@  Sun, 18 Oct 2026 23:59:00 -0500
+
 voxtype (1.1.0-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
   * Voxtype 1.1.0 for @DISTRO_NAME@, from Voxtype's own release package
