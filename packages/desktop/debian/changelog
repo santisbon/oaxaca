@@ -1,5 +1,17 @@
 oaxaca-desktop (4.0.4+git20261019.107.5b441611-0oaxaca1) stonking; urgency=medium
 
+  * The screensaver fills the screen and takes the keyboard when it starts
+    over an open bar panel or the menu: the launcher closes them first,
+    through the shell's new "shell closePanels" call. With the WiFi panel
+    open, Hyprland mapped the screensaver without focus or its fullscreen
+    rule, a small window with the pointer hidden.
+  * The first update's Voxtype invitation is not sent when Voxtype is
+    already installed; it is marked as done instead.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Mon, 19 Oct 2026 14:32:20 -0500
+
+oaxaca-desktop (4.0.4+git20261019.107.5b441611-0oaxaca1) stonking; urgency=medium
+
   * Installing software from the menu works on a system that has no
     package lists yet: oaxaca-pkg-add, which the Install entries use, runs
     apt-get update first when /var/lib/apt/lists holds none. A system

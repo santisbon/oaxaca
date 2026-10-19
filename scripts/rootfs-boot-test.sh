@@ -512,6 +512,15 @@ while IFS="\$tab" read -r keys cmd; do
     esac
 done < /tmp/bindings-run.tsv
 echo "shell ping after bindings: \$(run_user $id-shell shell ping 2>&1 | paste -sd'|')"
+# The screensaver over an open bar panel (2026-10-19, the WiFi panel): an open panel holds the
+# keyboard as a layer surface, and Hyprland mapped the screensaver window without focus or its
+# fullscreen rule, a small window with the pointer hidden. The launcher closes panels first
+# (the shell's closePanels); the screensaver is then fullscreen and focused.
+run_user $id-shell omarchy.network open >/dev/null 2>&1; sleep 1
+echo "panel open before screensaver: \$(run_user hyprctl -j layers 2>/dev/null | jq -r '.. | .namespace? // empty' | grep -cx '$id-keyboard-panel')"
+run_user $id-launch-screensaver force >/dev/null 2>&1; sleep 2
+echo "screensaver over a panel: \$(run_user hyprctl -j clients 2>/dev/null | jq -r '[.[] | select(.class == "org.omarchy.screensaver")] | if length == 0 then "none" else (.[0] | "fullscreen=\(.fullscreen) focused=\(.focusHistoryID == 0)") end')"
+pkill -f '[o]rg.omarchy.screensaver'; sleep 1
 # The shell's journal: Quickshell's WARN lines are listed, its ERROR/CRIT lines and QML
 # failures (a type that failed to load, an undefined reference) are counted.
 log=\$(journalctl -b -t $id-shell --no-pager -o cat | sed 's/\x1b\[[0-9;]*m//g')
@@ -796,6 +805,8 @@ if [[ $profile == desktop ]]; then
   fi
   check "^binding run: SUPER + SPACE: exit=0 opened=\[.*L:$DISTRO_ID-menu"
   check "^shell ping after bindings: ok$"
+  check "^panel open before screensaver: [1-9]"
+  check "^screensaver over a panel: fullscreen=2 focused=true$"
   check "^shell log: [0-9]* lines, 0 errors, "
 fi
 if [[ $upgrade == 1 ]]; then
