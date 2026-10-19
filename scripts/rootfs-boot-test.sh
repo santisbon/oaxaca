@@ -496,11 +496,16 @@ while IFS="\$tab" read -r keys cmd; do
     echo "binding run: \$keys: exit=\$rc opened=[\$opened] closed=\$closed\$note"
     # A polkit password dialog (the shell's layer <id>-polkit) is no binding's doing: something else
     # in the session asked for an administrator action while the binding ran (2026-10-19, a release
-    # run: the dialog stayed open and every later binding opened nothing). The processes that ask
-    # through the session's agent, and polkitd's journal, name the requester.
+    # run: the dialog stayed open and every later binding opened nothing; again on 2026-10-19 at
+    # a different binding). The logging rule in /etc/polkit-1/rules.d/00-boot-test-log.rules
+    # names each check's action and requesting process; each requester still running is printed
+    # with its parent, since the requester can be a short-lived client such as a snap command.
     case " \$opened " in *" L:$id-polkit "*)
-        echo "polkit request during \$keys: [\$(ps -eo user=,pid=,args= | grep -E 'pkexec|polkit-agent-helper|systemd-inhibit' | grep -v grep | cut -c1-160 | paste -sd'|')]"
-        journalctl -b -u polkit --no-pager -o cat -n 6 | cut -c1-200 | sed "s/^/polkit journal during \$keys: /" ;;
+        checks=\$(journalctl -b -u polkit --no-pager -o cat | grep 'boot-test check:' | tail -n 6)
+        echo "\$checks" | cut -c1-200 | sed "s/^/polkit check during \$keys: /"
+        for p in \$(echo "\$checks" | sed -n 's/.* pid=\([0-9]*\) .*/\1/p' | sort -u); do
+            echo "polkit requester during \$keys: pid \$p: [\$(ps -o user=,pid=,args= -p \$p | cut -c1-160)] parent: [\$(ps -o user=,pid=,args= -p \$(ps -o ppid= -p \$p 2>/dev/null) 2>/dev/null | cut -c1-160)]"
+        done ;;
     esac
 done < /tmp/bindings-run.tsv
 echo "shell ping after bindings: \$(run_user $id-shell shell ping 2>&1 | paste -sd'|')"
@@ -573,6 +578,15 @@ if [ "$profile" = session ] || [ "$profile" = desktop ]; then
     # (passwordless theme and DNS actions from the menu) are written for.
     sed -i 's/^sudo:x:27:$/sudo:x:27:tester/' "$root/etc/group"
     sed -i 's/^sudo:\*::$/sudo:*::tester/' "$root/etc/gshadow"
+    # polkitd logs no action and no requester for a check. This rule, read first (00-) and
+    # deciding nothing, logs both to polkitd's journal for every check, so a password dialog
+    # during the binding checks names its cause (the diagnostic there prints these lines).
+    mkdir -p "$root/etc/polkit-1/rules.d"
+    cat > "$root/etc/polkit-1/rules.d/00-boot-test-log.rules" <<'EOF'
+polkit.addRule(function(action, subject) {
+    polkit.log("boot-test check: " + action.id + " pid=" + subject.pid + " user=" + subject.user + " active=" + subject.active);
+});
+EOF
     mkdir -p "$root/home/tester"
     chown 1001:1001 "$root/home/tester"
     chmod 0750 "$root/home/tester"
