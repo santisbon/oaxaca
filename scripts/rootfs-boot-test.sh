@@ -69,7 +69,7 @@
 #        and the installer's autostart removed), QEMU_MEM (MiB, default 2048 base /
 #        3072 session / 4096 desktop and live),
 #        QEMU_TIMEOUT (seconds, default 600), QEMU_RENDERNODE (default: the first non-NVIDIA render node),
-#        KEEP=1 keeps the work dir, UPGRADE=1 (see above; QEMU_TIMEOUT default 900)
+#        KEEP=1 keeps the work dir after a passed run too (a failed run always keeps it), UPGRADE=1 (see above; QEMU_TIMEOUT default 900)
 set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
 # shellcheck source=/dev/null
@@ -795,6 +795,9 @@ if [[ $upgrade == 1 ]]; then
   check "^update log errors: 0$"
   check "^shell restarted: yes$"
 fi
+# A failed run keeps its work dir (the serial log with the guest's whole report, and the disk
+# image), as factory-reset-test.sh does; a passed one removes it unless KEEP=1, since the disk
+# image takes several GB.
+if (( fail )); then echo "!! boot test FAILED; serial log and disk image kept in $work"; exit 1; fi
 [[ ${KEEP:-0} == 1 ]] || rm -rf "$work"
-if (( fail )); then echo "!! boot test FAILED"; exit 1; fi
 echo "== boot test passed"

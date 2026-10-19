@@ -422,7 +422,7 @@ make rootfs-test                   # the live tarball with the desktop checks (c
 make rootfs-test PROFILE=desktop   # step 6's tarball, the same checks
 make rootfs-test PROFILE=session   # steps 4 and 5's checks
 make rootfs-test PROFILE=base      # step 3's checks only
-KEEP=1 make rootfs-test            # keep build/rootfs/boot-test/ with the serial log
+KEEP=1 make rootfs-test            # keep build/rootfs/boot-test/ with the serial log after a pass too (a failure always keeps it)
 ```
 
 ### `mksquashfs`, `mkfs.vfat` with `mtools`, and `xorriso` (`make iso`)
