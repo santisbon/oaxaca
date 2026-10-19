@@ -494,6 +494,14 @@ while IFS="\$tab" read -r keys cmd; do
             case " \${bar#*: } " in *" \$panel "*) ;; *) [ -z "\$opened" ] && note=" skipped=not-in-bar" ;; esac ;;
     esac
     echo "binding run: \$keys: exit=\$rc opened=[\$opened] closed=\$closed\$note"
+    # A polkit password dialog (the shell's layer <id>-polkit) is no binding's doing: something else
+    # in the session asked for an administrator action while the binding ran (2026-10-19, a release
+    # run: the dialog stayed open and every later binding opened nothing). The processes that ask
+    # through the session's agent, and polkitd's journal, name the requester.
+    case " \$opened " in *" L:$id-polkit "*)
+        echo "polkit request during \$keys: [\$(ps -eo user=,pid=,args= | grep -E 'pkexec|polkit-agent-helper|systemd-inhibit' | grep -v grep | cut -c1-160 | paste -sd'|')]"
+        journalctl -b -u polkit --no-pager -o cat -n 6 | cut -c1-200 | sed "s/^/polkit journal during \$keys: /" ;;
+    esac
 done < /tmp/bindings-run.tsv
 echo "shell ping after bindings: \$(run_user $id-shell shell ping 2>&1 | paste -sd'|')"
 # The shell's journal: Quickshell's WARN lines are listed, its ERROR/CRIT lines and QML
