@@ -1,5 +1,16 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Installing software from the menu works on a system that has no
+    package lists yet: oaxaca-pkg-add, which the Install entries use, runs
+    apt-get update first when /var/lib/apt/lists holds none. A system
+    installed by oaxaca-installer 0.1.11 had none until its first update,
+    and Install > AI > Dictation failed with "Unable to locate package
+    voxtype" (docs/7, choice 55).
+
+ -- @MAINTAINER@  Mon, 19 Oct 2026 02:15:00 -0500
+
+@DISTRO_ID@-desktop (4.0.4+git20261019.105.30b5ac12-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Setup > Reset Computer is in the menu again, on installs with the
     default btrfs file system: the factory reset came back without its menu
     entry, so it could be started only from a terminal (docs/6, choice 87).

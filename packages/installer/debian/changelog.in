@@ -1,3 +1,13 @@
+@DISTRO_ID@-installer (0.1.12) @BASE_SERIES@; urgency=medium
+
+  * The installation runs apt-get update in the new system again, so the
+    installed system knows its packages from the first boot. 0.1.11 removed
+    the packages step, which had started with that update, and a new
+    system's Install > AI > Dictation failed with "Unable to locate package
+    voxtype" until the first update (docs/7, choice 55).
+
+ -- @MAINTAINER@  Mon, 19 Oct 2026 02:10:00 -0500
+
 @DISTRO_ID@-installer (0.1.11) @BASE_SERIES@; urgency=medium
 
   * The installation copies only the medium's installed-system layer

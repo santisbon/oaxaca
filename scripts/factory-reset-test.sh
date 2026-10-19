@@ -143,6 +143,7 @@ echo "$reportD"
 fail=0
 check() { grep -q -- "$2" <<< "$1" || { echo "!! expected: $2" >&2; fail=1; }; }
 check "$reportA" "^factory install: done$"
+check "$reportA" "^factory install: apt lists: [1-9]"
 check "$reportA" "^factory snapshot: present ro=true$"
 check "$reportA" "^factory boot copy in running root: no$"
 check "$reportA" "^factory boot copy in snapshot: [1-9]"

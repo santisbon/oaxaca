@@ -1,4 +1,4 @@
-# The desktop's own install-time setup, in the target system: @DISTRO_ID@-apply-system
+# apt's package lists, then the desktop's own install-time setup, in the target system: @DISTRO_ID@-apply-system
 # (step 6) runs the install/config, hardware, login and post-install scripts and the first
 # user's provisioning, the same command the desktop boot test runs before SDDM. The user
 # name comes from Calamares's global storage, filled by the users page.
@@ -6,6 +6,13 @@
 dontChroot: false
 timeout: 900
 script:
+    # The package lists, which the installed system's layer of the medium does not carry
+    # (mmdebstrap removes them when it builds the root filesystem). Until the packages step went
+    # with choice 55 of docs/7, that step began with this same apt-get update; without it, apt
+    # knew no package until the first update, and Install > AI > Dictation failed with "Unable to
+    # locate package voxtype" (2026-10-19). The leading "-" lets an install without a network go
+    # on; that system's lists come with its first update.
+    - "-apt-get -q update"
     # OMARCHY_LOG_TO_STDOUT=1: the script otherwise writes every step's output to
     # /var/log/@DISTRO_ID@-install.log in the target and prints nothing, so a failure reached
     # Calamares as "exit code 1, there was no output from the command" (Legion laptop,
