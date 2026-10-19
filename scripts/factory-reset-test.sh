@@ -8,7 +8,7 @@
 # a Python watcher, which logs it, types the disk encryption passphrase when the initramfs asks
 # ("Please unlock disk"), and turns "=== KEYS <key>" lines into key presses through QEMU's monitor.
 # A line after which the boot cannot go on (casper finding no live medium, a kernel panic) makes
-# the watcher quit QEMU, and a boot that ends without its report ends the test (reached below).
+# the watcher quit QEMU, and a boot whose report never began ends the test (reached below).
 #   A. The test ISO (build/iso/<id>-<version>-amd64-test.iso). Its live session runs its own boot
 #      test, then tests/factory-reset/run.sh from a small disk labelled OAXTEST: a scripted install
 #      that follows the installer's settings and runs its scripts, ending with factory-snapshot,
@@ -135,14 +135,18 @@ PY
   wait "$watcher" 2>/dev/null || true
 }
 section() { sed -n "/=== $1 BEGIN/,/=== $1 END/p" "$work/$2.serial.log" 2>/dev/null | tr -d '\r' | grep -av $'\e\\[' || true; }
-# Each boot works on what the one before it left on the disk, so a boot that ended without its
-# report's END line (a fatal line, a timeout, QEMU stopped by hand) ends the test there: boot B
-# on a disk that boot A never installed only waits for its own timeout at the firmware's
-# network boot.
+# Each boot works on what the one before it left on the disk, so a boot whose report never began
+# (casper finding no live medium, the firmware falling back to network boot) or that the watcher
+# quit on a fatal line ends the test there: boot B on a disk that boot A never installed only
+# waits for its own timeout. The BEGIN line is the test, not the END line: a report's last lines
+# are still in the guest's serial buffer when the guest powers off or reboots, and the kernel's
+# own shutdown lines can cut them (2026-10-19: "=== DRIVE END" came out as "D" after
+# "reboot: Power down", in a run whose report was complete).
 reached() {
-  grep -aq "=== $2 END" "$work/$1.serial.log" 2>/dev/null && return 0
-  echo "!! boot $1 ended without its report (no '=== $2 END'); last lines of $work/$1.serial.log:" >&2
-  tr -d '\r' < "$work/$1.serial.log" 2>/dev/null | sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g' | grep -avE '^[A-Za-z0-9+/=]{60,}$' | tail -n 15 >&2
+  local log="$work/$1.serial.log"
+  if grep -aq "=== $2 BEGIN" "$log" 2>/dev/null && ! grep -aq "=== FATAL" "$log"; then return 0; fi
+  echo "!! boot $1 ended without its report (no '=== $2 BEGIN', or a FATAL line); last lines of $log:" >&2
+  tr -d '\r' < "$log" 2>/dev/null | sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g' | grep -avE '^[A-Za-z0-9+/=]{60,}$' | tail -n 15 >&2
   echo "!! factory reset test FAILED (logs in $work)"
   exit 1
 }
