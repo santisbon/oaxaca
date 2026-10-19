@@ -215,7 +215,12 @@ if [[ -z $report ]]; then
   tail -n 30 "$serial" >&2
   exit 2
 fi
-echo "$report"
+# Screenshots travel inside the report as one base64 line between "=== SCREENSHOT <name> BEGIN"
+# and "=== SCREENSHOT <name> END" (live-boot-test's shot), and are decoded into PNG files below;
+# the printed report shows each one as a single line instead of its base64 text.
+awk '/^=== SCREENSHOT .* BEGIN$/ {print "=== SCREENSHOT " $3 " (saved as " $3 ".png)"; skip=1; next}
+     /^=== SCREENSHOT .* END$/ {skip=0; next}
+     !skip' <<< "$report"
 
 fail=0
 check() { grep -q -- "$1" <<< "$report" || { echo "!! expected: $1" >&2; fail=1; }; }
