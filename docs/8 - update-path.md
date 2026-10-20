@@ -106,13 +106,9 @@ All on this workstation (Kubuntu 26.04 host, stonking chroots and images), 2026-
 - **The `#clear` semantics**: `apt-config dump Unattended-Upgrade::Allowed-Origins` over a directory with Ubuntu's `50unattended-upgrades` alone prints the four `${distro_id}` entries; with `51oaxaca-unattended-upgrades` beside it, the four literal `Ubuntu:` entries only.
 - **Packages built**: `oaxaca-base 0.1.1` (lintian clean), `oaxaca-desktop 4.0.4-0oaxaca1` from the branch's working tree with `migrations/` (the README only) in `oaxaca-tools` and the runner fix, lintian clean (the third desktop build of the day; `build/` holds it).
 
-## Carried to later steps
+## Open work
 
-- The series upgrade (choice 5): the command on the port branch, the second suite in the archive, and the upgrade test across suites, when the next series opens in Launchpad.
-- A workstation-side update test in QEMU (choice 3): boot the previous release's image, run `oaxaca-update` in the session, check the shell restart and the reboot prompt.
-- Rollback: the policy keeps GRUB and ext4, so there is no snapshot to boot into. apt's cache keeps the current `.deb` files (`autoclean` drops only what no source offers), and the published archive carries one version per package (aptly's `publish switch` replaces the previous snapshot). Whether to keep the previous release's packages published, so that `apt install name=version` can go back, is a decision for the first release.
-- The first real migration, when a port change moves a user's files: `omarchy-dev-add-migration` on the branch, the upgrade test shows it running.
-- `oaxaca-update-confirm`'s "What's new" line now points at the distro's home URL through the rename; a release-notes page does not exist yet.
+What is left from this step is in the developer README's [To do](README.md#to-do), the one list of open work.
 
 ## Facts checked on 2026-10-11
 

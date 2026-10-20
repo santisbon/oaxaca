@@ -173,7 +173,7 @@ All on this workstation (Kubuntu 26.04.1, 24 CPUs, KVM, Intel iGPU render node),
   drivers-install show: [driver: ubuntu-drivers default (no NVIDIA open branch with prebuilt modules fits)|packages: ]
   drivers-install exit: 0
   ```
-  The whole test took 32 s (the guest's apt update and the x11-apps install included). The journal excerpts the test prints show nothing failing: SDDM logs `Session started true` for `hyprland-uwsm.desktop`, and the user's warnings are services not installed yet (RealtimeKit, UPower, BlueZ, AT-SPI; see "Carried to later steps").
+  The whole test took 32 s (the guest's apt update and the x11-apps install included). The journal excerpts the test prints show nothing failing: SDDM logs `Session started true` for `hyprland-uwsm.desktop`, and the user's warnings are services not installed yet (RealtimeKit, UPower, BlueZ, AT-SPI, all in the image since the desktop of step 6).
 - `make drivers-check`, on this laptop (Lenovo Legion Pro 7 16IAX10H, RTX 5070 Ti Mobile):
   ```
   --- ubuntu-drivers devices
@@ -202,15 +202,9 @@ All on this workstation (Kubuntu 26.04.1, 24 CPUs, KVM, Intel iGPU render node),
   So `ubuntu-drivers` works with `ID=oaxaca` (the policy's open question from step 3): its "from the distro" test reads apt's `Origin: Ubuntu` field, not `/etc/os-release`. The detector recommends `nvidia-driver-580-open`, the LTSB branch, over `615-open`, the NFB branch; `oaxaca-drivers-install` chooses `615-open` (choice 13), and the list the command hands apt resolves to `linux-modules-nvidia-615-open-generic` with no DKMS package. The plan's table (2026-09-24) expected `595-open`; in `stonking` today `nvidia-driver-595-open` is a transitional package depending on `nvidia-driver-615-open`, with no `Support:` field, so the detector never lists it and `615-open` is what a user asking for 595 gets. The plan's rule "don't hardcode the branch number" stands; the table is corrected there. In the QEMU guest, with no NVIDIA GPU, the same `--show` prints `driver: ubuntu-drivers default (no NVIDIA open branch with prebuilt modules fits)` and an empty package list, and exits 0.
 - Problems found and fixed on the way: `loginctl list-sessions` has no `--plain` option (the first run never found the test session); `systemctl --user -M tester@` opened a new logind session per call (replaced by `runuser`); a plain `mount --bind /sys` into the chroot is refused in a user namespace because `/sys` carries locked submounts (`--rbind`); `scripts/render.py` wrote its generated-file note as a `#` comment into a Lua file and a man page (it now knows `--` and `.\"`); and `apt-get --simulate install nvidia-driver-580-open` alone resolves to DKMS, because only `ubuntu-drivers` adds the `linux-modules-nvidia` package to the list, which is why the check uses its library call.
 
-## Carried to later steps
+## Open work
 
-- Omarchy's session file (`omarchy.desktop`, renamed), SDDM theme, `NetworkManager-wait-online` mask, `rtkit` (PipeWire's realtime scheduling; the guest's journal shows WirePlumber asking for it), `upower`, `bluez`, AT-SPI, a polkit agent, fonts, terminal, lock screen: the desktop, step 6.
-- Omarchy's `nvidia.lua` session variables (`LIBVA_DRIVER_NAME`, `NVD_BACKEND`, `__GLX_VENDOR_LIBRARY_NAME`), the `omarchy-hw-nvidia*` detectors, `nvidia-vaapi-driver`, `AQ_DRM_DEVICES` for the compositor on the iGPU (since 2026-10-11 through the session package's user environment generator and `/etc/oaxaca/gpu`, `docs/7` choice 17), `intel-media-va-driver-non-free`: step 6's configuration and hardware packages.
-- Running `oaxaca-drivers-install` against the target, creating the real user and choosing the default session: the installer, step 7. No autologin (choice 14); the test image's autologin exists only so the QEMU test needs no greeter interaction.
-- The plan's NVIDIA verification on real hardware (`nvidia-smi`, `modeset` reading `Y`, `glxinfo -B` under Xwayland, suspend and resume) and the Secure Boot pass: once an image exists, step 7.
-- `gcr4`, a dependency of `gnome-keyring`, enables `gcr-ssh-agent.service` in `graphical-session-pre.target.wants` too, an SSH agent that answers on `$XDG_RUNTIME_DIR/gcr/ssh`; whether the desktop uses that agent or another is step 6's call. Also the Secret portal: `gnome-keyring` ships `/usr/share/xdg-desktop-portal/portals/gnome-keyring.portal` for `org.freedesktop.impl.portal.Secret` (what sandboxed applications use instead of the bus name), and Ubuntu's `hyprland-portals.conf` names only `hyprland;gtk`, so that interface has no backend until the desktop's portal configuration (step 6) adds `org.freedesktop.impl.portal.Secret=gnome-keyring`.
-- `ubuntu-drivers devices` prints `ERROR:root:aplay command not found` from its `sl-modem` detector plugin (a Smart Link modem check). Harmless; `alsa-utils` would silence it and is a candidate for the desktop package.
-- SDDM logs `Failed to write utmpx: No such file or directory` on login: systemd 256 and later keep no utmp database, and SDDM 0.21 still tries. Harmless.
+What is left from this step is in the developer README's [To do](README.md#to-do), the one list of open work.
 
 ## Facts checked on 2026-10-08
 

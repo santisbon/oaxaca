@@ -1,5 +1,76 @@
 # @DISTRO_NAME@: the developer README
 
+## About this document
+
+@DISTRO_NAME@ is a Linux distribution built from the Ubuntu [archive](#archive): Ubuntu @BASE_VERSION@ (`@BASE_SERIES@`) underneath, apt for packages, and on top a Wayland desktop made of Hyprland, Quickshell and the Omarchy shell, themes and fonts, ported from Arch to apt. @DISTRO_NAME@ works with Secure Boot on or off, with no key enrollment either way and never a requirement that Secure Boot be on, and @DISTRO_NAME@ installs onto an encrypted disk. The first machine @DISTRO_NAME@ is built for is a Lenovo Legion Pro 7 laptop with an Intel iGPU and an NVIDIA dGPU, so hybrid graphics and sleep are first-class concerns. @DISTRO_NAME@ is meant to run on other PCs too: Omarchy's fixes for other machines are applied at install where their device check matches ([docs/1, section 3](1%20-%20policy.md#3-omarchy-version-to-follow)).
+
+Nothing is ever installed and then stripped out: the root filesystem is assembled from Ubuntu's archive one package at a time, and the parts Ubuntu doesn't have come from a small apt repository of our own. The Omarchy port is built up the same way: it starts from Ubuntu's configuration plus the parts of Omarchy the desktop needs to run, and each further Omarchy feature is added by a recorded choice ([docs/6](6%20-%20omarchy-port.md#choices)). This document, the developer README (`docs/README.md`; the repository's top-level `README.md` is the introduction for people deciding whether to install @DISTRO_NAME@), explains the tools that produce that repository and how those tools fit together. The reasoning behind each decision lives in the numbered documents next to this one in `docs/`.
+
+## Contents
+
+- [About this document](#about-this-document)
+- [At a glance](#at-a-glance)
+- [Terms](#terms)
+  - [Package](#package)
+  - [Source package](#source-package)
+  - [Suite and pocket](#suite-and-pocket)
+  - [Component](#component)
+  - [Archive](#archive)
+  - [Essential and Priority](#essential-and-priority)
+  - [Recommends](#recommends)
+  - [Metapackage](#metapackage)
+  - [Build dependencies](#build-dependencies)
+  - [Chroot](#chroot)
+  - [Vendored crates](#vendored-crates)
+  - [Codec](#codec)
+  - [VA-API driver](#va-api-driver)
+- [Status](#status)
+- [To do](#to-do)
+  - [On the Legion laptop](#on-the-legion-laptop)
+  - [To design](#to-design)
+  - [To investigate](#to-investigate)
+  - [Automation](#automation)
+  - [Upstream reports](#upstream-reports)
+  - [When something changes upstream](#when-something-changes-upstream)
+- [The installed system in detail](#the-installed-system-in-detail)
+  - [Installing software: Recommends are on, with exceptions](#installing-software-recommends-are-on-with-exceptions)
+  - [Secure Boot](#secure-boot)
+  - [NVIDIA and AMD GPUs](#nvidia-and-amd-gpus)
+  - [Media codecs](#media-codecs)
+  - [Apple hardware](#apple-hardware)
+  - [The Omarchy desktop](#the-omarchy-desktop)
+  - [Plugins and themes written for Omarchy](#plugins-and-themes-written-for-omarchy)
+- [Repository map](#repository-map)
+- [The tools](#the-tools)
+  - [`distro.conf` and `scripts/render.py` (`make render`)](#distroconf-and-scriptsrenderpy-make-render)
+  - [`mmdebstrap` (`make chroot`)](#mmdebstrap-make-chroot)
+  - [`sbuild` with `dpkg-buildpackage` and `debhelper` (`make build`)](#sbuild-with-dpkg-buildpackage-and-debhelper-make-build)
+  - [`lintian` (runs inside `make build`)](#lintian-runs-inside-make-build)
+  - [`gpg` (`scripts/keygen.sh`, once)](#gpg-scriptskeygensh-once)
+  - [`aptly` (`make publish`)](#aptly-make-publish)
+  - [`mmdebstrap` again (`make rootfs`)](#mmdebstrap-again-make-rootfs)
+  - [`qemu-system-x86_64` with `mke2fs` (`make rootfs-test`)](#qemu-system-x86_64-with-mke2fs-make-rootfs-test)
+  - [`mksquashfs`, `mkfs.vfat` with `mtools`, and `xorriso` (`make iso`)](#mksquashfs-mkfsvfat-with-mtools-and-xorriso-make-iso)
+  - [`qemu-system-x86_64` with OVMF (`make iso-test`)](#qemu-system-x86_64-with-ovmf-make-iso-test)
+  - [`qemu-system-x86_64` with OVMF, four boots (`make factory-reset-test`)](#qemu-system-x86_64-with-ovmf-four-boots-make-factory-reset-test)
+  - [`unshare` with `chroot` (`make drivers-check`)](#unshare-with-chroot-make-drivers-check)
+  - [`git` with `dpkg --compare-versions` (`make check-versions`)](#git-with-dpkg---compare-versions-make-check-versions)
+  - [`mmdebstrap` with `dpkg-scanpackages` (`make upgrade-test`)](#mmdebstrap-with-dpkg-scanpackages-make-upgrade-test)
+  - [`qemu-system-x86_64` on the published desktop (`make session-upgrade-test`)](#qemu-system-x86_64-on-the-published-desktop-make-session-upgrade-test)
+  - [`curl` with GitHub's API (`make upstream-check`)](#curl-with-githubs-and-launchpads-apis-make-upstream-check)
+  - [GitHub Actions (`.github/workflows/build.yml`)](#github-actions-githubworkflowsbuildyml)
+  - [`scripts/suspend-baseline.sh` (measurement, not build)](#scriptssuspend-baselinesh-measurement-not-build)
+- [How the pieces fit together](#how-the-pieces-fit-together)
+- [Building the distro from source](#building-the-distro-from-source)
+- [Day-to-day](#day-to-day)
+- [Shipping a change: the apt repository or a new ISO](#shipping-a-change-the-apt-repository-or-a-new-iso)
+- [Releasing](#releasing)
+  - [Once per machine](#once-per-machine)
+  - [Before each release](#before-each-release)
+  - [Each release](#each-release)
+- [Conventions](#conventions)
+- [Documents](#documents)
+
 ## At a glance
 
 Where every part of @DISTRO_NAME@ comes from, then each package in @DISTRO_NAME@'s own apt repository. The versions are filled in by `make render` from each package's `packages/<dir>/debian/changelog.in`, so they are the versions this checkout builds. Linked words are defined under [Terms](#terms).
@@ -44,70 +115,6 @@ The packages in @DISTRO_NAME@'s repository, one row per [source package](#source
 | `asusctl` | @VERSION_ASUSCTL@ | `asusctl` | The 6.5.0 release tarball from `OpenGamingCollective/asusctl`, Rust crates vendored at build time | - | ASUS ROG laptop control (`asusd`, `asusctl`, `asus-shutdown`, `asusd-user`); installed on those models only (docs/6, choice 68) |
 | `supergfxctl` | @VERSION_SUPERGFXCTL@ | `supergfxctl` | The 5.2.7 tag tarball from `gitlab.com/asus-linux/supergfxctl`, Rust crates vendored at build time | - | Graphics mode switching on hybrid laptops, used by Hardware > Hybrid GPU (docs/6, choice 68) |
 | `qmk-hid` | @VERSION_QMK_HID@ | `qmk-hid` | The v0.1.13 release tarball of `FrameworkComputer/qmk_hid`, Rust crates vendored at build time | - | QMK keyboard control, for the Framework Laptop 16's lighting; installed on that model only (docs/6, choice 67) |
-
-## About this document
-
-@DISTRO_NAME@ is a Linux distribution built from the Ubuntu [archive](#archive): Ubuntu @BASE_VERSION@ (`@BASE_SERIES@`) underneath, apt for packages, and on top a Wayland desktop made of Hyprland, Quickshell and the Omarchy shell, themes and fonts, ported from Arch to apt. @DISTRO_NAME@ works with Secure Boot on or off, with no key enrollment either way and never a requirement that Secure Boot be on, and @DISTRO_NAME@ installs onto an encrypted disk. The first machine @DISTRO_NAME@ is built for is a Lenovo Legion Pro 7 laptop with an Intel iGPU and an NVIDIA dGPU, so hybrid graphics and sleep are first-class concerns. @DISTRO_NAME@ is meant to run on other PCs too: Omarchy's fixes for other machines are applied at install where their device check matches ([docs/1, section 3](1%20-%20policy.md#3-omarchy-version-to-follow)).
-
-Nothing is ever installed and then stripped out: the root filesystem is assembled from Ubuntu's archive one package at a time, and the parts Ubuntu doesn't have come from a small apt repository of our own. The Omarchy port is built up the same way: it starts from Ubuntu's configuration plus the parts of Omarchy the desktop needs to run, and each further Omarchy feature is added by a recorded choice ([docs/6](6%20-%20omarchy-port.md#choices)). This document, the developer README (`docs/README.md`; the repository's top-level `README.md` is the introduction for people deciding whether to install @DISTRO_NAME@), explains the tools that produce that repository and how those tools fit together. The reasoning behind each decision lives in the numbered documents next to this one in `docs/`.
-
-## Contents
-
-- [At a glance](#at-a-glance)
-- [About this document](#about-this-document)
-- [Terms](#terms)
-  - [Package](#package)
-  - [Source package](#source-package)
-  - [Suite and pocket](#suite-and-pocket)
-  - [Component](#component)
-  - [Archive](#archive)
-  - [Essential and Priority](#essential-and-priority)
-  - [Recommends](#recommends)
-  - [Metapackage](#metapackage)
-  - [Build dependencies](#build-dependencies)
-  - [Chroot](#chroot)
-  - [Vendored crates](#vendored-crates)
-  - [Codec](#codec)
-  - [VA-API driver](#va-api-driver)
-- [Status](#status)
-- [The installed system in detail](#the-installed-system-in-detail)
-  - [Installing software: Recommends are on, with exceptions](#installing-software-recommends-are-on-with-exceptions)
-  - [Secure Boot](#secure-boot)
-  - [NVIDIA and AMD GPUs](#nvidia-and-amd-gpus)
-  - [Media codecs](#media-codecs)
-  - [Apple hardware](#apple-hardware)
-  - [The Omarchy desktop](#the-omarchy-desktop)
-  - [Plugins and themes written for Omarchy](#plugins-and-themes-written-for-omarchy)
-- [Repository map](#repository-map)
-- [The tools](#the-tools)
-  - [`distro.conf` and `scripts/render.py` (`make render`)](#distroconf-and-scriptsrenderpy-make-render)
-  - [`mmdebstrap` (`make chroot`)](#mmdebstrap-make-chroot)
-  - [`sbuild` with `dpkg-buildpackage` and `debhelper` (`make build`)](#sbuild-with-dpkg-buildpackage-and-debhelper-make-build)
-  - [`lintian` (runs inside `make build`)](#lintian-runs-inside-make-build)
-  - [`gpg` (`scripts/keygen.sh`, once)](#gpg-scriptskeygensh-once)
-  - [`aptly` (`make publish`)](#aptly-make-publish)
-  - [`mmdebstrap` again (`make rootfs`)](#mmdebstrap-again-make-rootfs)
-  - [`qemu-system-x86_64` with `mke2fs` (`make rootfs-test`)](#qemu-system-x86_64-with-mke2fs-make-rootfs-test)
-  - [`mksquashfs`, `mkfs.vfat` with `mtools`, and `xorriso` (`make iso`)](#mksquashfs-mkfsvfat-with-mtools-and-xorriso-make-iso)
-  - [`qemu-system-x86_64` with OVMF (`make iso-test`)](#qemu-system-x86_64-with-ovmf-make-iso-test)
-  - [`qemu-system-x86_64` with OVMF, four boots (`make factory-reset-test`)](#qemu-system-x86_64-with-ovmf-four-boots-make-factory-reset-test)
-  - [`unshare` with `chroot` (`make drivers-check`)](#unshare-with-chroot-make-drivers-check)
-  - [`git` with `dpkg --compare-versions` (`make check-versions`)](#git-with-dpkg---compare-versions-make-check-versions)
-  - [`mmdebstrap` with `dpkg-scanpackages` (`make upgrade-test`)](#mmdebstrap-with-dpkg-scanpackages-make-upgrade-test)
-  - [`qemu-system-x86_64` on the published desktop (`make session-upgrade-test`)](#qemu-system-x86_64-on-the-published-desktop-make-session-upgrade-test)
-  - [`curl` with GitHub's API (`make upstream-check`)](#curl-with-githubs-and-launchpads-apis-make-upstream-check)
-  - [GitHub Actions (`.github/workflows/build.yml`)](#github-actions-githubworkflowsbuildyml)
-  - [`scripts/suspend-baseline.sh` (measurement, not build)](#scriptssuspend-baselinesh-measurement-not-build)
-- [How the pieces fit together](#how-the-pieces-fit-together)
-- [Building the distro from source](#building-the-distro-from-source)
-- [Day-to-day](#day-to-day)
-- [Shipping a change: the apt repository or a new ISO](#shipping-a-change-the-apt-repository-or-a-new-iso)
-- [Releasing](#releasing)
-  - [Once per machine](#once-per-machine)
-  - [Before each release](#before-each-release)
-  - [Each release](#each-release)
-- [Conventions](#conventions)
-- [Documents](#documents)
 
 ## Terms
 
@@ -230,23 +237,63 @@ The roadmap is in [docs/0 - plan.md](0%20-%20plan.md). Done so far:
 | 4. Graphics and session layer | `@DISTRO_ID@-session` (Mesa, Hyprland, Xwayland, uwsm, SDDM, portals, GNOME Keyring) and `@DISTRO_ID@-nvidia` (the NVIDIA install path), the `session` profile of the root filesystem, the graphical boot test, and the driver check on this laptop | [docs/4 - session.md](4%20-%20session.md) |
 | 5. Hyprland and Quickshell | Hyprland stays the archive's 0.56.2 (Omarchy's exact pin); Quickshell 0.3.2 backported as `quickshell 0.3.2-0oaxaca1` from Debian's packaging (`0.3.2-0oaxaca2` since 2026-10-15, with a fix so the lock screen works more than once per login), `@DISTRO_ID@-session` depends on it, and the boot test runs Omarchy @OMARCHY_TAG@'s shell on it | [docs/5 - hyprland-quickshell.md](5%20-%20hyprland-quickshell.md) |
 | 6. The Omarchy port | Omarchy @OMARCHY_TAG@ on the `oaxaca` branch of a fork, pacman replaced by apt, renamed at build time into `@DISTRO_ID@-desktop`, `-tools`, `-shell`, `-themes` and `-config`; `@DISTRO_ID@-fonts`, `asdcontrol`, `hyprland-preview-share-picker`, `nwg-displays` and `@DISTRO_ID@-hw-legion` beside them; the `desktop` profile of the root filesystem and a boot test that logs into the ported session | [docs/6 - omarchy-port.md](6%20-%20omarchy-port.md) |
-| 7. Image and installer | the live installation ISO: casper's live session with the desktop, Calamares from Ubuntu's archive as the installer (`@DISTRO_ID@-installer` configures it, `@DISTRO_ID@-live` is the live session), Ubuntu's signed shim and GRUB in an EFI partition image written by xorriso, and a QEMU boot test under OVMF with Secure Boot on and off; from 2026-10-11 to 2026-10-14 KPMcore, the library Calamares partitions with, was rebuilt with one patch (`kpmcore 26.08.1-0ubuntu1oaxaca1`) so an encrypted install works in every partitioning mode, until Ubuntu's `26.08.1-0ubuntu2` fixed the same refusal; the same day's laptop runs added rsync and the btrfs and xfs tools to the installer's dependencies, `md5sum.txt` to the medium, `plymouth-label` to the port's package list with Plymouth itself rebuilt for an upstream null-check patch (`packages/plymouth`), a backlight udev rule to the session `pulseaudio-utils` for the volume keys, and one GPU environment generator in the session package, which also fixed the Legion package's `AQ_DRM_DEVICES` (aquamarine rejects a by-path name); the fourth run put the hardware scripts' packages in the image so an install works offline, bound the resolver into the target, and added `gawk` and `gtk-launch` for the keybindings and application menus, put the NVIDIA driver's packages on the medium in a pool the drivers step installs from, and, after the first completed install overwrote Kubuntu's loader on a shared EFI System Partition, taught the installer to keep the previous system in the menu; the sixth run fixed the GRUB entry's name and the first-boot login, the shared GRUB stub now falls back to the previous system when Oaxaca is removed, Calamares is rebuilt with a Replace-mode patch, the boot and login screens say what they ask for, and encryption is the default; the dimming on the partition page is open, with what was tried recorded (choices 12 to 33) | [docs/7 - image-installer.md](7%20-%20image-installer.md) |
+| 7. Image and installer | the live installation ISO: casper's live session with the desktop, Calamares from Ubuntu's archive as the installer (`@DISTRO_ID@-installer` configures it, `@DISTRO_ID@-live` is the live session), Ubuntu's signed shim and GRUB in an EFI partition image written by xorriso, and a QEMU boot test under OVMF with Secure Boot on and off; from 2026-10-11 to 2026-10-14 KPMcore, the library Calamares partitions with, was rebuilt with one patch (`kpmcore 26.08.1-0ubuntu1oaxaca1`) so an encrypted install works in every partitioning mode, until Ubuntu's `26.08.1-0ubuntu2` fixed the same refusal; the same day's laptop runs added rsync and the btrfs and xfs tools to the installer's dependencies, `md5sum.txt` to the medium, `plymouth-label` to the port's package list with Plymouth itself rebuilt for an upstream null-check patch (`packages/plymouth`), a backlight udev rule to the session `pulseaudio-utils` for the volume keys, and one GPU environment generator in the session package, which also fixed the Legion package's `AQ_DRM_DEVICES` (aquamarine rejects a by-path name); the fourth run put the hardware scripts' packages in the image so an install works offline, bound the resolver into the target, and added `gawk` and `gtk-launch` for the keybindings and application menus, put the NVIDIA driver's packages on the medium in a pool the drivers step installs from, and, after the first completed install overwrote Kubuntu's loader on a shared EFI System Partition, taught the installer to keep the previous system in the menu; the sixth run fixed the GRUB entry's name and the first-boot login, the shared GRUB stub now falls back to the previous system when Oaxaca is removed, Calamares is rebuilt with a Replace-mode patch, the boot and login screens say what they ask for, and encryption is the default; the dimming on the partition page, open from the fourth laptop run with what was tried recorded (choice 27), was gone by 2026-10-19 | [docs/7 - image-installer.md](7%20-%20image-installer.md) |
 | 8. Update path | `@DISTRO_ID@-update` (Omarchy's update pipeline on apt) and unattended security updates from Ubuntu, the migrations runner with the port's own `migrations/`, the N to N+1 upgrade test in a chroot (`make upgrade-test`, also a CI job), the version-bump check (`make check-versions`) and the publish guard; the step also found and fixed two silent bugs: unattended-upgrades matched no origin on Oaxaca, and the migrations runner waited forever on Ubuntu's unattended-upgrades shutdown helper | [docs/8 - update-path.md](8%20-%20update-path.md) |
 | Baseline | suspend/resume measured on the Legion laptop before building anything | [docs/suspend-baseline.md](suspend-baseline.md) |
-| Removal audit | what the port still lacks from Omarchy v4.0.4, why, whether the reason holds on Ubuntu, the candidates still to restore, and everything restored since 2026-10-16 with its choice | the fork's [PORT-REMOVALS.md](https://github.com/santisbon/omarchy/blob/oaxaca/PORT-REMOVALS.md) |
+| Removal audit | what the port still lacks from Omarchy v4.0.4, why, whether the reason holds on Ubuntu, and everything restored since 2026-10-16 with its choice | the fork's [PORT-REMOVALS.md](https://github.com/santisbon/omarchy/blob/oaxaca/PORT-REMOVALS.md) |
 
-Next: the roadmap's eight steps are done. Pending, as of 2026-10-15 (details in [docs/7, "Carried to later steps"](7%20-%20image-installer.md#carried-to-later-steps)):
+The roadmap's eight steps are done; what is left is in [To do](#to-do).
 
-- the NVIDIA GPU never powers down on the Legion laptop: the driver's default power mode (`DynamicPowerManagement: 3`) did not change it, and the ACPI power resources of the bridge above the GPU match Kubuntu's, which reports `Enabled (fine-grained)`; next, compare with Kubuntu upgraded to stonking, on the same kernel and driver as Oaxaca;
-- on the laptop: the hardware checklist with the FIDO2 key registered, and the suspend runs on AC and on battery, since the lock fix (Secure Boot on, the Xbox controller over USB and Bluetooth, an iPhone or iPad in Files, and suspend docked with the lock were verified on 2026-10-15; the Apple Studio Display staying dark after a slow disk encryption passphrase was fixed the same day, docs/7 choice 49);
-- TPM unlock of the encrypted disk: the tools are installed (choice 47 of docs/7), the enrollment is to be designed;
-- reinstall the Legion laptop with one disk per system, each with its own EFI System Partition (decided 2026-10-15, docs/7 choice 50);
-- user units enabled by a package start only with a new user manager; the next such package also starts them in running sessions;
-- the `GDK_BACKEND` warning from Files, not investigated;
-- the fork's test suite: sorted on 2026-10-16 (the fork's `PORT.md`, "Tests": 20 test files of deleted things removed, the rest rewritten for apt and Ubuntu, one launcher bug fixed); `./test/all` passes on a machine with `lua5.5` and `ripgrep` and a checkout that is not group-writable, and nothing runs it automatically yet; the next step is running it in CI (docs/6, choice 21);
-- the menu's Install > Gaming > Xbox Controllers (`xpadneo-dkms` needs a Secure Boot key enrolled); the kernel's own drivers already run the controller over USB and Bluetooth (docs/6, choice 18);
-- **when Oaxaca moves to Qt 6.12 or to a newer Omarchy** (on a new Ubuntu release; stonking ships Qt 6.11.2): Qt 6.12 adds a QtQuick `Color` type that hides the shell's own `Color` singleton (`shell/Commons/Color.qml`), since the shell's QML files import QtQuick without a version. Omarchy works around it with `load_qtquick_611.patch` in its Quickshell package (`omacom/omarchy-pkgs`, `pkgbuilds/quickshell`, commit 5fcf9597, 2026-10-10, "temporarily work around Qt 6.12 breakage"): when the shell's `shell.qml` starts with `//@ pragma OmarchyLoadPatch`, Quickshell rewrites the shell's unversioned `import QtQuick` lines to `import QtQuick 6.11` as it loads them. Add the patch to `packages/quickshell` and the pragma line to the fork's `shell/shell.qml` together (Omarchy's current `shell.qml` has it; v4.0.4's does not), unless Qt or Quickshell has settled the conflict by then. Not added on 2026-10-15: no effect on Qt 6.11, and Omarchy calls it temporary;
-- and the older items each step carried, listed at the end of each document.
+## To do
+
+The one list of open work for @DISTRO_NAME@, this repository and the fork, checked against the code, the `.108` image and the Legion laptop on 2026-10-19. Each item says what is known and where its background is. When an item is done, it leaves this list, and the work is recorded where the work happened: a changelog entry, a numbered choice in one of the step documents, or the fork's [PORT-REMOVALS.md](@OMARCHY_FORK@/blob/@OMARCHY_PORT_REF@/PORT-REMOVALS.md), "Restored".
+
+### On the Legion laptop
+
+- **The NVIDIA GPU never powers down.** NVIDIA's own report on Oaxaca (`/proc/driver/nvidia/gpus/0000:02:00.0/power`) says `Runtime D3 status: Not supported`; on Kubuntu, same laptop, the same report says `Enabled (fine-grained)`. The driver's default power mode (`DynamicPowerManagement: 3`) did not change the report, the ACPI power resources of the bridge above the GPU match Kubuntu's, and only `nvidia-powerd` holds the GPU open (stopping `nvidia-powerd` changes nothing). Oaxaca's kernel log has two kernel warning traces, one while `nvidia_modeset` loads. Next: compare with Kubuntu upgraded to `@BASE_SERIES@`, on the same kernel and driver as Oaxaca.
+- **The hardware checklist and the suspend runs.** Verified on 2026-10-15: Secure Boot on, the Xbox controller over USB and Bluetooth, an iPhone or iPad in Files, and suspend docked with the lock. Left: the hardware checklist with the FIDO2 key registered (Wi-Fi, Bluetooth, keyboard backlight, Studio Display picture and brightness, laptop screen brightness, speakers, volume keys, webcam, microphones, trackpad, fingerprint reader, secret store), the plan's NVIDIA checks (`nvidia-smi`, `modeset` reading `Y`, `glxinfo -B` under Xwayland), and 10 suspend and resume cycles each on AC and on battery, compared with [docs/suspend-baseline.md](suspend-baseline.md).
+- **Reinstall with one disk per system, each with its own EFI System Partition** (decided 2026-10-15, docs/7 choice 50). On 2026-10-19 Oaxaca's partitions (`oaxaca_boot`, `oaxaca_root`) are on `nvme0n1`, which has no EFI System Partition; the laptop's only EFI System Partition is on Kubuntu's disk, `nvme1n1`.
+- **The live session's own shutdown.** In QEMU, a plain `systemctl poweroff` of the live session looped on `Failed unmounting cdrom.mount - /cdrom` until the test's timeout (2026-10-10) and never reached `casper-stop`, casper's service that asks the user to remove the medium. casper's `25disable_cdrom.mount` masks `cdrom.mount` with a symlink to `/dev/null` under the live root's `/lib/systemd/system`, and the mask did not stop the unmount attempts. Whether a real machine shows the same, and why the mask does not take, is to be checked on hardware; the boot test powers off with `systemctl poweroff -ff` instead.
+
+### To design
+
+- **TPM unlock of the encrypted disk.** The installer enrolls no TPM token. Since docs/7 choice 47 the tools are installed (`systemd-cryptenroll` in `systemd-cryptsetup`, `systemd-tpm`, `tpm-udev`). To decide: a dependency, an enrollment step after the installation, the disk encryption passphrase kept as the recovery key, and which TPM measurements (PCRs) the key is sealed to. For comparison, Kubuntu on the same laptop seals the key with clevis to PCR 7 only (read 2026-10-19), the Secure Boot policy, so the unlock stops working whenever the Secure Boot state or its key databases change, and any boot chain signed by the same certificates gets the same PCR 7 value.
+- **Going back to the previous release's packages.** Btrfs installs get a Timeshift snapshot before every update ([docs/1](1%20-%20policy.md), "Timeshift snapshots on btrfs installs"); ext4 and xfs installs have none. The apt repository carries one version per package (aptly's `publish switch` replaces the previous snapshot), so `apt install <package>=<version>` cannot go back. To decide: whether to keep the previous release's packages published.
+- **A release notes page.** `@DISTRO_ID@-update-confirm`'s "What's new" line points at the distro's home URL; no release notes page exists.
+- **The SSH agent and the Secret portal.** `gcr4`, a dependency of `gnome-keyring`, enables `gcr-ssh-agent.service`, an SSH agent on `$XDG_RUNTIME_DIR/gcr/ssh`; which agent the desktop uses is not decided. `gnome-keyring` ships `/usr/share/xdg-desktop-portal/portals/gnome-keyring.portal` for `org.freedesktop.impl.portal.Secret`, the interface sandboxed applications store secrets through, but Ubuntu's `/usr/share/xdg-desktop-portal/hyprland-portals.conf` (`[preferred]` `default=hyprland;gtk`, in the `.108` image) names no backend for that interface; a line `org.freedesktop.impl.portal.Secret=gnome-keyring` in the desktop's portal configuration would add one.
+- **Branding artwork**: `logo.svg`, `icon.png`, the Plymouth and SDDM logos, the icon font's U+E900 glyph, the installer's three images (rendered from the distro's name today), the installer's slideshow, and translations of the installer launcher's name.
+- **Install > Gaming > Xbox Controllers.** `xpadneo-dkms` needs a Secure Boot key enrolled; the kernel's own drivers already run the controller over USB and Bluetooth (docs/6, choice 18).
+- **Learn > Omarchy**, the one Omarchy feature left to restore: with a caveat, or with a page of the port's own. The facts are in the fork's PORT-REMOVALS.md, "Commands, launchers and menu entries".
+- **A BIOS boot path**, only if a machine without UEFI ever matters (docs/7, choice 4).
+
+### To investigate
+
+- **User units a package enables start only with a new user manager.** A unit that `dh_installsystemduser` enables (`@DISTRO_ID@-volume-monitors.service`, docs/7 choice 46) does not start in sessions already running: on 2026-10-13 the first session after the upgrade to `@DISTRO_ID@-session` 0.1.5 ran without it. The next package that adds a user unit should also start the unit in running sessions from its postinst.
+- **Files' `GDK_BACKEND` warning.** Files logs `GDK backend forced via env var, portal dialogs will not work properly` and `Unsupported or missing session type 'wayland'`: something in the session sets `GDK_BACKEND`, which can break the file chooser's portal dialog.
+- **Plymouth's theme under QEMU.** Plymouth's debug log in both boot tests (`plymouth.debug`) holds none of the script plugin's trace lines ("starting boot animation"), while `plymouth-start.service` starts and nothing crashes. Whether the theme is shown at all under `virtio-vga`, and so whether the tests' Plymouth crash check exercises the script plugin, is to be read from that log with the guest kept running.
+- **foot's server reads its configuration before the theme exists.** Ubuntu's `foot` package enables `foot-server.socket` for every user; the server, started at the session's first connection, reads `~/.config/foot/foot.ini` before the theme is written and logs the missing include. foot keeps running, and a terminal opened later has the theme.
+- **uutils `timeout`.** Ubuntu's `timeout` is uutils' (`coreutils-from-uutils`), which on timeout kills only the process it started; GNU's signals the whole process group. When the timed-out program has started children and the caller reads its output (`$(timeout … cmd)`), the caller waits for those children: 30 s instead of 2 s in Omarchy's own test of a wedged `supergfxctl`. The restored Hybrid GPU scripts call `gnutimeout` (GNU's, `gnu-coreutils`). Kept scripts that time out a program which starts children may have the same problem, the likeliest being the callers of `@DISTRO_ID@-shell` (`@DISTRO_ID@-theme-set`, `@DISTRO_ID@-system-sleep-lock`).
+- **The Bluetooth pairing agent.** Omarchy's `bt-agent.service` was replaced by blueman's applet, which starts through XDG autostart; not confirmed that XDG autostart runs under the uwsm session.
+- **Hardware fixes kept without proof that Ubuntu needs them**, by the maintainer's decision of 2026-10-16: the ASUS Panther Lake display options (docs/6, choice 55) and Wi-Fi 7 off on a Dell XPS on Panther Lake (choice 60). Whether Ubuntu's kernel has those bugs was not checked.
+- **Hardware support never run on the hardware**: the Surface and MacBook8,1 keyboard modules (docs/6, choices 63 and 64), the IPU7 camera through libcamera (65), the Dell XPS haptic touchpad (66), `qmk_hid` (67), and `asusctl` with the Hybrid GPU toggle (68).
+
+### Automation
+
+- **Turn the GitHub Actions workflows back on.** `build` and `upstream-check` were disabled on 2026-10-19 (`gh workflow disable`), because every run since has ended without starting, with GitHub's annotation "The job was not started because recent account payments have failed or your spending limit needs to be increased"; they stay off until the account's next billing cycle. To turn them on: `gh workflow enable build` and `gh workflow enable upstream-check`; `make check-render` and `make check-versions` run the `prepare` job's checks on the workstation meanwhile.
+- **The fork's tests in CI.** The fork's `./test/all` passes on a machine with `lua5.5` and `ripgrep` and a checkout that is not group-writable (the fork's `PORT.md`, "Tests"), and nothing runs it automatically: the fork has no `.github/workflows/`, and this repository's `build.yml` and `upstream-check.yml` do not call `test/all`.
+- **The root filesystem and the ISO in CI.** `make rootfs` downloads about 500 MB per run, the live root filesystem is a 4 GB mmdebstrap run, and the boot tests need KVM and OVMF, so all of them run on the workstation only. If a CI run of the boot test ever uses `virtio-vga` without virgl, check the software-rendering patch of [docs/5](5%20-%20hyprland-quickshell.md), choice 6, against its shell check.
+- **The fork's `install/omarchy-other.packages`** holds Arch package names that nothing reads.
+
+### Upstream reports
+
+- **Calamares' partition alignment in "Replace a partition" and "Install alongside".** Launchpad bug 2165428 covers "Erase disk" only, and Calamares issue 2526 covers manual partitioning. Ubuntu's `kpmcore 26.08.1-0ubuntu2` sidesteps the gap with 512-byte sectors (docs/7, choice 11), so the gap costs only the 4K sector size. A report needs the laptop's evidence: the mode line (`doReplacePartition` or `doAlongsideApply`) and the partition's sector count from a failed run's Calamares session log, and `sfdisk -l`.
+
+### When something changes upstream
+
+- **When @DISTRO_NAME@ moves to Qt 6.12 or to a newer Omarchy** (on a new Ubuntu release; `@BASE_SERIES@` ships Qt 6.11.2): Qt 6.12 adds a QtQuick `Color` type that hides the shell's own `Color` singleton (`shell/Commons/Color.qml`), since the shell's QML files import QtQuick without a version. Omarchy works around it with `load_qtquick_611.patch` in its Quickshell package (`omacom/omarchy-pkgs`, `pkgbuilds/quickshell`, commit 5fcf9597, 2026-10-10, "temporarily work around Qt 6.12 breakage"): when the shell's `shell.qml` starts with `//@ pragma OmarchyLoadPatch`, Quickshell rewrites the shell's unversioned `import QtQuick` lines to `import QtQuick 6.11` as it loads them. Add the patch to `packages/quickshell` and the pragma line to the fork's `shell/shell.qml` together (Omarchy's current `shell.qml` has the pragma; v4.0.4's does not), unless Qt or Quickshell has settled the conflict by then. Not added on 2026-10-15: no effect on Qt 6.11, and Omarchy calls the patch temporary.
+- **Dropping `packages/quickshell`** (docs/5, choice 4). Debian has `quickshell 0.3.2-1` (sources.debian.org, 2026-10-19); `@BASE_SERIES@` has `0.3.0-1build1`. This repository's `0.3.2-0oaxaca2` also carries the fix that makes the lock screen work more than once per login, so the package can go when Ubuntu's archive has 0.3.2 or later with that fix; whether Debian's `0.3.2-1` has the fix is not checked.
+- **Omarchy's Hyprland plugins.** `omarchy-hyprland-titlebars` and `cua-hyprland-plugin` are not in v4.0.4's package list; if a later Omarchy tag installs one, the plugin is built against Ubuntu's `hyprland-dev` and depends on the `hyprland-abi-*` package of the archive's Hyprland.
+- **The series upgrade** ([docs/8](8%20-%20update-path.md), choice 5): the command on the fork's branch, the second suite in the apt repository, and the upgrade test across suites, when the next Ubuntu series opens in Launchpad.
 
 ## The installed system in detail
 
@@ -610,6 +657,8 @@ A newer Ubuntu upload of a rebuilt package: read its changelog for the distro's 
 A new LocalSend release: in `packages/localsend/upstream`, change the version in both URLs and both SHA-256s (GitHub shows each file's SHA-256 on the release page), add a changelog entry, `make build PKG=packages/localsend`, then publish. A new ttfx release: see `packages/ttfx/README.md`. A new Voxtype release: in `packages/voxtype/sources.list`, change the version in the URL and the SHA-256, add a changelog entry, `make build PKG=packages/voxtype`, then publish.
 
 ### GitHub Actions (`.github/workflows/build.yml`)
+
+Both workflows, `build` and `upstream-check`, are disabled on GitHub since 2026-10-19 (the workflow files are unchanged); turning them back on is in [To do](#to-do).
 
 On every push, pull request and `v*` tag, four jobs run on `ubuntu-26.04` runners. `prepare` runs `make check-render` and `make check-versions`, lists the directories under `packages/` and runs `make chroot` once (cached weekly). `build` runs one job per package directory, in parallel: a job whose package directory, `distro.conf`, build scripts and chroot week are unchanged since its last successful build restores that build from the cache and uploads it; otherwise it installs sbuild, mmdebstrap and cargo and runs `make build PKG=packages/<directory>` with `TMPDIR=/var/tmp` (sbuild unpacks the chroot and builds under `/tmp` otherwise, a 3.9 GB tmpfs on the runner; `quickshell` needs 4.8 GB there) and `DEB_BUILD_OPTIONS=parallel=2` (the runner has 16 GB; `quickshell` peaks at 12.4 GB with four compiler jobs and 1.9 GB with two). Each job uploads its packages and sbuild's build log as the artifact `packages-<directory>`. `upgrade-test` gathers every artifact into `build/` and runs `make upgrade-test` against the published archive. On a tag, `release` gathers every artifact and attaches the packages to a GitHub Release. The runners use the same toolchain as the workstation, so a green run means the packages build from a clean checkout. Publishing stays on the workstation, where the signing key is.
 

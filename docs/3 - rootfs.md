@@ -175,15 +175,9 @@ All on this workstation (Kubuntu 26.04.1, 24 CPUs, KVM), with the archive mirror
   `system: starting` rather than `running` is expected and explained in the script: systemd counts startup as finished only once its job queue first drains, and the test unit's own job is in that queue, so the test waits for every other job instead and reports no failed units. 162 AppArmor profiles loaded means the `apparmor` service found the profiles shipped by the installed packages. `apt update: ok` covers both the Ubuntu archive and the Oaxaca repository on GitHub Pages, verified with the installed keyring. The whole test, image creation included, takes 41 s on this workstation (the `mke2fs` copy of the 1.8 GB tree is most of that).
 - Four problems found and fixed on the way, each now a comment in the script that hit it: a make variable named `PKG` in `debian/rules` was overridden by the `make build PKG=...` command line through `MAKEFLAGS`, leaving the package empty; the host shell's `LOCPATH` made the `locales` package fail its own check inside the chroot; a hook's redirect into the home directory was denied in unshare mode, so the manifest is fetched with mmdebstrap's `download` hook; and `systemctl is-system-running --wait` inside the test unit waited for itself.
 
-## Carried to later steps
+## Open work
 
-- Writing GRUB and shim to a disk, the partition layout, `fstab`, the encrypted root and the Plymouth prompt: roadmap step 7, where the policy's OVMF Secure Boot boot also happens.
-- Creating the user, the locale and time zone questions: the installer, step 7.
-- `ubuntu-drivers` with `ID=oaxaca`: step 4, when `ubuntu-drivers-common` and the NVIDIA packages are added (policy, section 4).
-- `bluez`, `thermald` and the laptop's firmware extras: `oaxaca-desktop`, `oaxaca-base` and `oaxaca-session`, step 6 and docs/7 choice 44.
-- `oaxaca-hybrid-backlight`, the pipeline's second package: `make build` still produces `build/oaxaca-hybrid-backlight_0.1.0_all.deb` and `make publish` ships that package, and `oaxaca-nvidia` depends on the package, so every image from the `session` profile up has the hide (docs/7 choice 44); the base profile does not.
-- `unattended-upgrades`: optional per the plan, undecided.
-- Building the root filesystem in CI: the download is about 500 MB per run and the runner would also need KVM for the boot test, so for now both run on the workstation only.
+What is left from this step is in the developer README's [To do](README.md#to-do), the one list of open work.
 
 ## Facts checked on 2026-10-07
 

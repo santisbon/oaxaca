@@ -120,13 +120,9 @@ All on this workstation (Kubuntu 26.04.1, 24 CPUs, KVM, Intel iGPU render node).
   So on Ubuntu's Hyprland 0.56.2 with virgl, our Quickshell loads Omarchy v4.0.4's shell, the shell's `IpcHandler` answers `ping` with `ok` twelve seconds after launch, and its bar is on screen as the layer surface `omarchy-bar`. The shell wrote seven lines to its journal in those twelve seconds and none of them matches an error pattern, with no `omarchy-*` script, no theme and no Nerd Font installed: the shell's startup tolerates all of that, as choice 7 expected. The other layer surfaces (`omarchy-background`, `omarchy-menu`, …) appear on demand, when a theme sets a background or a key opens the menu, so their absence here says nothing.
 - The empty `revision` in `quickshell --version` is expected: Quickshell fills it from `git` at build time, and the orig tarball has no `.git`; Debian's build prints the same.
 
-## Carried to later steps
+## Open work
 
-- `hyprland-preview-share-picker` 0.2.1 (Rust, GTK4, `gtk4-layer-shell`), the screen-share picker `xdg-desktop-portal-hyprland` calls through Omarchy's `config/hypr/xdph.conf`: in neither Ubuntu nor Debian, so it is packaged in step 6 with the other third-party programs, through the `upstream` file mechanism. *(Done 2026-10-10, `packages/hyprland-preview-share-picker`.)*
-- Omarchy's Hyprland plugins (`omarchy-hyprland-titlebars`, `cua-hyprland-plugin`) are not in v4.0.4's package list; if a later Omarchy tag installs one, it is built against Ubuntu's `hyprland-dev` and depends on `hyprland-abi-b51ae4c`.
-- The companion tools (`hyprpicker`, `hyprsunset`, `hyprland-guiutils`, `wl-clipboard`, `xdg-terminal-exec`), `libxkbcommon-tools` (`xkbcli`, which the shell's bar runs for the keyboard layout) and the JetBrains Mono Nerd Font the shell names: step 6's desktop and fonts packages. *(Done 2026-10-10; step 6 also found that the shell imports Qt QML modules Ubuntu's `quickshell` does not depend on, `QtQuick.Effects` among them, so `oaxaca-shell` names all seven.)*
-- The software-rendering patch (choice 6): revisit if the CI fallback run of the boot test, on `virtio-vga` without virgl, shows rendering problems in the shell check.
-- When Debian uploads `quickshell 0.3.2-1` or later, drop `packages/quickshell` at the next rebase (choice 4).
+What is left from this step is in the developer README's [To do](README.md#to-do), the one list of open work.
 
 ## Facts checked on 2026-10-09
 

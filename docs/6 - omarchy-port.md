@@ -414,12 +414,9 @@ All on this workstation (Kubuntu 26.04.1, 24 CPUs, KVM, Intel iGPU render node),
 - **Stores and the catalogue additions** (choice 17, later the same day): with `snapd` and `flatpak` in the package list, `install/config/flatpak.sh` adding Flathub, the six store helpers, VS Code restored next to VSCodium from Flathub, and Wave and Thunderbird as snaps, the desktop packages pass lintian, the root filesystem is 3.5 GB with 1091 packages, and the boot test reports `snapd candidate: 2.77.1+ubuntu26.10.1`, `apply-system completed scripts: 19`, `stores: snapd=enabled flathub=1`, `apps split: removed=0 launchers=3 apps-pkg=0`, `shell log: 17 lines, 0 errors, 8 warnings` and `== boot test passed`. The store entries install from the network on request and are not exercised by the test.
 - **Chrome restored and Mullvad VPN added** (later the same day): the browser installer, remover, theme scripts and the three menu groups carry Chrome next to Chromium again, and the service group gained Mullvad VPN from Mullvad's apt repository (key and `InRelease` answered HTTP 200; `mullvad-vpn 2026.5`); the desktop packages pass lintian, the root filesystem rebuilds and the boot test reports `menu layer: yes`, `stores: snapd=enabled flathub=1`, `shell log: 17 lines, 0 errors, 8 warnings` and `== boot test passed`.
 
-## Carried to later steps
+## Open work
 
-- `plymouth-set-default-theme`, which `oaxaca-plymouth-set` and its relatives call, does not exist in stonking: Ubuntu selects the theme through `update-alternatives` on `default.plymouth`, registered by the theme packages (`plymouth-theme-spinner` registers `bgrt` at priority 110), so step 7 registers ours the same way and drops those calls. *(Done 2026-10-10 in step 7: `oaxaca-config`'s postinst registers the theme at priority 150 and `oaxaca-plymouth-set` runs `update-alternatives --set`.)* Omarchy's own applications (choice 5), the CUPS hardening (`cups-browsed` as its own user, `cups-files.conf`), the kernel command-line drop-ins for other vendors' quirks (they need the boot loader of step 7), the Nerd Font install menu (only JetBrains Mono Nerd is packaged), Omarchy's `omarchy-nvim` configuration, `localsend` and `obsidian` as debs from their GitHub releases.
-- Step 7: the installer runs `oaxaca-apply-system --install-user <user> --first-install`, offers the browser choice, selects `oaxaca-hw-legion` on this laptop, turns the Plymouth theme on, and copies `/etc/skel` through `useradd -m`.
-- Branding: real artwork for `logo.svg`, `icon.png`, the Plymouth and SDDM logos, and the icon font's U+E900 glyph.
-- The port's `test/` directory still has Omarchy's unit tests, many for deleted scripts; a CI job for the fork is not set up.
+What is left from this step is in the developer README's [To do](README.md#to-do), the one list of open work.
 
 ## Facts checked on 2026-10-10
 
