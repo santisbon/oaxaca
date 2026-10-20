@@ -1,7 +1,7 @@
 <!-- Generated from packages/desktop/README.md.in by scripts/render.py. Edit the .in file, not this one. -->
 # oaxaca-desktop
 
-The Omarchy port: roadmap step 6. One source package built from the `oaxaca` branch of the fork `https://github.com/santisbon/omarchy` (Omarchy `v4.0.4` plus the port commits), producing five binary packages, all at version `4.0.4+git20261019.108.aa6bd56b-0oaxaca<N>`: the Omarchy tag, `+git` and the date (UTC) of the fork commit built (`OMARCHY_PORT_DATE` in `distro.conf`, which `scripts/build.sh` checks against the commit), then the Debian revision. See `docs/6 - omarchy-port.md`.
+The Omarchy port: roadmap step 6. One source package built from the `oaxaca` branch of the fork `https://github.com/santisbon/omarchy` (Omarchy `v4.0.4` plus the port commits), producing five binary packages, all at version `4.0.4+git20261020.111.a5ea1314-0oaxaca<N>`: the Omarchy tag, `+git` and the date (UTC) of the fork commit built (`OMARCHY_PORT_DATE` in `distro.conf`, which `scripts/build.sh` checks against the commit), then the Debian revision. See `docs/6 - omarchy-port.md`.
 
 | Binary package | What it carries | Omarchy's own package it mirrors |
 |---|---|---|

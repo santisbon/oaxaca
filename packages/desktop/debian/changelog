@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.4+git20261019.108.aa6bd56b-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.4+git20261020.111.a5ea1314-0oaxaca1) stonking; urgency=medium
 
   * HEIC photos open in imv and get thumbnails in Files: the desktop
     depends on libheif-plugin-libde265, the HEVC decoder libheif loads for
