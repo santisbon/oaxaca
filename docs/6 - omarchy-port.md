@@ -331,7 +331,7 @@ hostnamectl hostname
 whoami
 ```
 
-`hostnamectl hostname` prints the Oaxaca machine's host name, the one the installer's Users page proposed or you typed there (on the Legion laptop, `<host>`). `whoami` prints your user name on the Oaxaca machine, the account the installer created.
+`hostnamectl hostname` prints the Oaxaca machine's host name, the one the installer's Users page proposed or you typed there (on the Legion laptop, the user name followed by `-83f5`). `whoami` prints your user name on the Oaxaca machine, the account the installer created.
 
 ### Run a command over SSH (the other computer)
 

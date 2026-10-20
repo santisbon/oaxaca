@@ -192,6 +192,6 @@ What is left from this step is in the developer README's [To do](README.md#to-do
 | lintian on apt preferences | `package-installs-apt-preferences`, error: "This directory is under the control of the local administrator" | `lintian-explain-tags` |
 | mmdebstrap `--include` with a `.deb` path | the `.deb` must be readable by the unshared user and present at the same path inside the chroot; `--hook-dir=/usr/share/mmdebstrap/hooks/file-mirror-automount` does the copying | `man mmdebstrap`, 1.5.7 |
 | Owner of `/etc/os-release`, `/usr/lib/os-release`, `/etc/lsb-release` | `base-files`; `/etc/os-release` is a symlink to `../usr/lib/os-release` | `dpkg -S` on this workstation (resolute) |
-| `/dev/kvm` access on this workstation | ACL entry `user:<user>:rw-` | `getfacl` |
+| `/dev/kvm` access on this workstation | ACL entry `user:<user>:rw-` for the maintainer's account | `getfacl` |
 | `LOCPATH` set in the build host's environment | glibc then looks only in that directory for per-locale directories and ignores `locale-archive`, so the `locales` package's postinst check `update-locale LANG=en_US.UTF-8` fails inside the chroot with "invalid locale settings". The shell this was built from had `LOCPATH=/usr/lib/locale`; the script unsets it | first `make rootfs` run, 2026-10-07, and `locale(7)` |
 | A make command-line variable reaches sub-makes | `make build PKG=...` overrode a `PKG` variable inside `debian/rules` through `MAKEFLAGS`, so `debian/rules` files here avoid that name | observed, first build of `oaxaca-base` |
