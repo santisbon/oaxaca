@@ -749,7 +749,7 @@ Two scripts run the whole process; each one's header comment says what the scrip
 - `scripts/machine-setup.sh` (`make machine-setup`), once per workstation;
 - `scripts/release.sh` (`make release`), once per release.
 
-Both expect this repository cloned at `~/Projects/mydistro` and the Omarchy fork at `~/Projects/omarchy` (branch `@OMARCHY_PORT_REF@`; `OMARCHY_FORK_DIR=<path>` names another checkout), and these credentials in place:
+Both expect this repository cloned at `~/Projects/oaxaca` and the Omarchy fork at `~/Projects/omarchy` (branch `@OMARCHY_PORT_REF@`; `OMARCHY_FORK_DIR=<path>` names another checkout), and these credentials in place:
 
 - an SSH key that GitHub accepts for both repositories, for `git push`;
 - the apt signing key in GnuPG, restored from the password manager as in [docs/2, Backing up the signing key](2%20-%20build-infra.md#backing-up-the-signing-key);
@@ -759,7 +759,7 @@ Both expect this repository cloned at `~/Projects/mydistro` and the Omarchy fork
 ### Once per machine
 
 ```sh
-cd ~/Projects/mydistro && make machine-setup
+cd ~/Projects/oaxaca && make machine-setup
 ```
 
 What `make machine-setup` does, stopping at the first failure:
@@ -788,7 +788,7 @@ Files with a `.in` template are never edited directly: `make render` writes each
 2. **When the fork changed, give the desktop package a new changelog entry.** The top entry of `packages/desktop/debian/changelog.in` carries the placeholder `@@OMARCHY_PORT_VERSION@@`, which `make render` fills from `distro.conf`, so the top entry always names the version being built. Before `make release` moves `distro.conf` to the fork's new commit, write the published version into the top entry, while `distro.conf` still names that version:
 
    ```sh
-   ( cd ~/Projects/mydistro && source distro.conf && sed -i "1s/@@OMARCHY_PORT_VERSION@@/$OMARCHY_PORT_VERSION/" packages/desktop/debian/changelog.in && head -1 packages/desktop/debian/changelog.in )
+   ( cd ~/Projects/oaxaca && source distro.conf && sed -i "1s/@@OMARCHY_PORT_VERSION@@/$OMARCHY_PORT_VERSION/" packages/desktop/debian/changelog.in && head -1 packages/desktop/debian/changelog.in )
    ```
 
    Then add a new entry above it, with the placeholder in the first line, one bullet per change, and a date from `date -R`:
@@ -806,14 +806,14 @@ Files with a `.in` template are never edited directly: `make render` writes each
 4. **Document each change, render, and commit this repository.** Each change gets its bullets in the changed packages' `debian/changelog.in` entries (steps 2 and 3) and, when it is a decision, a numbered choice in the `docs/` document of its roadmap step, with `docs/README.md.in` updated where it describes the changed behavior. Then render and commit:
 
    ```sh
-   cd ~/Projects/mydistro && make render && git add -A && git commit -m "<what changed>" && git push
+   cd ~/Projects/oaxaca && make render && git add -A && git commit -m "<what changed>" && git push
    ```
 
    `<what changed>` is the commit's message, in your own words. `make release` commits with `git add -A` (its step 8), so anything left uncommitted goes into the release commit, mixed with the files the release itself rewrites.
 5. **Print the release commit's message**, to check what the release will build before starting it:
 
    ```sh
-   cd ~/Projects/mydistro && make release-message
+   cd ~/Projects/oaxaca && make release-message
    ```
 
    `make release-message` runs `scripts/release.sh --message`, which computes the message the way `make release` does and changes nothing: it pushes nothing, writes no file and builds nothing. The output on 2026-10-18, before the release of the layered ISO and the SSH PATH:
@@ -827,7 +827,7 @@ Files with a `.in` template are never edited directly: `make render` writes each
 ### Each release
 
 ```sh
-cd ~/Projects/mydistro && make release
+cd ~/Projects/oaxaca && make release
 ```
 
 What `make release` does, stopping at the first failure:
