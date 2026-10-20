@@ -67,11 +67,14 @@ Nothing is ever installed and then stripped out: the root filesystem is assemble
   - [Build dependencies](#build-dependencies)
   - [Chroot](#chroot)
   - [Vendored crates](#vendored-crates)
+  - [Codec](#codec)
+  - [VA-API driver](#va-api-driver)
 - [Status](#status)
 - [The installed system in detail](#the-installed-system-in-detail)
   - [Installing software: Recommends are on, with exceptions](#installing-software-recommends-are-on-with-exceptions)
   - [Secure Boot](#secure-boot)
   - [NVIDIA and AMD GPUs](#nvidia-and-amd-gpus)
+  - [Media codecs](#media-codecs)
   - [Apple hardware](#apple-hardware)
   - [The Omarchy desktop](#the-omarchy-desktop)
   - [Plugins and themes written for Omarchy](#plugins-and-themes-written-for-omarchy)
@@ -197,6 +200,14 @@ A directory holding a complete root filesystem, used by running a program with t
 
 A Rust program's crates (its library dependencies, which cargo normally downloads from crates.io) copied into the [source package](#source-package), so that `make build` (which `make release` and CI run) can compile the program inside the build [chroot](#chroot), where sbuild's unshare mode (`sbuild.conf`) blocks network access. Nothing is compiled when a user installs @DISTRO_NAME@: the ISO and the apt repository carry the finished packages. For a package whose `upstream` file says `CARGO_VENDOR=1` (hyprland-preview-share-picker, ttfx, asusctl, supergfxctl, qmk-hid), `scripts/build.sh` runs `cargo vendor --locked vendor` on the workstation: cargo downloads every crate at the version in the program's `Cargo.lock` into a `vendor/` directory, and `scripts/build.sh` packs that directory as a second tarball of the source package, such as `ttfx_0.5.0.orig-vendor.tar.gz`. In the build, the package's `debian/rules` points cargo at `vendor/` instead of crates.io. Ubuntu's own Rust packages instead depend on one `librust-*-dev` package per crate from the archive. Because the crates' code ships inside the source package, `scripts/vendor-copyright.py` lists each crate's license in `debian/copyright`.
 
+### Codec
+
+The code that turns one compressed audio, video or image format (H.264, AAC, AV1, HEIC) into pictures and sound, or the reverse. On Linux a program gets its codecs from one of two libraries: FFmpeg (`libavcodec`), which mpv, `ffmpeg` and `ffmpegthumbnailer` use, or GStreamer, whose codecs come as plugin packages (`gstreamer1.0-plugins-base`, `-good`, `-bad`, `-ugly` and `gstreamer1.0-libav`, which wraps FFmpeg) and which GNOME's players use.
+
+### VA-API driver
+
+The library through which a program hands [codec](#codec) work to the graphics card instead of the processor (hardware decoding). VA-API is the interface; each GPU vendor has its own driver: Mesa's for AMD, Intel's `intel-media-va-driver` for Intel, and `nvidia-vaapi-driver` for NVIDIA.
+
 ## Status
 
 The roadmap is in [docs/0 - plan.md](0%20-%20plan.md). Done so far:
@@ -269,6 +280,33 @@ On laptops with hybrid graphics, where the built-in screen hangs off the Intel o
 - CUDA programs use an NVIDIA GPU directly, with no launcher.
 
 The AMD path is tested against simulated machines only, not yet on AMD hardware.
+
+### Media codecs
+
+Which [codecs](#codec) and [VA-API drivers](#va-api-driver) a stock Ubuntu Desktop, Omarchy and @DISTRO_NAME@ install, checked on 2026-10-19:
+
+- the Ubuntu Desktop column: the `ubuntu-desktop` metapackage 1.577 and `ubuntu-restricted-addons` 33ubuntu in Ubuntu's `@BASE_SERIES@` archive, and the archive's `Contents-amd64` index for which package ships each GStreamer plugin;
+- the Omarchy column: Omarchy v4.0.4's `install/omarchy-base.packages` and hardware scripts, and Arch's packages on archlinux.org (Omarchy installs Arch's current versions, such as `ffmpeg` 9.0.2-2);
+- the @DISTRO_NAME@ column: the root filesystem manifest of the `desktop` 4.0.4+git20261019.108.aa6bd56b release, and the `@DISTRO_ID@-session` package's dependencies.
+
+| | Ubuntu Desktop @BASE_VERSION@ | Omarchy v4.0.4 | @DISTRO_NAME@ |
+|---|---|---|---|
+| Video player | Showtime (GStreamer) | mpv (FFmpeg) | mpv (FFmpeg) |
+| Music player | Rhythmbox (GStreamer) | none; mpv plays music files | none; mpv plays music files |
+| FFmpeg | not named by `ubuntu-desktop` | Arch's `ffmpeg`, a dependency of `mpv` | Ubuntu's `ffmpeg` 8.1.2 (`libavcodec62`) |
+| GStreamer plugins | `base` (through `gstreamer1.0-plugins-base-apps`) | none named | `base` and `good` 1.28.7 |
+| GStreamer `bad`, `ugly` and `libav` | only in `ubuntu-restricted-addons`, which the installer's "Install third-party software … additional media formats" box installs | not installed | not installed |
+| H.264, HEVC and AAC in the video player | only with `ubuntu-restricted-addons` (`gstreamer1.0-libav`) | yes: FFmpeg's own decoders | yes: FFmpeg's own decoders |
+| AV1 in the video player | only with `ubuntu-restricted-addons` (`gstreamer1.0-libav`) | yes: Arch's `ffmpeg` depends on `dav1d` | yes: `libdav1d7` |
+| H.264 and HEVC encoders (`@DISTRO_ID@-transcode`, Omarchy's `omarchy-transcode`) | not installed | Arch's `ffmpeg` depends on `x264` and `x265` | `libx264-165` and `libx265-216` |
+| HEIC photos | only with `ubuntu-restricted-addons` (`libheif-plugin-libde265`) | yes: `imv` depends on Arch's `libheif`, which depends on `libde265` | no: `libheif1` has only the AVIF plugins (`libheif-plugin-aomdec`, `-aomenc`) |
+| DVD reading (no CSS decryption) | not named by `ubuntu-desktop` | `libdvdread` and `libdvdnav`, dependencies of Arch's `ffmpeg` and `mpv` | `libdvdread8t64` and `libdvdnav4` |
+| Hardware decoding, AMD | Mesa's VA-API driver in `mesa-libgallium`, which `Provides: mesa-va-drivers` | Mesa's VA-API driver in Arch's `mesa` (`Provides: libva-mesa-driver`) | `mesa-libgallium` 26.2.4 (`radeonsi_drv_video.so`) |
+| Hardware decoding, Intel | not named by `ubuntu-desktop` | `intel-media-driver`, on Intel machines (`install/hardware/intel/video-acceleration.sh`) | `intel-media-va-driver-non-free` 26.2.4, on every machine (a dependency of `@DISTRO_ID@-session`) |
+| Hardware decoding, NVIDIA | not named by `ubuntu-desktop` | `libva-nvidia-driver`, on NVIDIA machines (`install/hardware/nvidia.sh`) | `nvidia-vaapi-driver`, which `@DISTRO_ID@-drivers-install` adds after `ubuntu-drivers` installs an NVIDIA driver ([NVIDIA and AMD GPUs](#nvidia-and-amd-gpus)) |
+| Browser | Firefox (snap); which web video formats the snap plays is not checked | Arch's Chromium, built with `proprietary_codecs=true` (Arch's `PKGBUILD`, line 350), so web pages can play H.264 and AAC | Chromium 155 from xtradeb; whether xtradeb's build plays H.264 and AAC on web pages is not checked |
+
+"Not named by `ubuntu-desktop`" means the metapackage neither depends on nor recommends the package; whether another package of a stock install pulls the package in is not checked. None of @DISTRO_NAME@'s preinstalled programs plays media through GStreamer, so the missing `bad`, `ugly` and `libav` plugins matter only for a GStreamer player the user adds, such as Showtime; Omarchy installs none of them either.
 
 ### Apple hardware
 
