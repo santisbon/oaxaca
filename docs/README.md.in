@@ -202,7 +202,17 @@ A Rust program's crates (its library dependencies, which cargo normally download
 
 ### Codec
 
-The code that turns one compressed audio, video or image format (H.264, AAC, AV1, HEIC) into pictures and sound, or the reverse. On Linux a program gets its codecs from one of two libraries: FFmpeg (`libavcodec`), which mpv, `ffmpeg` and `ffmpegthumbnailer` use, or GStreamer, whose codecs come as plugin packages (`gstreamer1.0-plugins-base`, `-good`, `-bad`, `-ugly` and `gstreamer1.0-libav`, which wraps FFmpeg) and which GNOME's players use.
+The code that turns one compressed audio, video or image format (H.264, AAC, AV1, HEIC) into pictures and sound, or the reverse. On Linux a program gets its codecs from one of two libraries: FFmpeg (`libavcodec`), which mpv, `ffmpeg` and `ffmpegthumbnailer` use, or GStreamer, which GNOME's players use. GStreamer's codecs come as plugins, which the GStreamer project sorts into sets by quality and licensing, one Ubuntu package per set. The sets' meanings below are quoted from the packages' descriptions in Ubuntu's `@BASE_SERIES@` archive (read 2026-10-19):
+
+| Set | Ubuntu package | Package description |
+|---|---|---|
+| `base` | `gstreamer1.0-plugins-base` | "an essential exemplary set of elements" |
+| `good` | `gstreamer1.0-plugins-good` | "a set of good-quality plug-ins under the LGPL license" |
+| `ugly` | `gstreamer1.0-plugins-ugly` | "a set of good-quality plug-ins that might pose distribution problems" (patents or licenses; the H.264 encoder `x264` and DVD reading are here) |
+| `bad` | `gstreamer1.0-plugins-bad` | "plug-ins that aren't up to par compared to the rest. They might be close to being good quality, but they're missing something - be it a good code review, some documentation, a set of tests, a real live maintainer, or some actual wide use" (the OpenH264 decoder is here) |
+| `libav` | `gstreamer1.0-libav` | "supports a large number of audio and video compression formats through the use of the ffmpeg library": GStreamer's wrapper around FFmpeg, which gives GStreamer players FFmpeg's H.264, HEVC and AAC decoders |
+
+The packages that ship the x264 plugin (`libgstx264.so`), DVD reading (`libgstdvdread.so`) and OpenH264 (`libgstopenh264.so`) are from the archive's `Contents-amd64` index. `base` and `good` are in Ubuntu's main component; `ugly`, `bad` and `libav` are in universe.
 
 ### VA-API driver
 
@@ -299,7 +309,7 @@ Which [codecs](#codec) and [VA-API drivers](#va-api-driver) a stock Ubuntu Deskt
 | H.264, HEVC and AAC in the video player | only with `ubuntu-restricted-addons` (`gstreamer1.0-libav`) | yes: FFmpeg's own decoders | yes: FFmpeg's own decoders |
 | AV1 in the video player | only with `ubuntu-restricted-addons` (`gstreamer1.0-libav`) | yes: Arch's `ffmpeg` depends on `dav1d` | yes: `libdav1d7` |
 | H.264 and HEVC encoders (`@DISTRO_ID@-transcode`, Omarchy's `omarchy-transcode`) | not installed | Arch's `ffmpeg` depends on `x264` and `x265` | `libx264-165` and `libx265-216` |
-| HEIC photos | only with `ubuntu-restricted-addons` (`libheif-plugin-libde265`) | yes: `imv` depends on Arch's `libheif`, which depends on `libde265` | no: `libheif1` has only the AVIF plugins (`libheif-plugin-aomdec`, `-aomenc`) |
+| HEIC photos | only with `ubuntu-restricted-addons` (`libheif-plugin-libde265`) | yes: `imv` depends on Arch's `libheif`, which depends on `libde265` | not in the `.108` image, where `libheif1` had only the AVIF plugins (`libheif-plugin-aomdec`, `-aomenc`); yes from the next `desktop` release on, which depends on `libheif-plugin-libde265` (the port's `install/@DISTRO_ID@-base.packages`), and the boot test decodes a sample HEIC |
 | DVD reading (no CSS decryption) | not named by `ubuntu-desktop` | `libdvdread` and `libdvdnav`, dependencies of Arch's `ffmpeg` and `mpv` | `libdvdread8t64` and `libdvdnav4` |
 | Hardware decoding, AMD | Mesa's VA-API driver in `mesa-libgallium`, which `Provides: mesa-va-drivers` | Mesa's VA-API driver in Arch's `mesa` (`Provides: libva-mesa-driver`) | `mesa-libgallium` 26.2.4 (`radeonsi_drv_video.so`) |
 | Hardware decoding, Intel | not named by `ubuntu-desktop` | `intel-media-driver`, on Intel machines (`install/hardware/intel/video-acceleration.sh`) | `intel-media-va-driver-non-free` 26.2.4, on every machine (a dependency of `@DISTRO_ID@-session`) |

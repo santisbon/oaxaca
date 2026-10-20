@@ -1,5 +1,15 @@
 oaxaca-desktop (4.0.4+git20261019.108.aa6bd56b-0oaxaca1) stonking; urgency=medium
 
+  * HEIC photos open in imv and get thumbnails in Files: the desktop
+    depends on libheif-plugin-libde265, the HEVC decoder libheif loads for
+    HEIC. libheif1 only suggests it, so the image had only libheif's AV1
+    plugins, and decoding a HEIC failed with "No decoding plugin installed
+    for this compression format: HEVC". The boot test decodes a sample HEIC.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Mon, 19 Oct 2026 22:36:47 -0500
+
+oaxaca-desktop (4.0.4+git20261019.108.aa6bd56b-0oaxaca1) stonking; urgency=medium
+
   * The screensaver fills the screen and takes the keyboard when it starts
     over an open bar panel or the menu: the launcher closes them first,
     through the shell's new "shell closePanels" call. With the WiFi panel

@@ -412,6 +412,14 @@ echo "stores: snapd=\$(systemctl is-enabled snapd.socket 2>/dev/null) flathub=\$
 img=\$(mktemp /tmp/syscheck-squashfs-XXXXXX); truncate -s 4K "\$img"; loopdev=\$(losetup --find --show "\$img"); udevadm settle; sleep 1
 echo "snapd check image: udev=\$(udevadm info -q property "\$loopdev" | grep -cx 'UDISKS_IGNORE=1') udisks=\$(busctl get-property org.freedesktop.UDisks2 /org/freedesktop/UDisks2/block_devices/\${loopdev#/dev/} org.freedesktop.UDisks2.Block HintIgnore 2>&1)"
 losetup -d "\$loopdev"; rm -f "\$img"
+# HEIC photos: libheif decodes HEVC only through a plugin (libheif-plugin-libde265, in the port's
+# package list), and imv, Files' thumbnails (glycin-heif) and libvips all go through libheif. The
+# sample is a 16x16 mid-gray (#808080) HEIC made with ImageMagick (8-bit HEVC Main, 434 bytes);
+# vips avg decodes it and prints the mean pixel value on its last line; without the plugin, the last
+# line is libheif's "No decoding plugin installed for this compression format: HEVC" error.
+echo 'AAAAHGZ0eXBoZWljAAAAAG1pZjFoZWljbWlhZgAAAWhtZXRhAAAAAAAAACFoZGxyAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAAAA5waXRtAAAAAAABAAAAImlsb2MAAAAAREAAAQABAAAAAAGMAAEAAAAAAAAAJgAAACNpaW5mAAAAAAABAAAAFWluZmUCAAAAAAEAAGh2YzEAAAAA6GlwcnAAAADJaXBjbwAAAHVodmNDAQNwAAAAAAAAAAAAHvAA/P34+AAADwNgAAEAGEABDAH//wNwAAADAJAAAAMAAAMAHroCQGEAAQApQgEBA3AAAAMAkAAAAwAAAwAeoCCBBZbqrprm4CGgwIAAAAyAAAADAIRiAAEABkQBwXPBiQAAABRpc3BlAAAAAAAAAEAAAABAAAAAKGNsYXAAAAAQAAAAAQAAABAAAAAB////0AAAAAL////QAAAAAgAAABBwaXhpAAAAAAMICAgAAAAXaXBtYQAAAAAAAAABAAEEgQIEgwAAAC5tZGF0AAAAIigBrxMhHZb4W1MJiOssQLlMWCl5VyCTbsB4rzKHjr2vmmA=' | base64 -d >/tmp/sample.heic
+echo "heic decode: \$(vips avg /tmp/sample.heic 2>&1 | tail -n 1 | cut -c1-160)"
+rm -f /tmp/sample.heic
 # dpkg-query -W prints a line for a package it merely knows of, so the status field is tested exactly.
 echo "apps split: removed=\$(dpkg-query -W -f='\${db:Status-Status}\n' libreoffice kdenlive obs-studio xournalpp docker.io 2>/dev/null | grep -cx installed) launchers=\$(ls /usr/share/$id/applications | wc -l)"
 echo "launcher hides nvidia-settings: \$(grep -cx nvidia-settings /usr/share/$id/default/$id/launcher.hides)"
@@ -788,6 +796,8 @@ if [[ $profile == desktop ]]; then
   check "^restored tools missing: \[\]$"
   check "^stores: snapd=enabled flathub=1$"
   check "^snapd check image: udev=1 udisks=b true$"
+  # A mean of 120 to 139 is the sample's mid-gray (128) after lossy HEVC.
+  check "^heic decode: 1[23][0-9]\(\.[0-9]*\)\?$"
   check "^theme after switch: nord$"
   check "^shell ping after switch: ok$"
   check "^shell layers after switch: \\[.*$DISTRO_ID-background.*$DISTRO_ID-bar"
