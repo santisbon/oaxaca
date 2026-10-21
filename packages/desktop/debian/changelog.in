@@ -21,6 +21,8 @@
     the rest), the default browser and the setup's completion marker
     follow. A setup that still fails is written to first-run.log and
     retried at the next login instead of passing unnoticed.
+  * Install > Development > AWS CLI installs the aws-cli snap with classic
+    confinement; Remove > Development > AWS CLI removes it and keeps ~/.aws.
 
  -- @MAINTAINER@  Wed, 21 Oct 2026 15:08:05 -0500
 
