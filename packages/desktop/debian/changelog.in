@@ -7,6 +7,11 @@
   * The Display panel's text size header reads "TEXT SIZE · ALL DISPLAYS"
     with more than one monitor on: text size is one setting for the shell,
     GTK and the terminals, while scale is per monitor.
+  * Setup > Defaults > Terminal lists Wave once Wave is installed, and
+    choosing Wave explains in a notification why Wave cannot be the default
+    terminal: Wave does not run a command given at launch, which the menu's
+    terminal tools rely on. Installing Wave from Install > Terminal sends
+    the same notification.
 
  -- @MAINTAINER@  Wed, 21 Oct 2026 15:08:05 -0500
 
