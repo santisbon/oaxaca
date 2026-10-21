@@ -65,7 +65,13 @@ if ((seed)); then
   aptly repo create -distribution="$BASE_SERIES" -component="$APT_COMPONENT" "$repo"
   aptly repo import published "$repo" Name
   mkdir -p "$here/build"
-  find "$root/pool" -name '*.deb' -exec cp -n -t "$here/build/" {} +
+  # aptly's pool names each file <28 hex digits of its checksum>_<Debian file name>, while
+  # build/ and its readers (rootfs-create.sh, driver-pool.sh, the guard below) expect the Debian
+  # file name, <package>_<version without epoch>_<architecture>.deb, read here from the package.
+  find "$root/pool" -name '*.deb' -print0 | while IFS= read -r -d '' deb; do
+    version=$(dpkg-deb -f "$deb" Version)
+    cp -n "$deb" "$here/build/$(dpkg-deb -f "$deb" Package)_${version#*:}_$(dpkg-deb -f "$deb" Architecture).deb"
+  done
   echo "seeded $repo and build/ from $APT_URL"
   exit 0
 fi
