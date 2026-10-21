@@ -12,6 +12,15 @@
     terminal: Wave does not run a command given at launch, which the menu's
     terminal tools rely on. Installing Wave from Install > Terminal sends
     the same notification.
+  * Install > Development > GitHub CLI installs gh from GitHub's apt
+    repository, as GitHub's instructions for Debian and Ubuntu describe,
+    replacing a github-cli.list made by hand from those instructions;
+    Remove > Development > GitHub CLI removes gh and the repository.
+  * A new user's setup finishes on a first login without network: the
+    Node.js download no longer stops it, so the tool stubs (gh, codex and
+    the rest), the default browser and the setup's completion marker
+    follow. A setup that still fails is written to first-run.log and
+    retried at the next login instead of passing unnoticed.
 
  -- @MAINTAINER@  Wed, 21 Oct 2026 15:08:05 -0500
 
