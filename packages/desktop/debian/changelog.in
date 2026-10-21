@@ -1,5 +1,17 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Monitor scale is set per monitor: the Display panel's scale buttons and
+    Super + / save the scale as a rule for the focused monitor in
+    ~/.config/hypr/monitors.lua. They wrote it into the catch-all rule, and
+    Hyprland's reload of the changed file rescaled every other monitor too.
+  * The Display panel's text size header reads "TEXT SIZE · ALL DISPLAYS"
+    with more than one monitor on: text size is one setting for the shell,
+    GTK and the terminals, while scale is per monitor.
+
+ -- @MAINTAINER@  Wed, 21 Oct 2026 15:08:05 -0500
+
+@DISTRO_ID@-desktop (4.0.4+git20261020.111.a5ea1314-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * HEIC photos open in imv and get thumbnails in Files: the desktop
     depends on libheif-plugin-libde265, the HEVC decoder libheif loads for
     HEIC. libheif1 only suggests it, so the image had only libheif's AV1
