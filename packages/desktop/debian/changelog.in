@@ -7,6 +7,13 @@
     the snap is missing.
   * A theme change themes Obsidian again: the @DISTRO_NAME@ theme, chosen in
     a vault's Appearance settings, follows the desktop's theme.
+  * Setup > Keyboard picks your keyboard layouts from a list, with a variant
+    for each, for your Hyprland session. With two or more layouts the top
+    bar shows the current one, and clicking it switches; Left Ctrl + Right
+    Ctrl together can switch too. The login screen and the disk encryption
+    passphrase prompt keep the layout chosen at installation.
+  * Setup > Displays starts nwg-displays, as the app launcher's
+    Displays Settings entry does.
 
  -- @MAINTAINER@  Thu, 22 Oct 2026 02:37:15 -0500
 
