@@ -400,7 +400,8 @@ run_user $id-dns DHCP >>/tmp/dns.log 2>&1; echo "dns reset: \$(run_user $id-dns)
 echo "dns sudoers rule: \$(ls /etc/sudoers.d | grep -c dns)"
 # The core/apps split (step 6, "Core and apps"): none of the removed preinstalls, Docker or the
 # command-line preferences in the image (tmux and Neovim came back, choices 25 and 26, and btop,
-# choice 43, so they are not in the list); only the three launchers Omarchy's own apps need.
+# choice 43, so they are not in the list); only the port's five launchers: foot, imv, mpv and
+# Disk Usage for Omarchy's own apps, and nwg-displays, which shadows the package's entry (choice 95).
 # The tools restored by choices 43 and 47, each by the command its callers run.
 echo "restored tools missing: [\$(for c in btop eza inxi lazygit starship zoxide ttfx swappy unzip gnome-calculator gnome-disks whois mise dua; do command -v \$c >/dev/null || printf '%s ' \$c; done)]"
 # Both stores preconfigured (step 6, choice 17): snapd's socket enabled by its package, Flathub added
@@ -790,7 +791,7 @@ if [[ $profile == desktop ]]; then
   check "^dns provider: Cloudflare$"
   check "^dns reset: DHCP$"
   check "^dns sudoers rule: 0$"
-  check "^apps split: removed=0 launchers=4$"
+  check "^apps split: removed=0 launchers=5$"
   # The launcher hide list hides NVIDIA's settings launcher (docs/6, choice 89).
   check "^launcher hides nvidia-settings: 1$"
   check "^restored tools missing: \[\]$"
