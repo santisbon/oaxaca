@@ -38,7 +38,7 @@ The settings are in `distro.conf`, in shell syntax at the repository root:
 - `APT_S3_BUCKET=oaxaca-apt` and `APT_S3_REGION=us-east-1`: the bucket. The region must be `us-east-1`, because CloudFront only uses certificates from that region and the whole stack lives in one region.
 - `APT_DOMAIN=oaxaca.page`: the domain whose Route 53 hosted zone gets the records. The domain must be registered and its hosted zone must exist in the same AWS account; registering the domain through Route 53 creates the zone.
 - `APT_HOST=apt.oaxaca.page` and `APT_URL=https://apt.oaxaca.page`: the repository's host name and URL. `make render` writes `APT_URL` into `packages/archive-keyring/archive.sources`, the sources entry `oaxaca-apt-source` installs.
-- `APT_S3_PUBLIC_READ=true`: `true` lets anyone also read the bucket's own REST endpoint, `https://oaxaca-apt.s3.us-east-1.amazonaws.com`; `false` leaves the distribution as the bucket's only reader.
+- `APT_S3_PUBLIC_READ=false`: `true` lets anyone also read the bucket's own REST endpoint, `https://oaxaca-apt.s3.us-east-1.amazonaws.com`; `false` leaves the distribution as the bucket's only reader.
 - `APT_AWS_PROFILE=personal`: the aws-cli profile, from `~/.aws/config`; the `AWS_PROFILE` environment variable overrides it.
 
 ## What CloudFront caches
