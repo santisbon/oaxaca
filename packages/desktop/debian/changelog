@@ -1,3 +1,22 @@
+oaxaca-desktop (4.0.4+git20261022.123.cc3a51a4-0oaxaca1) stonking; urgency=medium
+
+  * Obsidian can be installed from the menu: Install > Productivity >
+    Obsidian installs Obsidian's own snap from the Snap Store, and Remove >
+    Productivity > Obsidian removes it; the notes in your vaults stay.
+  * Super + Shift + O opens Obsidian, as in Omarchy, or its installer while
+    the snap is missing.
+  * A theme change themes Obsidian again: the Oaxaca theme, chosen in
+    a vault's Appearance settings, follows the desktop's theme.
+  * Setup > Keyboard picks your keyboard layouts from a list, with a variant
+    for each, for your Hyprland session. With two or more layouts the top
+    bar shows the current one, and clicking it switches; Left Ctrl + Right
+    Ctrl together can switch too. The login screen and the disk encryption
+    passphrase prompt keep the layout chosen at installation.
+  * Setup > Displays starts nwg-displays, as the app launcher's
+    Displays Settings entry does.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 22 Oct 2026 02:37:15 -0500
+
 oaxaca-desktop (4.0.4+git20261022.121.c797743a-0oaxaca1) stonking; urgency=medium
 
   * Setup > Monitors opens ~/.config/hypr/monitors.lua in the editor again,
