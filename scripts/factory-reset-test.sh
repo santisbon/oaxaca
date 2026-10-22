@@ -134,7 +134,16 @@ PY
     -monitor "unix:$monitor,server,nowait" -no-reboot "$@" || true
   wait "$watcher" 2>/dev/null || true
 }
-section() { sed -n "/=== $1 BEGIN/,/=== $1 END/p" "$work/$2.serial.log" 2>/dev/null | tr -d '\r' | grep -av $'\e\\[' || true; }
+# The guest's own output is still queued for the serial port when the kernel writes its last
+# messages ("[  311.935282] reboot: Power down") straight to the port, so a kernel message can
+# land inside a line of the report: on 2026-10-22 "factory install: done" came out as
+# "factory install: d", the kernel's message and its newline, then "one". perl removes every
+# kernel message that starts in the middle of a line, with its newline, which joins the guest's
+# line up again; a kernel message on a line of its own is left alone.
+section() {
+  sed -n "/=== $1 BEGIN/,/=== $1 END/p" "$work/$2.serial.log" 2>/dev/null | tr -d '\r' |
+    perl -0pe 's/(?<=[^\n])\[ *\d+\.\d+\] [^\n]*\n//g' | grep -av $'\e\\[' || true
+}
 # Each boot works on what the one before it left on the disk, so a boot whose report never began
 # (casper finding no live medium, the firmware falling back to network boot) or that the watcher
 # quit on a fatal line ends the test there: boot B on a disk that boot A never installed only
@@ -170,9 +179,9 @@ reached D FACTORY-D
 
 fail=0
 check() { grep -q -- "$2" <<< "$1" || { echo "!! expected: $2" >&2; fail=1; }; }
-# "done" is boot A's last line before it powers off, and the kernel's "[  300.202110] reboot: Power
-# down" can follow it on the same serial line (2026-10-21), so a kernel timestamp may end the line.
-check "$reportA" "^factory install: done\($\|\[ *[0-9]*\.[0-9]*\] \)"
+# "done" is boot A's last line before it powers off, where the kernel's own messages can cut
+# into it; section() above joins it up again.
+check "$reportA" "^factory install: done$"
 check "$reportA" "^factory install: apt lists: [1-9]"
 check "$reportA" "^factory snapshot: present ro=true$"
 check "$reportA" "^factory boot copy in running root: no$"
