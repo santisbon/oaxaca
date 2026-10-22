@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.4+git20261020.111.a5ea1314-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.4+git20261022.120.51e652c5-0oaxaca1) stonking; urgency=medium
 
   * Monitor scale is set per monitor: the Display panel's scale buttons and
     Super + / save the scale as a rule for the focused monitor in
@@ -7,6 +7,33 @@ oaxaca-desktop (4.0.4+git20261020.111.a5ea1314-0oaxaca1) stonking; urgency=mediu
   * The Display panel's text size header reads "TEXT SIZE · ALL DISPLAYS"
     with more than one monitor on: text size is one setting for the shell,
     GTK and the terminals, while scale is per monitor.
+  * Setup > Defaults > Terminal lists Wave once Wave is installed, and
+    choosing Wave explains in a notification why Wave cannot be the default
+    terminal: Wave does not run a command given at launch, which the menu's
+    terminal tools rely on. Installing Wave from Install > Terminal sends
+    the same notification.
+  * Install > Development > GitHub CLI installs gh from GitHub's apt
+    repository, as GitHub's instructions for Debian and Ubuntu describe,
+    replacing a github-cli.list made by hand from those instructions;
+    Remove > Development > GitHub CLI removes gh and the repository.
+  * A new user's setup finishes on a first login without network: the
+    Node.js download no longer stops it, so the tool stubs (gh, codex and
+    the rest), the default browser and the setup's completion marker
+    follow. A setup that still fails is written to first-run.log and
+    retried at the next login instead of passing unnoticed.
+  * Install > Development > AWS CLI installs the aws-cli snap with classic
+    confinement; Remove > Development > AWS CLI removes it and keeps ~/.aws.
+  * Setup > Monitors opens nwg-displays, saving its layout to
+    ~/.config/hypr/monitors-gui.lua, and so does nwg-displays' entry in the
+    app launcher, which would otherwise have written over monitors.lua;
+    Setup > Config > Monitors opens monitors.lua in the editor. The scale
+    buttons and Super + / also change the scale in nwg-displays' rule,
+    which Hyprland applies last.
+  * fzf's Ctrl+R history search and ** completion load in the shell: they
+    came from Arch's /usr/share/fzf paths, which Ubuntu's fzf does not use.
+  * Remove > Security > Fingerprint and Fido2 show once set up: they looked
+    for the PAM modules in /etc/pam.d/sudo, where Ubuntu has only
+    @include common-auth.
 
  -- santisbon <santisbon@users.noreply.github.com>  Wed, 21 Oct 2026 15:08:05 -0500
 
