@@ -57,7 +57,10 @@ desktop_manifest="${desktop%.tar}.manifest"
 # under a live session built from newer packages. A package only one of them has is no drift:
 # with the live packages in the same install, apt satisfies plymouth's theme dependency with
 # plymouth-theme-hamara instead of the desktop's plymouth-theme-ubuntu-text.
-drift=$(join -t $'\t' <(sort "$desktop_manifest") <(sort "$manifest") -o 0,1.2,2.2 | awk -F'\t' '$2 != $3')
+# join needs its inputs in the order its own comparison uses; under a language locale such as
+# en_US.UTF-8, sort orders "cpp-15<tab>..." before "cpp<tab>...", and join stopped with "input is
+# not in sorted order" (2026-10-22). Both run in the C locale, sorting on the package name alone.
+drift=$(LC_ALL=C join -t $'\t' <(LC_ALL=C sort -t $'\t' -k1,1 "$desktop_manifest") <(LC_ALL=C sort -t $'\t' -k1,1 "$manifest") -o 0,1.2,2.2 | awk -F'\t' '$2 != $3')
 if [[ -n $drift ]]; then
   echo "the desktop and live root filesystems differ (package, desktop version, live version):" >&2
   echo "$drift" | head -20 >&2
