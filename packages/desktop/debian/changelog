@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.4+git20261022.120.51e652c5-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.4+git20261022.121.c797743a-0oaxaca1) stonking; urgency=medium
 
   * Setup > Monitors opens ~/.config/hypr/monitors.lua in the editor again,
     as in Omarchy, and Setup > Config > Monitors is gone. nwg-displays
