@@ -827,6 +827,21 @@ Files with a `.in` template are never edited directly: `make render` writes each
 
 ### Each release
 
+First check that Ubuntu's security servers serve the same `@BASE_SERIES@-security` index. `security.ubuntu.com` resolves to a pool of servers, and every root filesystem build asks one of them at random. While Ubuntu publishes a security update, some servers serve the new index and others still serve the old one, so the desktop root filesystem and the live one, built minutes apart, can get different versions of one package. `make iso` then stops with `the desktop and live root filesystems differ (package, desktop version, live version)`. On 2026-10-21 the release listed `libsoup-3.0-0   3.6.6-1ubuntu3  3.6.6-1`, after hours of building and testing. The command below asks each server in the pool for the `Date:` line of its `@BASE_SERIES@-security` index (`InRelease`) and prints each date with the number of servers serving it:
+
+```sh
+for ip in $(getent ahostsv4 security.ubuntu.com | awk '{print $1}' | sort -u); do curl -s --max-time 20 --resolve security.ubuntu.com:80:$ip http://security.ubuntu.com/ubuntu/dists/@BASE_SERIES@-security/InRelease | grep -m1 '^Date:'; done | sort | uniq -c
+```
+
+One line means every server agrees, and the release can start. Two or more lines mean an update is still spreading; wait and run the command again. The output on 2026-10-22 at 06:26 UTC, with one server behind:
+
+```
+      8 Date: Thu, 22 Oct 2026  5:17:58 UTC
+      1 Date: Wed, 21 Oct 2026 21:41:19 UTC
+```
+
+Then run the release:
+
 ```sh
 cd ~/Projects/oaxaca && make release
 ```
@@ -842,7 +857,7 @@ What `make release` does, stopping at the first failure:
 3. Builds the packages whose version is not published yet (`make build PKG=...`). Release tags (`v*`) have not been used so far, so `make check-versions` has nothing to compare against; instead, a package needs building when the version at the top of its rendered `debian/changelog` is missing from the published source index (`dists/@BASE_SERIES@/main/source/Sources.gz`). A package changed without a version bump is therefore not built. When every version is published, the release ends here with "nothing to release".
 4. Runs `make upstream-check` and reports a newer upstream release without stopping.
 5. Builds the live root filesystem and boots it in QEMU (`make rootfs`, `make rootfs-test`: the base, session and desktop checks).
-6. Builds the ISO and boots it under OVMF with Secure Boot on, then off (`make iso`, `make iso-test`, `make iso-test SECURE_BOOT=off`), then installs it on an encrypted btrfs disk and factory-resets it (`make factory-reset-test`).
+6. Builds the ISO, after checking that the desktop and live root filesystems hold the same version of every package they share (the security servers' check above), and boots it under OVMF with Secure Boot on, then off (`make iso`, `make iso-test`, `make iso-test SECURE_BOOT=off`), then installs it on an encrypted btrfs disk and factory-resets it (`make factory-reset-test`).
 7. Upgrades the published packages to `build/`'s in a throwaway chroot, migrations included (`make upgrade-test`), then boots the published desktop and updates it to `build/`'s inside its running session (`make session-upgrade-test`).
 8. Commits this repository with `git add -A` and pushes. git opens the editor with the release commit's message already filled in, the same message `make release-message` prints (step 5 of [Before each release](#before-each-release)): saving the file accepts the message, and emptying the file stops the release. The message names the desktop's version and each other package step 3 built, short names without the `@DISTRO_ID@-` prefix, in the form of the commit of 2026-10-18:
 
