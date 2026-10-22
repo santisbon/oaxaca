@@ -2,7 +2,7 @@
 -- SDDM starts this compositor as the sddm user, then starts the greeter inside it
 -- (CompositorCommand in /etc/sddm.conf.d/10-@DISTRO_ID@-wayland.conf). The greeter is the
 -- only client, so Hyprland's logo, splash, wallpaper and animations are turned off.
--- Same settings as Omarchy's default/sddm/hyprland.lua (@OMARCHY_TAG@).
+-- Same settings as Omarchy's default/sddm/hyprland.lua (v4.0.4).
 hl.config({
   misc = {
     disable_hyprland_logo = true,

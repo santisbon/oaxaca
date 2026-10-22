@@ -1,6 +1,6 @@
 # localsend
 
-LocalSend, the file sharing app Omarchy @OMARCHY_TAG@ preinstalls, packaged for @DISTRO_NAME@'s repository (docs/6, choice 19). Omarchy ships LocalSend from its own repository and Ubuntu's archive has none; `@DISTRO_ID@-desktop` depends on this package, so the menu's Share entries (clipboard, file, folder) and Files' "Send via LocalSend" have it to call.
+LocalSend, the file sharing app Omarchy v4.0.4 preinstalls, packaged for @DISTRO_NAME@'s repository (docs/6, choice 19). Omarchy ships LocalSend from its own repository and Ubuntu's archive has none; `@DISTRO_ID@-desktop` depends on this package, so the menu's Share entries (clipboard, file, folder) and Files' "Send via LocalSend" have it to call.
 
 The package keeps the upstream name, as the policy says for third-party software we rebuild, with the version `1.18.2-0@DISTRO_ID@1`. It holds LocalSend's own release builds, not a build from source: the app tarball and the CLI tarball from the GitHub release, unpacked under `/usr/lib/localsend` with `/usr/bin/localsend` and `/usr/bin/localsend-cli` as symlinks, the layout of Omarchy's package.
 

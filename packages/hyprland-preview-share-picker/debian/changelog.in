@@ -1,7 +1,7 @@
 hyprland-preview-share-picker (0.2.1-0oaxaca1) @BASE_SERIES@; urgency=medium
 
   * Initial @DISTRO_NAME@ package of hyprland-preview-share-picker 0.2.1
-    (roadmap step 6). Omarchy @OMARCHY_TAG@ installs the program and names
+    (roadmap step 6). Omarchy v4.0.4 installs the program and names
     the binary as custom_picker_binary in config/hypr/xdph.conf, so
     xdg-desktop-portal-hyprland opens the picker, with window and monitor
     previews, on every screen-share request. Ubuntu's archive has no

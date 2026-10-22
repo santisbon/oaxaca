@@ -19,7 +19,7 @@ nwg-displays (0.4.4-0oaxaca1) @BASE_SERIES@; urgency=medium
   * New upstream release 0.4.4, built for @DISTRO_NAME@ from Debian's 0.3.28-1
     packaging (roadmap step 6, the display settings app). Ubuntu's archive has
     0.3.28, which writes only the old monitors.conf format; Hyprland 0.55 and
-    newer, and Omarchy @OMARCHY_TAG@ with it, read a Lua configuration, and
+    newer, and Omarchy v4.0.4 with it, read a Lua configuration, and
     nwg-displays writes ~/.config/hypr/monitors.lua (hl.monitor blocks) and
     workspaces.lua next to the .conf files since 0.4.3. 0.4.4 adds Hyprland
     colour management and VRR fields and fixes monitor descriptions that

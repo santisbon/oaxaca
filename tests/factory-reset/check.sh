@@ -19,6 +19,9 @@ if [[ ! -f $flag ]]; then
   echo "c owner groups: $(id -nG newowner 2>/dev/null | tr ' ' '\n' | LC_ALL=C sort | paste -sd' ')"
   echo "c owner name: $(getent passwd newowner | cut -d: -f5)"
   echo "c root password: $(passwd -S root | awk '{ print $2 }')"
+  # The account files and the backups userdel and usermod leave next to them (shadow- and the
+  # rest): none may still name the seller, whose password hash a backup would keep.
+  echo "c seller in account files: $(grep -ls '^seller:' /etc/{shadow,gshadow,passwd,group,subuid,subgid}{,-} | grep -c .)"
   echo "c seller drift: etc=$([ -e /etc/seller-drift ] && echo yes || echo no) usr-local=$([ -e /usr/local/bin/seller-tool ] && echo yes || echo no) wifi=$(ls /etc/NetworkManager/system-connections | grep -c seller)"
   echo "c hostname: $(cat /etc/hostname)"
   echo "c timezone: $(readlink /etc/localtime | sed 's|.*/zoneinfo/||')"
@@ -35,6 +38,7 @@ if [[ ! -f $flag ]]; then
   echo "c subvolumes: $(btrfs subvolume list "$top" | awk '{ print $NF }' | LC_ALL=C sort | paste -sd' ')"
   echo "c top level: $(ls -A "$top" | LC_ALL=C sort | paste -sd' ')"
   echo "c factory users: [$(awk -F: '$3 >= 1000 && $3 < 60000 { print $1 }' "$top/@factory/etc/passwd" | paste -sd' ')] ro=$(btrfs property get -ts "$top/@factory" ro | cut -d= -f2)"
+  echo "c factory seller in account files: $(grep -ls '^seller:' "$top"/@factory/etc/{shadow,gshadow,passwd,group,subuid,subgid}{,-} | grep -c .)"
   umount "$top"
   echo "c swap: $(swapon --show=NAME --noheadings | paste -sd' ')"
   echo "c ssh host keys: $(ls /etc/ssh/ssh_host_*_key 2>/dev/null | grep -c .) sshd=$([ -x /usr/sbin/sshd ] && echo yes || echo no)"

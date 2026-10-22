@@ -10,7 +10,7 @@ quickshell (0.3.2-0oaxaca2) @BASE_SERIES@; urgency=medium
 quickshell (0.3.2-0oaxaca1) @BASE_SERIES@; urgency=medium
 
   * New upstream release 0.3.2, built for @DISTRO_NAME@ from Debian's 0.3.1-1
-    packaging (roadmap step 5). Omarchy @OMARCHY_TAG@ pins Quickshell 0.3.2;
+    packaging (roadmap step 5). Omarchy v4.0.4 pins Quickshell 0.3.2;
     0.3.1 fixed session lock crashes on sleep, wake and unlock (the shell's
     lock screen), 0.3.2 fixed networking after a NetworkManager restart and
     reentrant session lock crashes. Ubuntu's archive has 0.3.0.

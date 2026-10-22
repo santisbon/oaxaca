@@ -1,7 +1,7 @@
 asdcontrol (0.6.0-0oaxaca1) @BASE_SERIES@; urgency=medium
 
   * Initial @DISTRO_NAME@ package of asdcontrol 0.6.0 (roadmap step 6).
-    Omarchy @OMARCHY_TAG@ installs asdcontrol, and the desktop's
+    Omarchy v4.0.4 installs asdcontrol, and the desktop's
     oaxaca-brightness-display-apple script (Omarchy's
     omarchy-brightness-display-apple, renamed) runs "sudo asdcontrol" to read
     and set the brightness of an Apple Studio Display or Pro Display XDR over

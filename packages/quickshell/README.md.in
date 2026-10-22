@@ -1,6 +1,6 @@
 # quickshell
 
-Quickshell 0.3.2, the Qt/QML toolkit the Omarchy shell runs on, backported into @DISTRO_NAME@'s repository: roadmap step 5. Ubuntu's archive carries 0.3.0 and Omarchy @OMARCHY_TAG@ pins 0.3.2 (`omacom/omarchy-pkgs`, `pkgbuilds/quickshell/PKGBUILD`); between the two, Quickshell fixed session lock crashes on sleep, wake and unlock, which is the shell's lock screen. See `docs/5 - hyprland-quickshell.md`.
+Quickshell 0.3.2, the Qt/QML toolkit the Omarchy shell runs on, backported into @DISTRO_NAME@'s repository: roadmap step 5. Ubuntu's archive carries 0.3.0 and Omarchy v4.0.4 pins 0.3.2 (`omacom/omarchy-pkgs`, `pkgbuilds/quickshell/PKGBUILD`); between the two, Quickshell fixed session lock crashes on sleep, wake and unlock, which is the shell's lock screen. See `docs/5 - hyprland-quickshell.md`.
 
 The package keeps the upstream name, as the policy says for third-party software we rebuild, and the version `0.3.2-0oaxaca1`: a new upstream release on Debian's packaging, so the `-0oaxaca1` revision marks "not in Debian yet" and sorts below a future Debian `0.3.2-1`.
 

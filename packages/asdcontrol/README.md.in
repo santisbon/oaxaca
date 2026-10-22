@@ -1,6 +1,6 @@
 # asdcontrol
 
-asdcontrol 0.6.0, a command-line program that reads and sets the brightness of an Apple Studio Display or an Apple Pro Display XDR over the display's USB HID interface, packaged for @DISTRO_NAME@'s repository: roadmap step 6. Ubuntu's archive has no asdcontrol; Omarchy @OMARCHY_TAG@ installs the program from its own repository (`omacom/omarchy-pkgs`, `pkgbuilds/asdcontrol/PKGBUILD`).
+asdcontrol 0.6.0, a command-line program that reads and sets the brightness of an Apple Studio Display or an Apple Pro Display XDR over the display's USB HID interface, packaged for @DISTRO_NAME@'s repository: roadmap step 6. Ubuntu's archive has no asdcontrol; Omarchy v4.0.4 installs the program from its own repository (`omacom/omarchy-pkgs`, `pkgbuilds/asdcontrol/PKGBUILD`).
 
 The package keeps the upstream name, as the policy says for third-party software we package from source, and the version `0.6.0-0oaxaca1`: the `-0oaxaca1` revision marks "not in Debian" and sorts below a future Debian `0.6.0-1`.
 

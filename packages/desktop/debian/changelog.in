@@ -1,5 +1,33 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Based on Omarchy 4.0.6 instead of 4.0.4. From Omarchy's 4.0.5 and 4.0.6:
+    - The screen lock decides each lock request from its current state, and
+      recovers a stranded lock only when no other locker may hold it.
+    - The bar starts faster, and a shell restart waits for the old shell
+      to exit, so a restart no longer ends with no bar.
+    - Links from every app open in the running default browser, and web
+      apps hand their window to it, both faster than starting a browser.
+    - On hybrid graphics, NVIDIA's video drivers are forced only when the
+      NVIDIA GPU drives the display.
+    - The calendar builds its month grid in UTC; an idle timeout of 0
+      works; the monitor panel's display toggle is fixed; fastfetch labels
+      swap correctly.
+    - Audio: EasyEffects outputs and filter pairs resolve to the right
+      sink, the speaker tuning asks RTKit for its priority directly, and
+      the KEF LSX II LT USB speaker no longer suspends.
+    - The shell's QML is ready for Qt 6.12.
+  * Security: a factory reset now also replaces root's password hash and
+    deletes the backups of the account files, which kept the previous
+    owner's password hash.
+  * Remove > Security > SSHD removes every standard SSH firewall rule, not
+    only the rate limit on port 22.
+  * Package names that start with a dash are never read as options by the
+    package helpers.
+
+ -- @MAINTAINER@  Thu, 22 Oct 2026 16:37:37 -0500
+
+@DISTRO_ID@-desktop (4.0.4+git20261022.127.788a310d-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Security: a project's bin/ folder under ~/Work is no longer put on
     PATH. The first login wrote ~/Work/.mise.toml with mise's
     _.path = "{{ cwd }}/bin", so any repository cloned under ~/Work could
@@ -627,7 +655,7 @@
 
 @DISTRO_ID@-desktop (@OMARCHY_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
-  * Initial release: Omarchy @OMARCHY_TAG@ ported from Arch Linux to Ubuntu
+  * Initial release: Omarchy v4.0.4 ported from Arch Linux to Ubuntu
     (roadmap step 6). One source, five binary packages: @DISTRO_ID@-desktop
     (metapackage, dependency list from the ported package list),
     @DISTRO_ID@-tools (the commands and install scripts), @DISTRO_ID@-shell
