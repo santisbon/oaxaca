@@ -85,6 +85,22 @@ out="$out_dir/$DISTRO_ID-$BASE_VERSION-$arch-$profile.tar"
 [[ $source == published ]] && out="${out%.tar}-published.tar"
 manifest="${out%.tar}.manifest"
 tmp="${out%.tar}.tmp.tar"
+# apt's package cache, shared by every run of this script and of upgrade-test.sh: a release
+# installs Ubuntu's packages four times (the desktop, live and published desktop root
+# filesystems and the upgrade test's chroot), about 2 GB each, mostly the same files.
+# mmdebstrap's sync-in hook copies build/apt-cache/ into the chroot's /var/cache/apt/archives/
+# before apt downloads, so apt fetches only the packages build/apt-cache/ lacks. apt reuses a
+# cached file whose name (package, version, architecture) and size match the index, without
+# checking its hash (apt-pkg/acquire-item.cc), so the cache holds only files apt downloaded and
+# hash-checked itself, and rm -rf build/apt-cache resets it. sync-out copies the archives back
+# after the last customize hook, before mmdebstrap's cleanup empties them, so no .deb reaches
+# the tarball.
+# --skip=essential/unlink keeps the essential packages' files, which mmdebstrap otherwise
+# deletes once dpkg has installed them. A bind mount would avoid the copies, but apt in the chroot
+# runs as a subordinate uid that cannot enter a home directory of mode 0750; sync-in and
+# sync-out are done by mmdebstrap's own process, as this user. apt-cache-prune.sh then keeps
+# only the newest version of each package.
+apt_cache="$here/build/apt-cache"
 
 # The packages of ours that go in, from build/ (make build). mmdebstrap takes a .deb
 # path in --include when the path starts with /, and the file-mirror-automount hook copies
@@ -226,7 +242,7 @@ for vendor_key in "$stage"/*.gpg; do
   if [[ -e $vendor_key ]]; then cp "$vendor_key" "$keyring_dir/"; fi
 done
 
-mkdir -p "$out_dir"
+mkdir -p "$out_dir" "$apt_cache"
 rm -f "$tmp"
 echo "creating $out (profile $profile, our packages from $source) from $mirror ($BASE_SERIES, $BASE_SERIES-updates, $BASE_SERIES-security; $components)"
 mmdebstrap \
@@ -235,6 +251,9 @@ mmdebstrap \
   --architectures="$arch" \
   --keyring="$keyring_dir" \
   --aptopt='APT::Install-Recommends "true"' \
+  --skip=essential/unlink \
+  --setup-hook='mkdir -p "$1/var/cache/apt/archives/"' \
+  --setup-hook="sync-in $apt_cache /var/cache/apt/archives/" \
   --setup-hook="upload $here/packages/base/apt-blocked-recommends.pref /etc/apt/preferences.d/zz-build-blocked-recommends" \
   --hook-dir=/usr/share/mmdebstrap/hooks/file-mirror-automount \
   "${includes[@]}" \
@@ -250,6 +269,7 @@ mmdebstrap \
   --customize-hook='chroot "$1" dpkg-query -W -f="\${Package}\t\${Version}\n" > "$1/manifest.tmp"' \
   --customize-hook="download /manifest.tmp $manifest" \
   --customize-hook='rm "$1/manifest.tmp"' \
+  --customize-hook="sync-out /var/cache/apt/archives $apt_cache" \
   "$BASE_SERIES" "$tmp" \
   "deb $mirror $BASE_SERIES $components" \
   "deb $mirror $BASE_SERIES-updates $components" \
@@ -257,4 +277,5 @@ mmdebstrap \
   "${vendor_sources[@]}" \
   "${our_sources[@]}"
 mv "$tmp" "$out"
+"$here/scripts/apt-cache-prune.sh" "$apt_cache"
 echo "done: $(du -h "$out" | cut -f1) $out ($(wc -l < "$manifest") packages, list in $manifest)"

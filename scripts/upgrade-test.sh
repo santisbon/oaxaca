@@ -65,6 +65,11 @@ debs=("$here"/build/*.deb)
 ((${#debs[@]})) || { echo "nothing in build/ to upgrade to (run 'make build')" >&2; exit 1; }
 rm -rf "$out"
 mkdir -p "$stage"
+# apt's package cache, shared with rootfs-create.sh (its comment on apt_cache has the details):
+# copied into the chroot before apt downloads and back out after the upgrade, which downloads
+# more, then pruned to the newest version of each package.
+apt_cache="$here/build/apt-cache"
+mkdir -p "$apt_cache"
 
 echo "== published index from $APT_URL"
 index="$out/published-Packages"
@@ -214,6 +219,9 @@ mmdebstrap \
   --architectures="$arch" \
   --keyring="$keyring" \
   --aptopt='APT::Install-Recommends "false"' \
+  --skip=essential/unlink \
+  --setup-hook='mkdir -p "$1/var/cache/apt/archives/"' \
+  --setup-hook="sync-in $apt_cache /var/cache/apt/archives/" \
   "${includes[@]}" \
   --customize-hook="copy-in $stage /var/lib" \
   --customize-hook="upload $inside /usr/local/sbin/$DISTRO_ID-upgrade-test" \
@@ -221,6 +229,7 @@ mmdebstrap \
   --customize-hook="chroot \"\$1\" /usr/local/sbin/$DISTRO_ID-upgrade-test" \
   --customize-hook="download /var/log/$DISTRO_ID-upgrade-test.report $report" \
   --customize-hook="download /var/log/$DISTRO_ID-upgrade-test.log $log" \
+  --customize-hook="sync-out /var/cache/apt/archives $apt_cache" \
   "$BASE_SERIES" /dev/null \
   "deb $mirror $BASE_SERIES $components" \
   "deb $mirror $BASE_SERIES-updates $components" \
@@ -228,6 +237,7 @@ mmdebstrap \
   "deb [signed-by=$our_key] $APT_URL $BASE_SERIES $APT_COMPONENT" \
   2>&1 | grep -vE '^I: ' || true
 [[ -f $report ]] || { echo "no report came back: see mmdebstrap's output above" >&2; exit 1; }
+"$here/scripts/apt-cache-prune.sh" "$apt_cache"
 
 echo "== report ($report)"
 cat "$report"
