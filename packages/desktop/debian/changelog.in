@@ -23,6 +23,17 @@
     retried at the next login instead of passing unnoticed.
   * Install > Development > AWS CLI installs the aws-cli snap with classic
     confinement; Remove > Development > AWS CLI removes it and keeps ~/.aws.
+  * Setup > Monitors opens nwg-displays, saving its layout to
+    ~/.config/hypr/monitors-gui.lua, and so does nwg-displays' entry in the
+    app launcher, which would otherwise have written over monitors.lua;
+    Setup > Config > Monitors opens monitors.lua in the editor. The scale
+    buttons and Super + / also change the scale in nwg-displays' rule,
+    which Hyprland applies last.
+  * fzf's Ctrl+R history search and ** completion load in the shell: they
+    came from Arch's /usr/share/fzf paths, which Ubuntu's fzf does not use.
+  * Remove > Security > Fingerprint and Fido2 show once set up: they looked
+    for the PAM modules in /etc/pam.d/sudo, where Ubuntu has only
+    @include common-auth.
 
  -- @MAINTAINER@  Wed, 21 Oct 2026 15:08:05 -0500
 
