@@ -1,3 +1,19 @@
+nwg-displays (0.5.0-0oaxaca1) @BASE_SERIES@; urgency=medium
+
+  * New upstream release 0.5.0: mangowm support (through wlr-randr, used
+    only under mangowm) and niri includes with extra properties kept. The
+    Python modules nwg-displays imports are those of 0.4.4 plus the
+    standard library's re, so the dependencies are unchanged.
+  * hyprland-use-given-paths.patch: on Hyprland, nwg-displays creates its
+    monitor and workspace files at the -m and -w paths instead of
+    ~/.config/hypr/monitors.conf and workspaces.conf, and reads mirrors and
+    the workspaces window from those paths. Started by
+    @DISTRO_ID@-launch-monitors with ~/.config/hypr/monitors-gui.conf, 0.4.4
+    left two empty files under ~/.config/hypr and opened the workspaces
+    window empty; 0.5.0 does the same unpatched.
+
+ -- @MAINTAINER@  Thu, 22 Oct 2026 00:16:00 -0500
+
 nwg-displays (0.4.4-0oaxaca1) @BASE_SERIES@; urgency=medium
 
   * New upstream release 0.4.4, built for @DISTRO_NAME@ from Debian's 0.3.28-1

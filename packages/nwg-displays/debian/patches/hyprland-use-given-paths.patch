@@ -1,0 +1,76 @@
+Description: Hyprland: use the -m and -w paths for every file
+ nwg-displays 0.5.0 takes the Hyprland monitor and workspace files from its
+ -m/--monitors_path and -w/--workspaces_path options when it saves, but three
+ other places name ~/.config/hypr/monitors.conf and workspaces.conf directly:
+ the module creates both files, empty, when it is imported (main.py, before
+ the options are parsed); the mirror check in list_outputs() reads mirror
+ lines from monitors.conf (tools.py); and the workspaces window loads the
+ workspace rules from workspaces.conf (main.py, create_workspaces_window_hypr).
+ Started with other paths, nwg-displays left two empty files under
+ ~/.config/hypr, saw no mirror it had saved, and opened the workspaces window
+ empty after workspaces had been saved. The patch creates the files at the
+ -m and -w paths once the options are parsed, and passes those paths to the
+ mirror check and the workspaces window. Started with no options, the paths
+ are the defaults, so nothing changes.
+Forwarded: no
+Last-Update: 2026-10-22
+---
+--- a/nwg_displays/main.py
++++ b/nwg_displays/main.py
+@@ -98,8 +98,7 @@
+     for name in ["outputs", "workspaces"]:
+         create_empty_file(os.path.join(sway_config_dir, name))
+ elif hypr:
+-    for name in ["monitors.conf", "workspaces.conf"]:
+-        create_empty_file(os.path.join(hypr_config_dir, name))
++    pass  # main() creates the files at the -m and -w paths, once the arguments are parsed
+ elif niri:
+     for name in ["monitor.kdl"]:
+         create_empty_file(os.path.join(niri_config_dir, name))
+@@ -810,7 +809,7 @@
+         item.destroy()
+     display_buttons = []
+ 
+-    outputs = list_outputs()
++    outputs = list_outputs(outputs_path if hypr else None)
+     
+     if not outputs:
+         eprint("[Error] No outputs detected")
+@@ -960,7 +959,7 @@
+ def create_workspaces_window_hypr(btn):
+     global workspaces
+     workspaces = load_workspaces_hypr(
+-        os.path.join(hypr_config_dir, "workspaces.conf"), num_ws=num_ws
++        workspaces_path, num_ws=num_ws
+     )
+     eprint("WS->Mon:", workspaces)
+     old_workspaces = workspaces.copy()
+@@ -1364,6 +1363,8 @@
+                         eprint(f"ERROR: Failed to make file writable: {e}")
+ 
+             workspaces_path = args.workspaces_path
++            for path in [outputs_path, workspaces_path]:
++                create_empty_file(path)
+         else:
+             eprint("Hyprland config directory not found!")
+             outputs_path = ""
+--- a/nwg_displays/tools.py
++++ b/nwg_displays/tools.py
+@@ -249,7 +249,7 @@
+     return shutil.which(cmd) is not None
+ 
+ 
+-def list_outputs():
++def list_outputs(monitors_path=None):
+     if os.getenv("NIRI_SOCKET"):
+         outputs_dict = {}
+         eprint("Running on niri")
+@@ -412,7 +412,7 @@
+         # 1. Mirroring is impossible to check in any way. We need to parse back the monitors.conf file, and it sucks.
+         mirrors = {}
+         hypr_config_dir = os.path.join(get_config_home(), "hypr")
+-        monitors_file = os.path.join(hypr_config_dir, "monitors.conf")
++        monitors_file = monitors_path or os.path.join(hypr_config_dir, "monitors.conf")
+         if os.path.isfile(monitors_file):
+             lines = load_text_file(monitors_file).splitlines()
+             for line in lines:

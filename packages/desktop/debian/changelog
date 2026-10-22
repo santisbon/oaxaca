@@ -1,5 +1,18 @@
 oaxaca-desktop (4.0.4+git20261022.120.51e652c5-0oaxaca1) stonking; urgency=medium
 
+  * Setup > Monitors opens ~/.config/hypr/monitors.lua in the editor again,
+    as in Omarchy, and Setup > Config > Monitors is gone. nwg-displays
+    starts from Displays Settings in the app launcher, saving its layout to
+    ~/.config/hypr/monitors-gui.lua as before.
+  * An existing user's ~/.config/hypr/monitors.lua has its comment about
+    nwg-displays corrected by a migration: the comment named Setup > Monitors
+    or said the rules above monitors-gui.lua win, and Hyprland keeps the
+    last rule per monitor, so nwg-displays' rule from monitors-gui.lua wins.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 22 Oct 2026 00:17:18 -0500
+
+oaxaca-desktop (4.0.4+git20261022.120.51e652c5-0oaxaca1) stonking; urgency=medium
+
   * Monitor scale is set per monitor: the Display panel's scale buttons and
     Super + / save the scale as a rule for the focused monitor in
     ~/.config/hypr/monitors.lua. They wrote it into the catch-all rule, and
