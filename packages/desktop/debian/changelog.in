@@ -1,5 +1,18 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Setup > Keyboard starts from the layouts you have: adding a layout puts
+    it after them instead of replacing them, and the picker can also remove
+    a layout, choose which one is the main layout, or go back to the layout
+    chosen at installation.
+  * Setup > Keyboard asks for one key press at the end, not two, and none
+    when nothing changed.
+  * Setup > Displays is now Setup > Arrange Monitors, so it no longer looks
+    like Setup > Monitors; it still starts nwg-displays.
+
+ -- @MAINTAINER@  Thu, 22 Oct 2026 12:01:06 -0500
+
+@DISTRO_ID@-desktop (4.0.4+git20261022.123.cc3a51a4-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Obsidian can be installed from the menu: Install > Productivity >
     Obsidian installs Obsidian's own snap from the Snap Store, and Remove >
     Productivity > Obsidian removes it; the notes in your vaults stay.
