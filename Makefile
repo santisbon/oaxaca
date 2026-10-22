@@ -29,7 +29,7 @@ chroot:            ## Create or refresh the clean build chroot (~/.cache/sbuild)
 build: render      ## Build packages in the clean chroot: make build [PKG=packages/<dir>]
 	scripts/build.sh $(PKG)
 
-publish:           ## Add build/'s newest packages to the apt repo, sign, and upload to S3 with --push: make publish [PUBLISH_FLAGS="--push --replace"]
+publish:           ## Add build/'s newest packages to the apt repo, sign, and upload to S3 with --push: make publish [PUBLISH_FLAGS=--push]
 	scripts/repo-publish.sh $(PUBLISH_FLAGS)
 
 repo-seed:         ## Fill a new workstation's empty aptly database and build/ from the published apt repo (once per machine)
@@ -44,10 +44,10 @@ release:           ## Build what is unpublished, test the image, commit, and pub
 release-message:   ## Print the commit message make release would use, without changing anything (docs/README.md, Releasing)
 	@scripts/release.sh --message
 
-apt-infra:         ## Create or update the S3 bucket that serves the apt repo (CloudFormation, infra/apt-repo/)
+apt-infra:         ## Create or update the S3 bucket, CloudFront distribution, certificate and DNS records that serve the apt repo (CloudFormation, infra/apt-repo/)
 	scripts/apt-infra.sh
 
-apt-infra-check:   ## Validate the bucket's CloudFormation template and show the stack's state; changes nothing
+apt-infra-check:   ## Validate the apt repo's CloudFormation template and show the stack's state; changes nothing
 	scripts/apt-infra.sh --check
 
 rootfs:            ## Build the root filesystem tarball from the Ubuntu archive plus build/*.deb: make rootfs [PROFILE=base|session|desktop|live] [SOURCE=published]

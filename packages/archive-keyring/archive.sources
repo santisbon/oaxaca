@@ -1,6 +1,6 @@
 # Generated from packages/archive-keyring/archive.sources.in by scripts/render.py. Edit the .in file, not this one.
 Types: deb
-URIs: https://oaxaca-apt.s3.us-east-1.amazonaws.com
+URIs: https://apt.oaxaca.page
 Suites: stonking
 Components: main
 Signed-By: /etc/apt/keyrings/oaxaca-archive-keyring.gpg

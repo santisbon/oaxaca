@@ -79,7 +79,7 @@ Where every part of Oaxaca comes from, then each package in Oaxaca's own apt rep
 |---|---|---|---|
 | Base | Ubuntu 26.10 (`stonking`): the kernel (`linux-generic`), systemd, Mesa, Hyprland, the signed boot chain (`shim-signed`, `grub-efi-amd64-signed`), and every [package](#package) not named in the rows below. The build starts from mmdebstrap's `minbase` variant (the [Essential and Priority: required](#essential-and-priority) packages plus apt), and each Ubuntu package in the image is the version the archive had when the ISO's root filesystem was built (`make rootfs`), listed on the ISO in `casper/filesystem.manifest`; an installed system then updates from the archive | Ubuntu's [archive](#archive): `http://archive.ubuntu.com/ubuntu` with the [suites](#suite-and-pocket) `stonking` and `stonking-updates`, and `http://security.ubuntu.com/ubuntu` with `stonking-security`, all four [components](#component) (`scripts/rootfs-create.sh`). On an installed system: `/etc/apt/sources.list.d/ubuntu.sources` | Oaxaca is Ubuntu: Ubuntu's kernel, drivers, security updates and Secure Boot chain, unmodified |
 | Package set | The packages an installed system has, chosen by name; nothing is installed and then removed | The [metapackages](#metapackage) `oaxaca-base`, `oaxaca-session` and `oaxaca-desktop` (next table), assembled into a root filesystem by mmdebstrap with [Recommends](#recommends) on, as on a stock Ubuntu, and two packages pinned out (`scripts/rootfs-create.sh`; [Installing software](#installing-software-recommends-are-on-with-exceptions)) | Each package is there for a recorded reason (docs/3 to docs/7) |
-| Added apt repository | Oaxaca's own: every package in the next table | <https://oaxaca-apt.s3.us-east-1.amazonaws.com>, suite `stonking`, component `main`, signed with the key in `oaxaca-archive-keyring`. On an installed system: `/etc/apt/sources.list.d/oaxaca.sources` | What Ubuntu's archive lacks, has too old, or needs patched |
+| Added apt repository | Oaxaca's own: every package in the next table | <https://apt.oaxaca.page>, suite `stonking`, component `main`, signed with the key in `oaxaca-archive-keyring`. On an installed system: `/etc/apt/sources.list.d/oaxaca.sources` | What Ubuntu's archive lacks, has too old, or needs patched |
 | Added apt repository | `chromium`, `chromium-common` | The xtradeb PPA (a personal package archive: an apt repository a Launchpad user publishes), `https://ppa.launchpadcontent.net/xtradeb/apps/ubuntu`, pinned at priority 400 (an apt preferences entry in `/etc/apt/preferences.d/xtradeb`; Ubuntu's archive has apt's default 500), so Ubuntu's archive wins for any package both carry. On an installed system: `/etc/apt/sources.list.d/xtradeb.sources` | Omarchy's browser; Ubuntu's archive has only placeholder packages for Chromium (docs/6, choice 3) |
 | Added apt repository | `mise` | mise's own repository, `https://mise.jdx.dev/deb`, suite `stable`. On an installed system: `/etc/apt/sources.list.d/mise.sources` | Omarchy preinstalls mise, and Ubuntu's archive does not carry mise (docs/6, choice 69) |
 | App stores | Nothing preinstalled from either store | Ubuntu's `snapd` (the Snap Store) and `flatpak` with Flathub as a system remote | Applications Ubuntu does not ship as packages install without setup (docs/6, choice 17) |
@@ -91,7 +91,7 @@ The packages in Oaxaca's repository, one row per [source package](#source-packag
 
 | `packages/<dir>` | Version | Packages built | Built from | Patches | Why |
 |---|---|---|---|---|---|
-| `archive-keyring` | 0.1.1 | `oaxaca-archive-keyring`, `oaxaca-apt-source` | This repository | - | The key that signs Oaxaca's repository, and apt's sources entry for the repository |
+| `archive-keyring` | 0.1.2 | `oaxaca-archive-keyring`, `oaxaca-apt-source` | This repository | - | The key that signs Oaxaca's repository, and apt's sources entry for the repository |
 | `base` | 0.1.8 | `oaxaca-base` | This repository | - | The base system metapackage (kernel, boot chain, init, network, sound) and the apt pins that keep `xdg-desktop-portal-gnome` and `sudo-rs` out |
 | `session` | 0.1.8 | `oaxaca-session` | This repository | - | The graphics and session metapackage (Mesa, Hyprland, Xwayland, uwsm, SDDM, portals, GNOME Keyring, Quickshell), the backlight udev rule, the GPU environment generator and the volume monitors unit |
 | `desktop` | 4.0.4+git20261022.125.55a4cf6c-0oaxaca1 | `oaxaca-desktop`, `-tools`, `-shell`, `-themes`, `-config` | The Omarchy fork (above), renamed from `omarchy` to `oaxaca` at build time | - (the port's changes are commits on the fork) | The Omarchy desktop: commands, shell, themes, settings, and the metapackage that pulls in the applications |
@@ -530,12 +530,11 @@ aptly manages apt repositories. aptly keeps a database and a package pool under 
 ```
 make publish                        # add build/'s newest packages, snapshot, publish, list what an upload would change
 make publish PUBLISH_FLAGS=--push   # the same, then upload to the S3 bucket
-make publish PUBLISH_FLAGS=--replace   # publish over a same-version file (only before the first release)
 ```
 
 Before adding anything, the script fetches the published index and refuses a `.deb` whose name and version are already published with different content: apt identifies a package by name and version, so installed systems would never see the new file. The fix is a version bump, which `make check-versions` asks for.
 
-The published repository is served from the S3 bucket at `https://oaxaca-apt.s3.us-east-1.amazonaws.com`. An installed system reaches the repository through the `oaxaca-apt-source` package, whose sources entry binds the repository to the key from `oaxaca-archive-keyring`.
+The published repository's files are in the S3 bucket `oaxaca-apt`, and Amazon CloudFront serves them at `https://apt.oaxaca.page` ([infra/apt-repo/README.md](../infra/apt-repo/README.md), which also says what CloudFront caches; [docs/2](2%20-%20build-infra.md), choice 10). An installed system reaches the repository through the `oaxaca-apt-source` package, whose sources entry binds the repository to the key from `oaxaca-archive-keyring`.
 
 ### `mmdebstrap` again (`make rootfs`)
 
@@ -598,7 +597,7 @@ VERSION_CHECK_TAG=<ref> scripts/version-check.sh   # compare against any ref
 
 ### `mmdebstrap` with `dpkg-scanpackages` (`make upgrade-test`)
 
-`scripts/upgrade-test.sh` is the N to N+1 test: N is the set of versions the published archive at `https://oaxaca-apt.s3.us-east-1.amazonaws.com` offers, N+1 is `build/`. One mmdebstrap run (unshare mode, output `/dev/null`) installs the `minbase` variant plus, from the published archive, every package name that is both published and in `build/`; a script then runs inside the chroot: it creates a user from N's `/etc/skel` with a marker line in one of the user's files, points apt at `build/` (copied in as a flat file archive indexed by `dpkg-scanpackages`), runs `apt-get full-upgrade` with the options `oaxaca-update -y` uses, records versions, `dpkg --audit`, what apt would still upgrade and the unattended-upgrades origins, and, when `oaxaca-tools` is installed, drops a synthetic migration and runs `oaxaca-migrate` as the user. The report lands in `build/upgrade-test/report.txt` and the script compares it with its expectations. The run uses the same package cache as `make rootfs`, `build/apt-cache/`.
+`scripts/upgrade-test.sh` is the N to N+1 test: N is the set of versions the published archive at `https://apt.oaxaca.page` offers, N+1 is `build/`. One mmdebstrap run (unshare mode, output `/dev/null`) installs the `minbase` variant plus, from the published archive, every package name that is both published and in `build/`; a script then runs inside the chroot: it creates a user from N's `/etc/skel` with a marker line in one of the user's files, points apt at `build/` (copied in as a flat file archive indexed by `dpkg-scanpackages`), runs `apt-get full-upgrade` with the options `oaxaca-update -y` uses, records versions, `dpkg --audit`, what apt would still upgrade and the unattended-upgrades origins, and, when `oaxaca-tools` is installed, drops a synthetic migration and runs `oaxaca-migrate` as the user. The report lands in `build/upgrade-test/report.txt` and the script compares it with its expectations. The run uses the same package cache as `make rootfs`, `build/apt-cache/`.
 
 ```
 make upgrade-test                  # needs build/*.deb and network access to the published archive
@@ -668,7 +667,7 @@ packages/<dir>/ ──sbuild (dpkg-buildpackage + dh, inside the chroot)──�
 build/ ──aptly (snapshot, publish, sign with the gpg key)──▶ ~/.local/state/oaxaca/aptly/public/dists, pool
                                                                             (make publish)
                                         │
-                                aws s3 sync ──▶ S3 bucket oaxaca-apt ──▶ https://oaxaca-apt.s3.us-east-1.amazonaws.com
+                                aws s3 sync ──▶ S3 bucket oaxaca-apt ──CloudFront──▶ https://apt.oaxaca.page
                                                                       │
                      installed systems: oaxaca-apt-source + oaxaca-archive-keyring ──▶ apt update
 
@@ -679,8 +678,8 @@ Ubuntu archive + build/{archive-keyring,apt-source,base[,nvidia,session,quickshe
                                                 tar + mke2fs (+ Omarchy's shell/ for the session profile; /etc/skel and apply-system for desktop) ──▶ ext4 image ──qemu──▶ boot checks   (make rootfs-test)
                                                 tar + unshare/chroot ──▶ ubuntu-drivers devices, oaxaca-drivers-install --show, apt --simulate   (make drivers-check)
 
-https://oaxaca-apt.s3.us-east-1.amazonaws.com (N) + build/*.deb (N+1) ──mmdebstrap (minbase + N), apt-get full-upgrade, oaxaca-migrate──▶ build/upgrade-test/report.txt   (make upgrade-test; CI)
-https://oaxaca-apt.s3.us-east-1.amazonaws.com (N, desktop tarball) + build/*.deb (N+1) ──qemu: log in on N, oaxaca-update -y inside the session──▶ desktop checks on N+1   (make session-upgrade-test)
+https://apt.oaxaca.page (N) + build/*.deb (N+1) ──mmdebstrap (minbase + N), apt-get full-upgrade, oaxaca-migrate──▶ build/upgrade-test/report.txt   (make upgrade-test; CI)
+https://apt.oaxaca.page (N, desktop tarball) + build/*.deb (N+1) ──qemu: log in on N, oaxaca-update -y inside the session──▶ desktop checks on N+1   (make session-upgrade-test)
 
 desktop tarball (the installed system) + live tarball (PROFILE=live: desktop + casper + oaxaca-live + oaxaca-installer) + the NVIDIA driver pool (apt download) ──mksquashfs (two layers: the desktop, then what the live tarball adds), signed shim and GRUB into a FAT image, xorriso──▶ build/iso/oaxaca-26.10-amd64.iso (+ -test.iso)   (make iso)
                                                                                         │
@@ -691,7 +690,7 @@ CI runs the first three rows (render, chroot, build) and the upgrade test on eve
 
 ## Building the distro from source
 
-Going from a fresh clone of this repository to a bootable USB stick is a chain of `make` targets, then one `dd`. Every target is described above; this list gives the order the targets run in on a clean checkout and what each one leaves behind. Nothing here needs root except the final write to the stick. Two targets are missing on purpose. `make render` is absent because every rendered file is committed next to its `.in` template (CI's `make check-render` keeps the two in step), so a clone is complete, and `make build` runs `render` first anyway. `make publish` is absent because no step reads the published repository or the secret signing key: `make rootfs` installs our packages from the `.deb` files in `build/` and writes only Ubuntu's apt sources into the tarball, and the one key file the build needs, the public `packages/archive-keyring/archive-keyring.gpg`, is committed. Publishing matters after installation: the installed system's apt sources entry points at `https://oaxaca-apt.s3.us-east-1.amazonaws.com`, so `apt update` on an installed machine needs the repository published, which is the "Releasing" line under Day-to-day.
+Going from a fresh clone of this repository to a bootable USB stick is a chain of `make` targets, then one `dd`. Every target is described above; this list gives the order the targets run in on a clean checkout and what each one leaves behind. Nothing here needs root except the final write to the stick. Two targets are missing on purpose. `make render` is absent because every rendered file is committed next to its `.in` template (CI's `make check-render` keeps the two in step), so a clone is complete, and `make build` runs `render` first anyway. `make publish` is absent because no step reads the published repository or the secret signing key: `make rootfs` installs our packages from the `.deb` files in `build/` and writes only Ubuntu's apt sources into the tarball, and the one key file the build needs, the public `packages/archive-keyring/archive-keyring.gpg`, is committed. Publishing matters after installation: the installed system's apt sources entry points at `https://apt.oaxaca.page`, so `apt update` on an installed machine needs the repository published, which is the "Releasing" line under Day-to-day.
 
 1. Install the tools. `make machine-setup SETUP_FLAGS=--tools` runs `scripts/machine-setup.sh`, which installs them from Ubuntu's archive (the list, with what each tool is for, is at the top of the script) and stops; without `SETUP_FLAGS` the script goes on to the publishing setup in [Releasing](#releasing). `lua5.5` and `ripgrep` are not for the build: the Omarchy fork's own tests (`./test/all` in the fork's checkout; the fork's `PORT.md`, "Tests") need `lua5.5`'s `lua` command to read the fork's Hyprland configuration, which is written in Lua, `ripgrep`'s `rg` for three more test files, and `nodejs`'s `node` for the 47 test files that run JavaScript (the shell's `Model.js` files among them). `qt6-declarative-dev-tools` is not for the build or the tests either: `qt6-declarative-dev-tools` provides `/usr/lib/qt6/bin/qmllint`, which checks the fork's shell QML by hand:
 
@@ -726,7 +725,7 @@ Releasing: the hand edits in [Before each release](#before-each-release), `make 
 
 ## Shipping a change: the apt repository or a new ISO
 
-A change reaches users one of two ways. The installation ISO (the [live medium](7%20-%20image-installer.md#live-medium-and-casper) built by `make iso`) is what a new install is made from; the apt repository at `https://oaxaca-apt.s3.us-east-1.amazonaws.com` (filled by `make publish PUBLISH_FLAGS=--push`) is what an installed system updates from, through `oaxaca-update`, the port of Omarchy's update command (`apt-get update`, `apt-get full-upgrade`, then the [migrations](8%20-%20update-path.md#migration), the user's hooks, the cleanup and the reboot offer; [docs/8 - update-path.md](8%20-%20update-path.md)).
+A change reaches users one of two ways. The installation ISO (the [live medium](7%20-%20image-installer.md#live-medium-and-casper) built by `make iso`) is what a new install is made from; the apt repository at `https://apt.oaxaca.page` (filled by `make publish PUBLISH_FLAGS=--push`) is what an installed system updates from, through `oaxaca-update`, the port of Omarchy's update command (`apt-get update`, `apt-get full-upgrade`, then the [migrations](8%20-%20update-path.md#migration), the user's hooks, the cleanup and the reboot offer; [docs/8 - update-path.md](8%20-%20update-path.md)).
 
 **Through the apt repository, no new ISO:** any change inside a [package](#package) that is installed on the system: the desktop (`oaxaca-desktop`, `-tools`, `-shell`, `-themes`, `-config`, built from the Omarchy fork), `oaxaca-base`, `oaxaca-session`, `oaxaca-nvidia`, `oaxaca-hw-legion`, and the Ubuntu packages their dependency lists add. The package's version has to be bumped (`make check-versions`), then built and published; installed systems get it with `oaxaca-update`. What a package install alone cannot change, such as files already in users' home folders (`/etc/skel` only seeds new users), ships as a migration in the fork's `migrations/`, which `oaxaca-update` runs after the packages.
 
@@ -742,7 +741,7 @@ A change reaches users one of two ways. The installation ISO (the [live medium](
 
 ## Releasing
 
-A release is one upload of the apt repository at `https://oaxaca-apt.s3.us-east-1.amazonaws.com`, made after the changed packages are built and the image built from them has passed its boot tests. Installed systems receive a release through `oaxaca-update`, and the ISO the release builds on the way is the one to offer for the next install.
+A release is one upload of the apt repository at `https://apt.oaxaca.page`, made after the changed packages are built and the image built from them has passed its boot tests. Installed systems receive a release through `oaxaca-update`, and the ISO the release builds on the way is the one to offer for the next install.
 
 The upload's anatomy: `make publish` runs `scripts/repo-publish.sh`, which drives two programs. aptly keeps the repository's database and package pool under `~/.local/state/oaxaca/aptly` on the workstation, adds `build/`'s newest packages to that database, and signs the published tree with the apt signing key (section [`aptly`](#aptly-make-publish)). The aws-cli's `aws s3 sync` then uploads aptly's published tree to the S3 bucket `oaxaca-apt`, deleting from the bucket whatever aptly's tree no longer has.
 

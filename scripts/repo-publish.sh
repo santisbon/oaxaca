@@ -19,10 +19,12 @@
 # refuses a .deb whose name and version are already published with different content: apt
 # clients identify a package by name and version, so installed systems would never see the
 # new file, and a client holding the old index would fail the hash check on download. The
-# only honest fix is a version bump (scripts/version-check.sh). --replace overrides, for a
-# package that no installed system can have yet (before the first release).
+# only honest fix is a version bump (scripts/version-check.sh). The guard also keeps CloudFront's
+# cache of pool/ correct: the distribution keeps a copy of each pool/ file for a day by default
+# (infra/apt-repo/apt-repo.yaml), which is only safe because a published name never gets new
+# content. There is no override.
 #
-# Usage: scripts/repo-publish.sh [--push] [--replace]
+# Usage: scripts/repo-publish.sh [--push]
 #        scripts/repo-publish.sh --seed    (once per workstation: make repo-seed)
 # Env:   AWS_PROFILE  the aws-cli profile for the upload (default APT_AWS_PROFILE in distro.conf)
 set -euo pipefail
@@ -38,13 +40,12 @@ mkdir -p "$root"
 aptly() { command aptly -config="$cfg" "$@"; }
 
 repo="$DISTRO_ID"
-push=0 replace=0 seed=0
+push=0 seed=0
 for arg in "$@"; do
   case $arg in
     --push) push=1 ;;
-    --replace) replace=1 ;;
     --seed) seed=1 ;;
-    *) echo "unknown option $arg (--push, --replace, --seed)" >&2; exit 1 ;;
+    *) echo "unknown option $arg (--push, --seed)" >&2; exit 1 ;;
   esac
 done
 
@@ -119,12 +120,8 @@ if curl -sSfL --max-time 30 -o "$index" "$APT_URL/dists/$BASE_SERIES/$APT_COMPON
   done
   if ((${#clash[@]})); then
     printf 'already published with different content: %s\n' "${clash[@]}" >&2
-    if ((replace)); then
-      echo "--replace given: publishing over them anyway" >&2
-    else
-      echo "bump the version (debian/changelog.in, then make build), or pass --replace if no installed system can have these" >&2
-      exit 1
-    fi
+    echo "bump the version (debian/changelog.in, then make build)" >&2
+    exit 1
   fi
 else
   echo "no published index at $APT_URL yet (or unreachable): skipping the same-version check" >&2

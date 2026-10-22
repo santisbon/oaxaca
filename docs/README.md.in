@@ -529,12 +529,11 @@ aptly manages apt repositories. aptly keeps a database and a package pool under 
 ```
 make publish                        # add build/'s newest packages, snapshot, publish, list what an upload would change
 make publish PUBLISH_FLAGS=--push   # the same, then upload to the S3 bucket
-make publish PUBLISH_FLAGS=--replace   # publish over a same-version file (only before the first release)
 ```
 
 Before adding anything, the script fetches the published index and refuses a `.deb` whose name and version are already published with different content: apt identifies a package by name and version, so installed systems would never see the new file. The fix is a version bump, which `make check-versions` asks for.
 
-The published repository is served from the S3 bucket at `@APT_URL@`. An installed system reaches the repository through the `@DISTRO_ID@-apt-source` package, whose sources entry binds the repository to the key from `@DISTRO_ID@-archive-keyring`.
+The published repository's files are in the S3 bucket `@APT_S3_BUCKET@`, and Amazon CloudFront serves them at `@APT_URL@` ([infra/apt-repo/README.md](../infra/apt-repo/README.md), which also says what CloudFront caches; [docs/2](2%20-%20build-infra.md), choice 10). An installed system reaches the repository through the `@DISTRO_ID@-apt-source` package, whose sources entry binds the repository to the key from `@DISTRO_ID@-archive-keyring`.
 
 ### `mmdebstrap` again (`make rootfs`)
 
@@ -667,7 +666,7 @@ packages/<dir>/ ──sbuild (dpkg-buildpackage + dh, inside the chroot)──�
 build/ ──aptly (snapshot, publish, sign with the gpg key)──▶ ~/.local/state/@DISTRO_ID@/aptly/public/dists, pool
                                                                             (make publish)
                                         │
-                                aws s3 sync ──▶ S3 bucket @APT_S3_BUCKET@ ──▶ @APT_URL@
+                                aws s3 sync ──▶ S3 bucket @APT_S3_BUCKET@ ──CloudFront──▶ @APT_URL@
                                                                       │
                      installed systems: @DISTRO_ID@-apt-source + @DISTRO_ID@-archive-keyring ──▶ apt update
 
