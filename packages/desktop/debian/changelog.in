@@ -8,6 +8,8 @@
     when nothing changed.
   * Setup > Displays is now Setup > Arrange Monitors, so it no longer looks
     like Setup > Monitors; it still starts nwg-displays.
+  * Remove > Service > Signal removes Signal and Signal's apt repository,
+    which Install > Service > Signal added.
 
  -- @MAINTAINER@  Thu, 22 Oct 2026 12:01:06 -0500
 
