@@ -170,7 +170,9 @@ reached D FACTORY-D
 
 fail=0
 check() { grep -q -- "$2" <<< "$1" || { echo "!! expected: $2" >&2; fail=1; }; }
-check "$reportA" "^factory install: done$"
+# "done" is boot A's last line before it powers off, and the kernel's "[  300.202110] reboot: Power
+# down" can follow it on the same serial line (2026-10-21), so a kernel timestamp may end the line.
+check "$reportA" "^factory install: done\($\|\[ *[0-9]*\.[0-9]*\] \)"
 check "$reportA" "^factory install: apt lists: [1-9]"
 check "$reportA" "^factory snapshot: present ro=true$"
 check "$reportA" "^factory boot copy in running root: no$"
