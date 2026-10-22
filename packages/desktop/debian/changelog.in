@@ -1,5 +1,17 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Obsidian can be installed from the menu: Install > Productivity >
+    Obsidian installs Obsidian's own snap from the Snap Store, and Remove >
+    Productivity > Obsidian removes it; the notes in your vaults stay.
+  * Super + Shift + O opens Obsidian, as in Omarchy, or its installer while
+    the snap is missing.
+  * A theme change themes Obsidian again: the @DISTRO_NAME@ theme, chosen in
+    a vault's Appearance settings, follows the desktop's theme.
+
+ -- @MAINTAINER@  Thu, 22 Oct 2026 02:37:15 -0500
+
+@DISTRO_ID@-desktop (4.0.4+git20261022.121.c797743a-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Setup > Monitors opens ~/.config/hypr/monitors.lua in the editor again,
     as in Omarchy, and Setup > Config > Monitors is gone. nwg-displays
     starts from Displays Settings in the app launcher, saving its layout to
