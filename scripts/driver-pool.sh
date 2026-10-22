@@ -2,10 +2,11 @@
 # driver-pool.sh: put the NVIDIA driver packages on the installation medium, so that the
 # installer's drivers step works without a network (docs/7, choice 20).
 #
-# Anatomy: unshare opens an unprivileged user namespace (as scripts/drivers-check.sh does),
-# extracts the desktop root filesystem tarball into build/iso/pool-work/root, mounts /proc and
-# binds /dev, copies the host's resolv.conf in, and chroots. Inside, apt-get update fetches
-# Ubuntu's package lists (the tarball ships none), apt-cache finds the newest NVIDIA open
+# Anatomy: tar extracts the desktop root filesystem tarball's apt configuration (etc/apt), dpkg
+# status file and Ubuntu's archive keyring into build/iso/pool-work/root, and the host's apt-get
+# and apt-cache run as the user with APT_CONFIG pointing at those files, so apt resolves against
+# the tarball's installed packages, preferences and apt.conf.d, not the host's. apt-get update
+# fetches Ubuntu's package lists (the tarball ships none), apt-cache finds the newest NVIDIA open
 # branch that has Canonical's prebuilt signed modules for the tarball's kernel (the choice
 # <id>-drivers-install makes on a machine with an NVIDIA GPU: nvidia-driver-<branch>-open with
 # linux-modules-nvidia-<branch>-open-<kernel>-generic), and apt-get install --download-only
@@ -30,6 +31,12 @@
 # the installed system's layer does not carry (docs/7, choice 55). The tarball given is the
 # desktop one, that installed system, so every closure is relative to what an installation has.
 #
+# No chroot and no user namespace: Ubuntu's AppArmor (kernel.apparmor_restrict_unprivileged_userns=1)
+# gives a namespace that /usr/bin/unshare makes from an unconfined terminal no capabilities, so the
+# chroot's mounts failed ("unshare: cannot change root filesystem propagation: Permission denied",
+# 2026-10-22, from foot); the step passed before only from Wave Terminal, whose snap profile, in
+# complain mode, let unshare keep them.
+#
 # Usage: scripts/driver-pool.sh <tarball> <pool dir>
 # Env:   DRIVER_POOL=0 skips the pool (an ISO without the driver, for quick test builds).
 set -euo pipefail
@@ -41,10 +48,7 @@ tarball=$1 pool=$2
 [[ -f $tarball ]] || { echo "no root filesystem tarball at $tarball" >&2; exit 1; }
 command -v dpkg-scanpackages >/dev/null || { echo "dpkg-scanpackages is not installed (dpkg-dev)" >&2; exit 1; }
 work="$here/build/iso/pool-work"
-# The extracted tree's files belong to subordinate uids of the user namespace, so removing it
-# takes the same namespace (the first run's leftovers failed a plain rm with EPERM).
-nsrm() { unshare --user --map-root-user --map-auto rm -rf "$@"; }
-nsrm "$work"; rm -rf "$pool"; mkdir -p "$work" "$pool"
+rm -rf "$work" "$pool"; mkdir -p "$work" "$pool"
 # The newest of the given .deb files by dpkg's version order (dpkg --compare-versions), not by
 # file name: sort -V ranks "4.0.4+git20261013-0oaxaca1" below "4.0.4-0oaxaca2" because "+"
 # sorts before "-", where dpkg ranks it above, and the root filesystem got the older desktop.
@@ -68,36 +72,41 @@ mkdir -p "$work/local"
 cp "${local_debs[@]}" "$work/local/"
 echo "== hardware packages: $(cd "$work/local" && ls | tr '\n' ' ')"
 echo "== driver pool: extracting $tarball into $work/root and resolving the NVIDIA branch in it"
-unshare --user --map-root-user --map-auto --mount --pid --fork --propagation=private \
-  bash -eu -s "$tarball" "$work" <<'INNER'
-tarball=$1 work=$2
 root="$work/root"
-mkdir "$root"
-tar -xf "$tarball" -C "$root" --exclude='./dev/*'
-mount --rbind /dev "$root/dev"
-mount -t proc proc "$root/proc"
-rm -f "$root/etc/resolv.conf"
-cp /etc/resolv.conf "$root/etc/resolv.conf"
-mkdir -p "$root/pool"
-cp -r "$work/local" "$root/local"
-chroot "$root" /bin/bash -e <<'CHROOT'
-export DEBIAN_FRONTEND=noninteractive
-# Ubuntu's archive only: the distro's own packages come from build/ (/local), and the image's
+mkdir -p "$root"
+tar -xf "$tarball" -C "$root" ./etc/apt ./var/lib/dpkg/status ./var/lib/dpkg/arch ./usr/share/keyrings/ubuntu-archive-keyring.gpg
+# Ubuntu's archive only: the distro's own packages come from build/ (local/), and the image's
 # sources entry for the distro's apt repository would make this step depend on what is published
 # there (a repository not yet published answered 404, and apt update failed the ISO build).
-find /etc/apt/sources.list.d -name '*.sources' ! -name ubuntu.sources -delete
-apt-get -q update >/tmp/apt-update.log 2>&1 || { echo "apt update: FAILED"; cat /tmp/apt-update.log; exit 1; }
-kver=$(ls /boot/vmlinuz-* | sed 's|.*/vmlinuz-||' | sort -V | tail -1)
+find "$root/etc/apt/sources.list.d" -name '*.sources' ! -name ubuntu.sources -delete
+# Signed-By names the keyring by its path in the image; this apt runs on the host.
+sed -i "s|^Signed-By: /usr/share/keyrings/|Signed-By: $root/usr/share/keyrings/|" "$root/etc/apt/sources.list.d/ubuntu.sources"
+mkdir -p "$work/state/lists/partial" "$work/cache" "$root/pool/partial"
+# APT_CONFIG is read before Dir::Etc's parts, so the tarball's apt.conf.d and preferences.d
+# apply and the host's do not. The architectures are the tarball's (dpkg's arch file).
+{
+  echo "Dir::Etc \"$root/etc/apt\";"
+  echo "Dir::State \"$work/state\";"
+  echo "Dir::State::status \"$root/var/lib/dpkg/status\";"
+  echo "Dir::Cache \"$work/cache\";"
+  echo "Dir::Log \"$work/log\";"
+  echo "Debug::NoLocking \"true\";"
+  echo "APT::Architecture \"$(head -1 "$root/var/lib/dpkg/arch")\";"
+  echo "APT::Architectures { $(sed 's/.*/"&";/' "$root/var/lib/dpkg/arch" | paste -sd' ') };"
+} > "$work/apt.conf"
+export APT_CONFIG="$work/apt.conf"
+apt-get -q update >"$work/apt-update.log" 2>&1 || { echo "apt update: FAILED"; cat "$work/apt-update.log"; exit 1; }
+kver=$(tar -tf "$tarball" | sed -n 's|^\./boot/vmlinuz-\(.*\)$|\1|p' | sort -V | tail -1)
 echo "kernel: $kver"
 best=""
-for name in $(apt-cache search --names-only '^nvidia-driver-[0-9]+-open$' | cut -d' ' -f1 | sort -t- -k3,3n); do
-    branch=${name#nvidia-driver-}; branch=${branch%-open}
-    if apt-cache show "linux-modules-nvidia-$branch-open-$kver" >/dev/null 2>&1; then best=$branch; fi
+for name in $(apt-cache search --names-only '^nvidia-driver-[0-9]+-open$' | cut -d' ' -f1 | LC_ALL=C sort -t- -k3,3n); do
+  branch=${name#nvidia-driver-}; branch=${branch%-open}
+  if apt-cache show "linux-modules-nvidia-$branch-open-$kver" >/dev/null 2>&1; then best=$branch; fi
 done
-[[ -n $best ]] || { echo "no NVIDIA open branch with prebuilt modules for $kver"; exit 1; }
+[[ -n $best ]] || { echo "no NVIDIA open branch with prebuilt modules for $kver" >&2; exit 1; }
 echo "branch: $best (nvidia-driver-$best-open, linux-modules-nvidia-$best-open-$kver)"
 # --download-only with Dir::Cache::archives set: the closure relative to the installed set lands
-# in /pool, nothing is installed. Recommends are in, as on the installed system (<id>-base 0.1.6
+# in pool/, nothing is installed. Recommends are in, as on the installed system (<id>-base 0.1.6
 # and later), so the medium carries what an online install would add (nvidia-settings).
 # The flavour metapackage too (linux-modules-nvidia-<branch>-open-generic): ubuntu-drivers takes
 # the prebuilt modules only when that metapackage is among the kernel-specific package's reverse
@@ -105,14 +114,12 @@ echo "branch: $best (nvidia-driver-$best-open, linux-modules-nvidia-$best-open-$
 # otherwise. Without it in the pool the drivers step installed nothing and nouveau drove the GPU
 # (Legion laptop, 2026-10-12, docs/7 choice 36).
 flavour=${kver#*-*-}
-apt-get -q -y --install-recommends --download-only -o Dir::Cache::archives=/pool \
-    install "nvidia-driver-$best-open" "linux-modules-nvidia-$best-open-$flavour" "linux-modules-nvidia-$best-open-$kver" nvidia-vaapi-driver \
-    btrfs-progs timeshift xfsprogs /local/*.deb >/tmp/apt-download.log 2>&1 \
-    || { echo "apt download: FAILED"; tail -20 /tmp/apt-download.log; exit 1; }
-echo "$best" > /pool/branch
-ls /pool/*.deb | wc -l | sed 's/^/debs: /'
-CHROOT
-INNER
+apt-get -q -y --install-recommends --download-only -o Dir::Cache::archives="$root/pool" \
+  install "nvidia-driver-$best-open" "linux-modules-nvidia-$best-open-$flavour" "linux-modules-nvidia-$best-open-$kver" nvidia-vaapi-driver \
+  btrfs-progs timeshift xfsprogs "$work"/local/*.deb >"$work/apt-download.log" 2>&1 \
+  || { echo "apt download: FAILED"; tail -20 "$work/apt-download.log"; exit 1; }
+echo "$best" > "$root/pool/branch"
+ls "$root/pool/"*.deb | wc -l | sed 's/^/debs: /'
 cp "$work/root/pool/"*.deb "$pool/"
 cp "$work/local/"*.deb "$pool/"
 cp "$work/root/pool/branch" "$pool/branch"
@@ -125,4 +132,4 @@ if [[ -n $common ]]; then
   dpkg-deb --fsys-tarfile "$common" | tar -xO --wildcards './usr/share/doc/libnvidia-common-*/copyright' > "$pool/LICENSE.NVIDIA"
 fi
 echo "   pool: $(ls "$pool"/*.deb | wc -l) packages, $(du -sh "$pool" | cut -f1), branch $(cat "$pool/branch")"
-nsrm "$work"
+rm -rf "$work"
