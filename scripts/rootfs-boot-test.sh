@@ -5,7 +5,8 @@
 #
 # Anatomy: three programs run in turn.
 #   1. tar, to pull the kernel (vmlinuz) and initramfs (initrd.img) out of the tarball.
-#   2. mke2fs -d, inside an unprivileged user namespace (unshare), to turn the tarball's
+#   2. mke2fs -d, under fakeroot (which records owners and modes in its own database and reports
+#      them to the programs it runs), to turn the tarball's
 #      contents into a raw ext4 disk image, after a oneshot systemd unit is dropped into
 #      the tree. That unit runs the checks below and powers the machine off. For the
 #      session profile a test user and an SDDM autologin file for that user go in too.
@@ -141,19 +142,23 @@ if [[ $profile == session ]]; then
   echo "   omarchy $OMARCHY_TAG at $(git -C "$omarchy_dir" rev-parse HEAD)"
 fi
 
-echo "== ext4 image from the tarball (unprivileged user namespace)"
-# Everything in this heredoc runs as the root user inside the namespace, so the tarball's
-# root-owned files extract with their real ownership and mke2fs records it.
-unshare --user --map-root-user --map-auto bash -eu -s "$tarball" "$work" "$image" "$DISTRO_ID" "$profile" "$omarchy_dir" "$live" "$upgrade_dir" "$here/scripts" <<'INNER'
+echo "== ext4 image from the tarball (fakeroot)"
+# Everything in this heredoc runs under fakeroot, so tar and chown record the tarball's owners
+# and groups in fakeroot's database (the files on disk stay the user's) and mke2fs -d writes
+# those owners into the image. fakeroot, not an unprivileged user namespace: Ubuntu's AppArmor
+# (kernel.apparmor_restrict_unprivileged_userns=1) gives a namespace that /usr/bin/unshare makes
+# from an unconfined process no capabilities, so tar could not set any owner but root
+# (2026-10-22, from foot). The step passed before only when run from Wave Terminal, whose snap
+# profile, in complain mode, let unshare keep them.
+fakeroot -- bash -eu -s "$tarball" "$work" "$image" "$DISTRO_ID" "$profile" "$omarchy_dir" "$live" "$upgrade_dir" "$here/scripts" <<'INNER'
 tarball=$1 work=$2 image=$3 id=$4 profile=$5 omarchy_dir=$6 live=$7 upgrade_dir=$8 scripts=$9
 upgrade=0; [ -n "$upgrade_dir" ] && upgrade=1
 root="$work/root"
 mkdir "$root"
-# Device nodes cannot be created in a user namespace, and the guest kernel mounts devtmpfs
-# over /dev anyway, so the tarball's ./dev entries are skipped.
+# The guest kernel mounts devtmpfs over /dev, so the tarball's ./dev entries are skipped.
 tar -xf "$tarball" -C "$root" --exclude='./dev/*'
 if [ "$live" = 1 ]; then
-  # The live tarball booted from a disk (see the comment above the unshare call).
+  # The live tarball booted from a disk (see the comment above "live=0").
   ln -sf /dev/null "$root/etc/systemd/system/casper-md5check.service"
   rm -f "$root/etc/xdg/autostart/$id-installer.desktop"
   echo "   live tarball: casper-md5check.service masked, the installer's autostart entry removed"
