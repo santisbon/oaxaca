@@ -42,8 +42,8 @@ Resources:
       OwnershipControls:
         Rules:
           - ObjectOwnership: BucketOwnerEnforced
-      # Public ACLs stay blocked. A public bucket policy is allowed only while PublicRead is
-      # "true"; afterwards S3 itself refuses any policy that would make the bucket public again.
+      # Public ACLs stay blocked. A public bucket policy is allowed only when PublicRead is
+      # "true"; with "false", S3 itself refuses any policy that would make the bucket public.
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         IgnorePublicAcls: true
@@ -72,8 +72,8 @@ Resources:
             Condition:
               StringEquals:
                 AWS:SourceArn: !Sub "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
-          # While PublicRead is "true", anyone may read objects at the bucket's REST endpoint,
-          # the URL installed systems used before the repository's own host name existed.
+          # Only when PublicRead is "true": anyone may also read objects at the bucket's REST
+          # endpoint. With "false", the distribution above is the bucket's only reader.
           - !If
             - IsPublicRead
             - Sid: PublicReadObjects
@@ -188,5 +188,5 @@ Outputs:
     Description: The distribution's own domain name, which the host name's records point at
     Value: !GetAtt Distribution.DomainName
   BucketRestUrl:
-    Description: The bucket's REST endpoint, readable by anyone only while PublicRead is "true"
+    Description: The bucket's REST endpoint, readable by anyone only when PublicRead is "true"
     Value: !Sub "https://${Bucket}.s3.${AWS::Region}.amazonaws.com"

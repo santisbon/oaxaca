@@ -7,7 +7,8 @@
 # APT_HOST over HTTPS, the TLS certificate for APT_HOST, and the A and AAAA records that point
 # APT_HOST at the distribution in the Route 53 hosted zone of APT_DOMAIN (all in distro.conf).
 # This script looks up that hosted zone's ID by APT_DOMAIN, so no zone ID is kept in the source
-# tree. APT_S3_PUBLIC_READ decides whether anyone may still read the bucket's own REST endpoint.
+# tree. APT_S3_PUBLIC_READ decides whether anyone besides CloudFront may read the bucket's own
+# REST endpoint.
 # Nothing on the distro's images or packages comes from here; the stack only serves the published
 # repository (infra/apt-repo/README.md).
 #

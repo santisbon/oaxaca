@@ -38,7 +38,7 @@ The settings are in `distro.conf`, in shell syntax at the repository root:
 - `APT_S3_BUCKET=oaxaca-apt` and `APT_S3_REGION=us-east-1`: the bucket. The region must be `us-east-1`, because CloudFront only uses certificates from that region and the whole stack lives in one region.
 - `APT_DOMAIN=oaxaca.page`: the domain whose Route 53 hosted zone gets the records. The domain must be registered and its hosted zone must exist in the same AWS account; registering the domain through Route 53 creates the zone.
 - `APT_HOST=apt.oaxaca.page` and `APT_URL=https://apt.oaxaca.page`: the repository's host name and URL. `make render` writes `APT_URL` into `packages/archive-keyring/archive.sources`, the sources entry `oaxaca-apt-source` installs.
-- `APT_S3_PUBLIC_READ=false`: `true` lets anyone also read the bucket's own REST endpoint, `https://oaxaca-apt.s3.us-east-1.amazonaws.com`; `false` leaves the distribution as the bucket's only reader.
+- `APT_S3_PUBLIC_READ=false`: `false` makes the distribution the bucket's only reader. The bucket policy grants `s3:GetObject` to that one distribution, and S3's Block Public Access refuses any policy that would make the bucket public, so a request to the bucket's own REST endpoint, `https://oaxaca-apt.s3.us-east-1.amazonaws.com`, gets 403. `true` would let anyone read that endpoint as well.
 - `APT_AWS_PROFILE=personal`: the aws-cli profile, from `~/.aws/config`; the `AWS_PROFILE` environment variable overrides it.
 
 ## What CloudFront caches
@@ -72,16 +72,11 @@ gpg asks for the apt signing key passphrase (the archive signing key's). The upl
 curl -sI https://apt.oaxaca.page/dists/stonking/InRelease | head -1   # HTTP/2 200
 ```
 
-## Why CloudFront, and the move to it
+## Why CloudFront
 
-Until 2026-10-22 apt read the repository straight from the bucket's REST endpoint. That URL named the storage: the repository had already moved once, from GitHub Pages to S3 on 2026-10-13, and the move changed every installed system's sources entry. A host name in a domain of our own stays when the storage changes. S3 alone cannot serve our own name over HTTPS: AWS's documentation, "Website endpoints" (read 2026-10-13), says "Amazon S3 website endpoints do not support HTTPS or access points", and the REST endpoint presents only Amazon's own certificate. CloudFront serves the name with our certificate, and its edge servers answer repeated downloads of `pool/` files without the bucket.
+apt reads the repository at a host name in a domain of our own, `apt.oaxaca.page`, not at a URL that names the storage, such as the bucket's REST endpoint. Every installed system's sources entry, `/etc/apt/sources.list.d/oaxaca.sources` from `oaxaca-apt-source`, names that URL, so a URL that named the storage would have to change on every installed system whenever the storage changed. S3 alone cannot serve our own name over HTTPS: AWS's documentation, "Website endpoints" (read 2026-10-13), says "Amazon S3 website endpoints do not support HTTPS or access points", and the REST endpoint presents only Amazon's own certificate. CloudFront serves the name with our certificate, and its edge servers answer repeated downloads of `pool/` files without the bucket.
 
-The move happens in two phases, so a system whose sources entry still names the bucket keeps receiving updates until it has the new entry:
-
-- **Phase A** (`APT_S3_PUBLIC_READ=true`): the distribution, certificate and records are added, the bucket stays readable at its REST endpoint, and `oaxaca-apt-source` 0.1.2 carries `https://apt.oaxaca.page`.
-- **Phase B** (`APT_S3_PUBLIC_READ=false`, then `make apt-infra`), once every installed system has `oaxaca-apt-source` 0.1.2: the bucket policy keeps only the distribution's read, and S3's Block Public Access refuses any policy that would make the bucket public again. A system still naming the bucket after phase B gets 403 from it, and its sources entry, `/etc/apt/sources.list.d/oaxaca.sources`, needs `URIs: https://apt.oaxaca.page` written by hand.
-
-Why GitHub Pages was left for S3: GitHub refuses files over 100 MB (`oaxaca-themes` is 111 MB, the fonts and desktop source tarballs 135 MB and 118 MB), and GitHub's "GitHub Pages limits" page says "Published GitHub Pages sites may be no larger than 1 GB"; the Pages checkout had already reached 758 MB. S3 has neither limit. Storage, requests and downloads are billed by AWS; see AWS's S3, CloudFront and Route 53 pricing pages for current prices.
+Why not GitHub Pages: GitHub refuses files over 100 MB (`oaxaca-themes` is 111 MB, the fonts and desktop source tarballs 135 MB and 118 MB), and GitHub's "GitHub Pages limits" page says "Published GitHub Pages sites may be no larger than 1 GB"; the Pages checkout had already reached 758 MB. S3 has neither limit. Storage, requests and downloads are billed by AWS; see AWS's S3, CloudFront and Route 53 pricing pages for current prices.
 
 ## Teardown
 

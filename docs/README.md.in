@@ -273,7 +273,7 @@ The one list of open work for @DISTRO_NAME@, this repository and the fork, check
 
 - **When @DISTRO_NAME@ moves to Qt 6.12** (on a new Ubuntu release; `@BASE_SERIES@` ships Qt 6.11.2): Qt 6.12 adds a QtQuick `Color` type that hides the shell's own `Color` singleton (`shell/Commons/Color.qml`) wherever QML names it unqualified. Omarchy first worked around it in its Quickshell package (`load_qtquick_611.patch`, `omacom/omarchy-pkgs` commit 5fcf9597, 2026-10-10), then fixed the shell itself: Omarchy 4.0.5's commit `bfac6650`, "Qualify shell palette references for Qt 6.12", imports `qs.Commons as Commons` and writes `Commons.Color`, and `docs/shell` in the fork states the rule for plugin QML too. The fork has had that commit since it merged Omarchy v4.0.6 (docs/6, choice 101), and on 2026-10-22 no QML file under its `shell/` named `Color.` unqualified, so neither the patch nor the `//@ pragma OmarchyLoadPatch` line is needed. QML the port adds must qualify the palette the same way.
 - **Dropping `packages/quickshell`** (docs/5, choice 4). Debian has `quickshell 0.3.2-1` (sources.debian.org, 2026-10-19); `@BASE_SERIES@` has `0.3.0-1build1`. This repository's `0.3.2-0oaxaca2` also carries the fix that makes the lock screen work more than once per login, so the package can go when Ubuntu's archive has 0.3.2 or later with that fix; whether Debian's `0.3.2-1` has the fix is not checked.
-- **Omarchy's Hyprland plugins.** `omarchy-hyprland-titlebars` and `cua-hyprland-plugin` are not in v4.0.4's package list; if a later Omarchy tag installs one, the plugin is built against Ubuntu's `hyprland-dev` and depends on the `hyprland-abi-*` package of the archive's Hyprland.
+- **Omarchy's Hyprland plugins.** `omarchy-hyprland-titlebars` and `cua-hyprland-plugin` are not in v4.0.6's package list; if a later Omarchy tag installs one, the plugin is built against Ubuntu's `hyprland-dev` and depends on the `hyprland-abi-*` package of the archive's Hyprland.
 - **The series upgrade** ([docs/8](8%20-%20update-path.md), choice 5): the command on the fork's branch, the second suite in the apt repository, and the upgrade test across suites, when the next Ubuntu series opens in Launchpad.
 
 ## The installed system in detail
@@ -324,10 +324,10 @@ The AMD path is tested against simulated machines only, not yet on AMD hardware.
 Which [codecs](#codec) and [VA-API drivers](#va-api-driver) a stock Ubuntu Desktop, Omarchy and @DISTRO_NAME@ install, checked on 2026-10-19:
 
 - the Ubuntu Desktop column: the `ubuntu-desktop` metapackage 1.577 and `ubuntu-restricted-addons` 33ubuntu in Ubuntu's `@BASE_SERIES@` archive, and the archive's `Contents-amd64` index for which package ships each GStreamer plugin;
-- the Omarchy column: Omarchy v4.0.4's `install/omarchy-base.packages` and hardware scripts, and Arch's packages on archlinux.org (Omarchy installs Arch's current versions, such as `ffmpeg` 9.0.2-2);
+- the Omarchy column: Omarchy v4.0.6's `install/omarchy-base.packages` and hardware scripts, and Arch's packages on archlinux.org (Omarchy installs Arch's current versions, such as `ffmpeg` 9.0.2-2);
 - the @DISTRO_NAME@ column: the root filesystem manifest of the `desktop` 4.0.4+git20261019.108.aa6bd56b release, and the `@DISTRO_ID@-session` package's dependencies.
 
-| | Ubuntu Desktop @BASE_VERSION@ | Omarchy v4.0.4 | @DISTRO_NAME@ |
+| | Ubuntu Desktop @BASE_VERSION@ | Omarchy v4.0.6 | @DISTRO_NAME@ |
 |---|---|---|---|
 | Video player | Showtime (GStreamer) | mpv (FFmpeg) | mpv (FFmpeg) |
 | Music player | Rhythmbox (GStreamer) | none; mpv plays music files | none; mpv plays music files |
@@ -816,13 +816,13 @@ Files with a `.in` template are never edited directly: `make render` writes each
    cd ~/Projects/oaxaca && make release-message
    ```
 
-   `make release-message` runs `scripts/release.sh --message`, which computes the message the way `make release` does and changes nothing: it pushes nothing, writes no file and builds nothing. The output on 2026-10-18, before the release of the layered ISO and the SSH PATH:
+   `make release-message` runs `scripts/release.sh --message`, which computes the message the way `make release` does and changes nothing: it pushes nothing, writes no file and builds nothing. The output before the release of 2026-10-22 whose release commit is `a584c99`:
 
    ```
-   Release: desktop 4.0.4+git20261019.103.0362ae1d, installer 0.1.11, live 0.1.8
+   Release: desktop 4.0.6+git20261022.128.a95cf5f7
    ```
 
-   The desktop's version is computed from the fork's HEAD: `4.0.4` is Omarchy's tag, then the commit's date in UTC, the number of the fork's commits since the tag, and the commit's short hash. Every other entry is a package directory whose version at the top of `debian/changelog` is not published yet, with that version. A package missing from the list will not be built, usually because step 3 was skipped. The command stops with "has uncommitted changes" when the fork has uncommitted changes, since a commit changes the hash, and prints "nothing to release" when every version is published.
+   The desktop's version is computed from the fork's HEAD: `4.0.6` is Omarchy's tag (`OMARCHY_TAG` in `distro.conf`), then the commit's date in UTC, the number of the fork's commits since the tag, and the commit's short hash. Every other entry is a package directory whose version at the top of `debian/changelog` is not published yet, with that version. A package missing from the list will not be built, usually because step 3 was skipped. The command stops with "has uncommitted changes" when the fork has uncommitted changes, since a commit changes the hash, and prints "nothing to release" when every version is published.
 
 ### Each release
 
@@ -881,7 +881,7 @@ A release that stopped resumes with another `make release`: `distro.conf` alread
 ## Documents
 
 - [docs/0 - plan.md](0%20-%20plan.md): the approved plan. Options compared, the Ubuntu base, NVIDIA, AppArmor, the Legion laptop's hardware, sleep, the roadmap and the verification list.
-- [docs/1 - policy.md](1%20-%20policy.md): roadmap step 1. Name, base series and move triggers, Omarchy pin and rebase policy, naming and version rules, the Secure Boot and encryption requirements, the password login rule with its fingerprint and FIDO2 key paths, and why hibernation is out of the first release.
+- [docs/1 - policy.md](1%20-%20policy.md): roadmap step 1. Name, base series and move triggers, Omarchy tag and merge policy, naming and version rules, the Secure Boot and encryption requirements, the password login rule with its fingerprint and FIDO2 key paths, and why hibernation is out of the first release.
 - [docs/2 - build-infra.md](2%20-%20build-infra.md): roadmap step 2. The tools above with their rejected alternatives, one-time setup, key rotation, the rebrand playbook, and what was verified.
 - [docs/3 - rootfs.md](3%20-%20rootfs.md): roadmap step 3. What the base metapackage pulls in and why, the files the build writes into the root filesystem, the choices (os-release diversion, netplan kept, Recommends on with two packages pinned out), how to run the build and the boot test, and what was verified
 - [docs/4 - session.md](4%20-%20session.md): roadmap step 4. What the session metapackage pulls in, the NVIDIA install path (ubuntu-drivers, prebuilt signed modules, early KMS hook), SDDM's Wayland greeter under Hyprland, the choices, the graphical boot test, the driver check on this laptop, and what was verified.
