@@ -1,3 +1,10 @@
+oaxaca-desktop (4.0.6+git20261023.130.7059ceeb-0oaxaca1) stonking; urgency=medium
+
+  * Learn > Oaxaca opens the user manual on Oaxaca's website, as
+    Learn > Omarchy opens Omarchy's.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 23 Oct 2026 14:33:42 -0500
+
 oaxaca-desktop (4.0.6+git20261022.128.a95cf5f7-0oaxaca1) stonking; urgency=medium
 
   * Based on Omarchy 4.0.6 instead of 4.0.4. From Omarchy's 4.0.5 and 4.0.6:
