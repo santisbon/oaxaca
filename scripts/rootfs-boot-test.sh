@@ -367,6 +367,14 @@ echo "font switch: \$(as_user sh -c 'mkdir -p /home/tester/.config/fontconfig &&
 echo "font list icon fonts: \$($id-font-list | grep -c -i -E 'material icons|font awesome')"
 echo "mise source: \$(apt-cache policy mise 2>/dev/null | awk '/\*\*\*/{getline; print \$2; exit}')"
 echo "fingerprint profile: \$(sed -n 's/^\t\[success=1 default=ignore\]\t\(pam_exec.so quiet .*\)/\1/p' /usr/share/pam-configs/$id-fprintd 2>/dev/null)"
+# The key and the reader serve only sudo, sudo -i and polkit (step 6, choice 103): with both profiles
+# enabled, common-auth has each profile's service gate in front of its module, and disabling them
+# takes the key back out. SDDM's PAM file includes common-auth, so the gates keep the login screen on
+# the password.
+DEBIAN_FRONTEND=noninteractive pam-auth-update --package --enable $id-u2f $id-fprintd >/dev/null 2>&1
+pam_gates=\$(grep -c -F 'pam_succeed_if.so quiet service notin sudo:sudo-i:polkit-1' /etc/pam.d/common-auth)
+DEBIAN_FRONTEND=noninteractive pam-auth-update --package --disable $id-u2f $id-fprintd >/dev/null 2>&1
+echo "pam key scope: gates=\$pam_gates after-disable=\$(grep -c pam_u2f /etc/pam.d/common-auth)"
 # The user's session environment, as the ported session file and uwsm set it up.
 echo "session env: \$(as_user systemctl --user show-environment 2>/dev/null | grep -E '^(OMARCHY_PATH|XDG_CURRENT_DESKTOP)=' | paste -sd' ')"
 echo "hyprland config: \$(run_user hyprctl -j getoption general:border_size 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print("border_size=%s" % d.get("int"))' 2>/dev/null)"
@@ -775,6 +783,7 @@ if [[ $profile == desktop ]]; then
   check "^font list icon fonts: 0$"
   check "^mise source: https://mise.jdx.dev/deb$"
   check "^fingerprint profile: pam_exec.so quiet /usr/bin/$DISTRO_ID-hw-laptop-closed$"
+  check "^pam key scope: gates=2 after-disable=0$"
   check "^ubuntu defaults: bashrc=bash aliases=yes zram=no sysctl=2 auto-upgrades=1$"
   # OMARCHY_PATH keeps Omarchy's name, for plugins written for Omarchy (docs/6, choice 86).
   check "^session env: .*OMARCHY_PATH=/usr/share/$DISTRO_ID"

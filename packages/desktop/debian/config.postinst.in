@@ -75,6 +75,14 @@ case "$1" in
       mkdir -p /var/lib/@DISTRO_ID@
       touch "$marker"
     fi
+    # The package's pam-auth-update profiles, @DISTRO_ID@-u2f and @DISTRO_ID@-fprintd (docs/6,
+    # choices 53 and 103): pam-auth-update writes an enabled profile into common-auth when the
+    # profile is enabled, not when the file changes, so a system that enabled one rewrites
+    # common-auth from the profile this package version ships, as libpam-fprintd's postinst does.
+    # Nothing changes on a system with neither profile enabled.
+    if command -v pam-auth-update >/dev/null; then
+      pam-auth-update --package
+    fi
     update-alternatives --install /usr/share/plymouth/themes/default.plymouth default.plymouth \
       /usr/share/plymouth/themes/@DISTRO_ID@/@DISTRO_ID@.plymouth 150
     if command -v update-initramfs >/dev/null && [ -d /boot ] && ls /boot/vmlinuz-* >/dev/null 2>&1; then

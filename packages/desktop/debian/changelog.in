@@ -1,5 +1,14 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Security: a FIDO2 key or fingerprint set up with Setup > Security serves
+    only sudo and polkit prompts, as on Omarchy. The login screen asks for
+    the password again, so the password unlocks the login keyring at login
+    and no keyring unlock dialog opens later.
+
+ -- @MAINTAINER@  Fri, 23 Oct 2026 17:02:35 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261023.130.7059ceeb-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Learn > @DISTRO_NAME@ opens the user manual on @DISTRO_NAME@'s website, as
     Learn > Omarchy opens Omarchy's.
 
