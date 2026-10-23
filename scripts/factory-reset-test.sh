@@ -65,7 +65,7 @@ run() {
   rm -f "$sock" "$monitor"
   echo "== boot $name (timeout ${limit}s, serial log $serial)"
   python3 -I - "$sock" "$monitor" "$serial" "$pass" <<'PY' &
-import os, socket, sys, time
+import os, select, socket, sys, time
 sock_path, mon_path, log_path, passphrase = sys.argv[1:5]
 FATAL = ("Unable to find a medium containing a live file system", "Kernel panic - not syncing")
 def connect(path):
@@ -79,7 +79,6 @@ def connect(path):
     sys.exit(1)
 ser = connect(sock_path)
 mon = connect(mon_path)
-mon.settimeout(0.2)
 log = open(log_path, "ab", buffering=0)
 buf = b""
 while True:
@@ -117,10 +116,17 @@ while True:
             for key in line[line.index("=== KEYS ") + 9:].split():
                 mon.sendall(("sendkey %s\n" % key).encode())
                 time.sleep(0.3)
-        try:
-            mon.recv(4096)
-        except OSError:
-            pass
+        # Empty the monitor's replies without waiting for one. A wait here, once per line, held
+        # the reading at 5 lines a second (a 0.2 s recv timeout), so the socket filled, QEMU's
+        # serial port held the guest's console writes, and the live boot crawled until casper
+        # gave up looking for the CD-ROM (2026-10-23: 26 s for the 130 lines the kernel queued
+        # before its console started).
+        while select.select([mon], [], [], 0)[0]:
+            try:
+                if not mon.recv(4096):
+                    break
+            except OSError:
+                break
 PY
   local watcher=$!
   timeout --foreground "$limit" qemu-system-x86_64 \
