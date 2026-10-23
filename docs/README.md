@@ -244,7 +244,6 @@ The one list of open work for Oaxaca, this repository and the fork, checked agai
 - **The SSH agent and the Secret portal.** `gcr4`, a dependency of `gnome-keyring`, enables `gcr-ssh-agent.service`, an SSH agent on `$XDG_RUNTIME_DIR/gcr/ssh`; which agent the desktop uses is not decided. `gnome-keyring` ships `/usr/share/xdg-desktop-portal/portals/gnome-keyring.portal` for `org.freedesktop.impl.portal.Secret`, the interface sandboxed applications store secrets through, but Ubuntu's `/usr/share/xdg-desktop-portal/hyprland-portals.conf` (`[preferred]` `default=hyprland;gtk`, in the `.108` image) names no backend for that interface; a line `org.freedesktop.impl.portal.Secret=gnome-keyring` in the desktop's portal configuration would add one.
 - **Branding artwork**: `logo.svg`, `icon.png`, the Plymouth and SDDM logos, the icon font's U+E900 glyph, the installer's three images (rendered from the distro's name today), the installer's slideshow, and translations of the installer launcher's name.
 - **Install > Gaming > Xbox Controllers.** `xpadneo-dkms` needs a Secure Boot key enrolled; the kernel's own drivers already run the controller over USB and Bluetooth (docs/6, choice 18).
-- **Learn > Omarchy**, the one Omarchy feature left to restore: with a caveat, or with a page of the port's own. The facts are in the fork's PORT-REMOVALS.md, "Commands, launchers and menu entries".
 - **A BIOS boot path**, only if a machine without UEFI ever matters (docs/7, choice 4).
 
 ### To investigate

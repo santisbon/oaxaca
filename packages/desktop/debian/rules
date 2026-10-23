@@ -14,6 +14,7 @@ export DISTRO_NAME = $(NAME)
 export DISTRO_ID_UPPER = $(UPPER)
 export DISTRO_HOME_URL = https://github.com/santisbon/oaxaca
 export DISTRO_BUG_URL = https://github.com/santisbon/oaxaca/issues
+export DISTRO_MANUAL_URL = https://oaxaca.page/manual/
 # owner/name of the Omarchy fork on GitHub, kept unrenamed by port/rename.sh: the agent skills
 # (default/agents/skills) send bug reports there.
 export DISTRO_FORK_REPO = $(patsubst https://github.com/%,%,https://github.com/santisbon/omarchy)

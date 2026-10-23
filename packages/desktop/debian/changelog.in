@@ -1,5 +1,12 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Learn > @DISTRO_NAME@ opens the user manual on @DISTRO_NAME@'s website, as
+    Learn > Omarchy opens Omarchy's.
+
+ -- @MAINTAINER@  Fri, 23 Oct 2026 14:33:42 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261022.128.a95cf5f7-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Based on Omarchy 4.0.6 instead of 4.0.4. From Omarchy's 4.0.5 and 4.0.6:
     - The screen lock decides each lock request from its current state, and
       recovers a stranded lock only when no other locker may hold it.
