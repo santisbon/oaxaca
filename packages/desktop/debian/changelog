@@ -1,3 +1,12 @@
+oaxaca-desktop (4.0.6+git20261023.131.28ecfdea-0oaxaca1) stonking; urgency=medium
+
+  * Security: a FIDO2 key or fingerprint set up with Setup > Security serves
+    only sudo and polkit prompts, as on Omarchy. The login screen asks for
+    the password again, so the password unlocks the login keyring at login
+    and no keyring unlock dialog opens later.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 23 Oct 2026 17:02:35 -0500
+
 oaxaca-desktop (4.0.6+git20261023.130.7059ceeb-0oaxaca1) stonking; urgency=medium
 
   * Learn > Oaxaca opens the user manual on Oaxaca's website, as
