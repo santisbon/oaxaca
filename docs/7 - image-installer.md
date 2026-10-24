@@ -187,9 +187,24 @@ The desktop's Plymouth theme files have been in `oaxaca-config` since step 6 (`/
     - shim's fallback loader recreating the entry from a `BOOTX64.CSV` file (shim-signed's own `/usr/lib/shim/BOOTX64.CSV` reads `shimx64.efi,ubuntu,,This is the boot entry for ubuntu`);
     - the firmware.
 
-    Neither is confirmed. If Stable Oaxaca's entry were ever relabeled `ubuntu`, the next test install would take that entry over. The label is checked before every test install.
+    Neither is confirmed. If Stable Oaxaca's entry were ever relabeled `ubuntu`, the next test install would take that entry over. The label is checked before every test install. *Answered by choice 57 (2026-10-23): the firmware.*
 
     Rejected: the label "Oaxaca daily" (above); an installer option for the label (a new installer page for one machine, used once, and the test install should boot as any user's does); relabeling the test install instead (needed again at every reinstall).
+
+57. **The Legion laptop's firmware adds an `ubuntu` boot entry for `\EFI\ubuntu\shimx64.efi` when no entry points at that loader (2026-10-23).** Choice 56 left open what turned Kubuntu's entry from `Kubuntu` back into `ubuntu`. The test, on the Legion laptop: Stable Oaxaca's EFI System Partition holds `\EFI\stable\shimx64.efi`, the loader of its `Stable Oaxaca` entry (`Boot0004`), and `\EFI\ubuntu\shimx64.efi`, which the installer's `grub-install --bootloader-id=ubuntu` wrote, with the entry `Boot0001`, labeled `ubuntu`, carrying no optional data. `sudo efibootmgr -b 0001 -B` deleted that entry, and after one restart through `Boot0004` the firmware had added it back (`efibootmgr -v`, trimmed):
+
+    ```
+    BootCurrent: 0004
+    BootOrder: 0004,0000,0001,2001,2002,2003
+    Boot0001* ubuntu    HD(1,GPT,dc05a5f1-…,0x1000,0x100000)/\EFI\ubuntu\shimx64.efiRC
+        data: 52 43
+    Boot2001* EFI USB Device    RC
+        data: 52 43
+    ```
+
+    The new entry points at the same loader, carries the label `ubuntu`, and two bytes of optional data, `52 43` (`RC`), as the firmware's own `EFI USB Device`, `EFI DVD/CDROM` and `EFI Network` entries do, while the entries `grub-install` writes carry none. Kubuntu's `ubuntu` entry, on Kubuntu's own EFI System Partition, carries the same `RC`. shim's fallback loader, the other suspect, did not make the entry: the firmware runs `fbx64.efi` only on a boot through `\EFI\BOOT\BOOTX64.EFI`, and this boot came through `Boot0004`; the fallback loader takes an entry's optional data from the third field of `BOOTX64.CSV`, which is empty in shim-signed's (`shimx64.efi,ubuntu,,This is the boot entry for ubuntu`); and the fallback loader puts its entry first in `BootOrder`, while the firmware appended this one after the disk entries already there. No Lenovo documentation of the behavior or of the `RC` marker was found, so what follows comes from this test, which covered one folder: whether the firmware does the same for other folders, and whether it takes the label from the folder's name or from the folder's `BOOTX64.CSV` (both say `ubuntu`), is not shown. What removed Kubuntu's `Kubuntu` entry in the first place is not shown; the firmware only put an `ubuntu` entry back for the loader left without one.
+
+    What follows for the two installs. The firmware adds entries and left the existing ones as they were (`Boot0004` and Kubuntu's entry, unchanged), so it does not relabel Stable Oaxaca's entry, whose loader is in `EFI/stable`. Each test install's `grub-install` takes over the `ubuntu` entries (choice 56), including the one for Stable Oaxaca's `\EFI\ubuntu\shimx64.efi`, and at the next restart the firmware adds an `ubuntu` entry for that loader again. That entry boots Stable Oaxaca: Stable Oaxaca's signed GRUB reads the `/EFI/ubuntu/grub.cfg` stub, which names Stable Oaxaca's `/boot` (choice 56). After a test install, the firmware's boot entries are therefore `Stable Oaxaca`, the test install's `Oaxaca`, and the firmware's `ubuntu` for Stable Oaxaca's EFI System Partition. Rejected: deleting `\EFI\ubuntu\` from Stable Oaxaca's EFI System Partition to stop the extra entry (the signed GRUB in `EFI/stable` reads its configuration stub from `/EFI/ubuntu/grub.cfg`, choice 56).
 
 ## Running it
 
