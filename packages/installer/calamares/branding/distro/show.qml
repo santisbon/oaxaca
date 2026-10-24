@@ -2,7 +2,8 @@
 /* Calamares slideshow (API 2), shown while the installation runs: three slides that advance every
    20 seconds while the installer shows them (Calamares 3.3.14's own sample uses the same Timer on
    presentation.activatedInCalamares). Colors: the boot and login screens' background, the mark's
-   grana red and the wordmark's lime-wash white. logo.png is the installer's mark, in this folder. */
+   agave and the wordmark's light neutral (docs/6, choice 105). logo.png is the installer's mark,
+   in this folder. */
 pragma ComponentBehavior: Bound
 import QtQuick 2.0
 import calamares.slideshow 1.0
@@ -10,9 +11,9 @@ import calamares.slideshow 1.0
 Presentation {
     id: presentation
 
-    readonly property color barro: "#1a1b26"
-    readonly property color grana: "#E25A6E"
-    readonly property color cal: "#ECE6DA"
+    readonly property color night: "#1a1b26"
+    readonly property color agave: "#6CC6B4"
+    readonly property color light: "#ECEEF6"
     readonly property color muted: "#a9b1d6"
 
     Timer {
@@ -30,7 +31,7 @@ Presentation {
         property string heading
         property string body
         default property alias extra: column.data
-        Rectangle { anchors.fill: parent; color: presentation.barro }
+        Rectangle { anchors.fill: parent; color: presentation.night }
         Column {
             id: column
             anchors.verticalCenter: parent.verticalCenter
@@ -42,7 +43,7 @@ Presentation {
             Text {
                 width: parent.width
                 text: page.heading
-                color: presentation.cal
+                color: presentation.light
                 font.pixelSize: 30
                 font.weight: Font.DemiBold
                 wrapMode: Text.WordWrap
@@ -81,7 +82,7 @@ Presentation {
                     required property string modelData
                     required property int index
                     text: modelData
-                    color: index % 2 === 0 ? presentation.grana : presentation.cal
+                    color: index % 2 === 0 ? presentation.agave : presentation.light
                     font.pixelSize: 18
                     font.weight: index % 2 === 0 ? Font.DemiBold : Font.Normal
                 }

@@ -1,5 +1,14 @@
 oaxaca-desktop (4.0.6+git20261024.132.e1b9db70-0oaxaca1) stonking; urgency=medium
 
+  * Oaxaca's artwork is redrawn as pixel art in agave blue-green
+    instead of red. The bar's menu button, the desktop's icon and fastfetch
+    show the mark, a square spiral; the boot and login screens and the
+    screensaver show the name alone.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 23 Oct 2026 22:08:22 -0500
+
+oaxaca-desktop (4.0.6+git20261024.132.e1b9db70-0oaxaca1) stonking; urgency=medium
+
   * Oaxaca has its own artwork: a stepped fret from the Zapotec
     mosaics at Mitla as its mark, and an "oaxaca" wordmark. The boot and
     login screens show both, the bar's menu button and fastfetch show the

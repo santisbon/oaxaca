@@ -1,3 +1,11 @@
+oaxaca-installer (0.1.14) stonking; urgency=medium
+
+  * The installer's images and slideshow use Oaxaca's redrawn artwork,
+    in agave blue-green instead of red: the square spiral in the sidebar and
+    the window icon, the name alone on the welcome page (docs/6, choice 105).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 23 Oct 2026 22:08:22 -0500
+
 oaxaca-installer (0.1.13) stonking; urgency=medium
 
   * The installer shows Oaxaca's mark and wordmark, and while it
