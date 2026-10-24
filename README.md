@@ -5,7 +5,7 @@ Oaxaca is Ubuntu 26.10 with the desktop of [Omarchy](https://omarchy.org). What 
 
 ## What Oaxaca runs on
 
-- A 64-bit Intel or AMD PC that starts in UEFI mode. Computers that start only in the older BIOS mode are not supported; on a computer whose firmware offers both modes, Oaxaca starts when UEFI mode is selected.
+- A 64-bit Intel or AMD PC that starts in UEFI mode. Computers that start only in the older BIOS mode are not supported; on a computer whose firmware offers both modes, Oaxaca starts when UEFI mode is selected. To see which mode a computer's current system started in: on Windows, System Information (`msinfo32`) shows "BIOS Mode: UEFI" or "BIOS Mode: Legacy"; on Linux, the folder `/sys/firmware/efi` exists only after a start in UEFI mode, and `[ -d /sys/firmware/efi ] && echo UEFI || echo BIOS` prints which.
 - At least 4 GB of memory and 20 GB of disk space.
 - The first computer Oaxaca is made for, and the one Oaxaca is tested on, is a Lenovo Legion Pro 7 laptop with Intel and NVIDIA graphics. The fixes Omarchy carries for other laptops (ASUS, Dell XPS, Framework, Microsoft Surface, MacBooks) are applied at installation on the models they are for.
 
