@@ -1,3 +1,12 @@
+@DISTRO_ID@-installer (0.1.15) @BASE_SERIES@; urgency=medium
+
+  * The welcome page no longer checks for a network: an install without
+    one is complete, and the missing connection showed a warning sign
+    under "This computer does not satisfy some of the recommended
+    requirements" (docs/7, choice 63).
+
+ -- @MAINTAINER@  Sat, 24 Oct 2026 17:27:37 -0500
+
 @DISTRO_ID@-installer (0.1.14) @BASE_SERIES@; urgency=medium
 
   * The installer's images and slideshow use @DISTRO_NAME@'s redrawn artwork,
