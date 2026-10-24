@@ -93,7 +93,10 @@ fi
 immutable="public, max-age=31536000, immutable"
 echo "== uploading $name ($size bytes) to $bucket/$prefix/"
 aws s3 cp "$iso" "$bucket/$prefix/$name" --content-type application/x-iso9660-image --cache-control "$immutable" --only-show-errors
-aws s3 cp "$stage/SHA256SUMS" "$bucket/$prefix/SHA256SUMS" --content-type text/plain --cache-control "$immutable" --only-show-errors
+# SHA256SUMS has no extension, and a browser saving a text/plain file without one appends .txt,
+# which breaks "gpg --verify SHA256SUMS.gpg SHA256SUMS": served as a download under its own name.
+aws s3 cp "$stage/SHA256SUMS" "$bucket/$prefix/SHA256SUMS" --content-type application/octet-stream \
+  --content-disposition 'attachment; filename="SHA256SUMS"' --cache-control "$immutable" --only-show-errors
 aws s3 cp "$stage/SHA256SUMS.gpg" "$bucket/$prefix/SHA256SUMS.gpg" --content-type application/pgp-signature --cache-control "$immutable" --only-show-errors
 aws s3 cp "$here/packages/archive-keyring/archive-keyring.asc" "$bucket/archive-keyring.asc" --content-type application/pgp-keys --cache-control "public, max-age=3600" --only-show-errors
 # latest.json last, so it never names an ISO that is not there yet.

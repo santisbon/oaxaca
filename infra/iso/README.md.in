@@ -86,7 +86,7 @@ Each ISO's folder holds two files for checking it, and the downloads host's root
   ```
   3a6d7829164da6e9f24e16dbb002712bee2fd44c84a6adc7534e2375d0f492ac *oaxaca-26.10-20261024.0747-amd64.iso
   ```
-  (from `@ISO_URL@/@BASE_VERSION@/20261024.0747/SHA256SUMS`, 2026-10-24). `sha256sum -c SHA256SUMS` hashes the downloaded ISO and compares the result with that line: it catches a corrupted or cut-off download, but not a replaced ISO, since whoever could replace the ISO on the host could replace `SHA256SUMS` too.
+  (from `@ISO_URL@/@BASE_VERSION@/20261024.0747/SHA256SUMS`, 2026-10-24). `sha256sum -c SHA256SUMS` hashes the downloaded ISO and compares the result with that line: it catches a corrupted or cut-off download, but not a replaced ISO, since whoever could replace the ISO on the host could replace `SHA256SUMS` too. `scripts/iso-publish.sh` uploads `SHA256SUMS` as `application/octet-stream` with the header `Content-Disposition: attachment; filename="SHA256SUMS"`: a browser saves a `text/plain` file whose name has no extension as `SHA256SUMS.txt`, and `gpg --verify SHA256SUMS.gpg SHA256SUMS` then finds no `SHA256SUMS`.
 - **`SHA256SUMS.gpg`**: an OpenPGP detached signature of the file `SHA256SUMS` (RSA over a SHA-512 digest), made with the [apt signing key](#apt-signing-key)'s private key by `scripts/iso-publish.sh`. `gpg --verify` proves `SHA256SUMS` is exactly what that private key signed, which only the holder of the private key can produce.
 - **`archive-keyring.asc`**: the apt signing key's public key, ASCII-armored, which `gpg --verify` needs to check `SHA256SUMS.gpg`.
 
