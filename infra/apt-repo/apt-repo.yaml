@@ -190,6 +190,8 @@ Resources:
           - !Ref HostName
         HttpVersion: http2and3
         IPV6Enabled: true
+        # Every edge location, so each viewer gets the nearest one: under CloudFront's Free flat-rate
+        # plan, data transfer is not billed per GB, so the cheaper classes would only be slower (docs/7, choice 62).
         PriceClass: PriceClass_All
         ViewerCertificate:
           AcmCertificateArn: !Ref Certificate
