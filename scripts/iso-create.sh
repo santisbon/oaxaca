@@ -73,7 +73,10 @@ done
 
 work="$here/build/iso"
 tree="$work/tree"
-stamp=$(date -u +%Y%m%d)
+# The ISO's version: its build time in UTC to the minute, unique per release and sorting in order.
+# It goes into .disk/info and into build/iso/iso-version, which scripts/iso-publish.sh reads to name
+# the uploaded ISO (docs/7, choice 59).
+stamp=$(date -u +%Y%m%d.%H%M)
 iso="$work/$DISTRO_ID-$BASE_VERSION-$arch.iso"
 test_iso="$work/$DISTRO_ID-$BASE_VERSION-$arch-test.iso"
 label="$DISTRO_NAME $BASE_VERSION $arch"
@@ -117,6 +120,7 @@ python3 -I "$here/scripts/layer-diff.py" "$desktop" "$tarball" | squash "$tree/c
 cp "$manifest" "$tree/casper/filesystem.live.manifest"
 
 printf '%s %s "%s" - Release %s (%s)\n' "$DISTRO_NAME" "$BASE_VERSION" "$BASE_SERIES" "$arch" "$stamp" > "$tree/.disk/info"
+printf '%s\n' "$stamp" > "$work/iso-version"
 
 # The NVIDIA driver's packages, so the installer's drivers step works without a network
 # (scripts/driver-pool.sh, docs/7 choice 20). DRIVER_POOL=0 leaves them out.

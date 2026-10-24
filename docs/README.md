@@ -420,7 +420,7 @@ What no layer reaches: plugins that need software Ubuntu does not package (for e
 
 ```
 distro.conf          the only place the distro's name and identity live
-Makefile             entry points: render, branding, check-versions, upstream-check, chroot, build, publish, rootfs, rootfs-test, drivers-check, iso, iso-test, upgrade-test, session-upgrade-test, factory-reset-test
+Makefile             entry points: render, branding, check-versions, upstream-check, chroot, build, publish, iso-publish, rootfs, rootfs-test, drivers-check, iso, iso-test, upgrade-test, session-upgrade-test, factory-reset-test
 sbuild.conf          sbuild settings for this repo (loaded through SBUILD_CONFIG)
 scripts/
   render.py          fills @TOKEN@ templates (*.in) from distro.conf
@@ -430,6 +430,8 @@ scripts/
   build.sh           builds packages with sbuild, checks them with lintian
   machine-setup.sh   installs the tools, checks the credentials, builds the chroot and seeds aptly, once per workstation (make machine-setup)
   release.sh         builds what is unpublished, tests the image, commits and publishes (make release); prints the release commit's message (make release-message)
+  iso-infra.sh       creates or updates the ISO downloads' bucket, CloudFront distribution, certificate and DNS records at get.oaxaca.page (make iso-infra; infra/iso/)
+  iso-publish.sh     uploads build/iso's ISO with its signed SHA256SUMS and latest.json to get.oaxaca.page, keeping the newest 2 (make iso-publish; asked by make release)
   repo-publish.sh    publishes build/ into the apt repository with aptly; refuses a published version with different content; --seed fills a new workstation's aptly database from the published repository
   version-check.sh   fails when a package directory changed since the last v* tag without a version bump (step 8)
   upgrade-test.sh    upgrades the published packages to build/ in a throwaway chroot and runs the migrations (step 8)
@@ -450,6 +452,8 @@ packages/<dir>/       one source package per directory: debian/, and an "upstrea
                      third-party package is built from; each one is a row of "At a glance"
 .github/workflows/build.yml   CI: the same make targets on an Ubuntu runner
 .github/workflows/upstream-check.yml   CI, weekly: make upstream-check
+infra/apt-repo/      the apt repository's hosting: its CloudFormation template and README (make apt-infra)
+infra/iso/           the ISO downloads' hosting at get.oaxaca.page: its CloudFormation template and README (make iso-infra)
 docs/                the developer README (this file), plan, policy, build infrastructure, root filesystem, session layer, Hyprland and Quickshell, the Omarchy port, image and installer, update path, suspend baseline
 tests/
   factory-reset/       the guest's side of make factory-reset-test: the scripted install, the reset, the checks, a stand-in for gum
@@ -866,6 +870,7 @@ What `make release` does, stopping at the first failure:
    The `Release:` prefix matters: since the ISO is built before this commit, the ISO is current when it is newer than the last commit that is not a release commit (`git log -1 --format=%ci --invert-grep --grep='^Release:'`).
 9. Signs the repository locally with `make publish` (pinentry asks for the apt signing key passphrase), lists what the upload would change, and asks `Upload to oaxaca-apt? [y/N]`.
 10. On `y`, uploads with `make publish PUBLISH_FLAGS=--push` and checks the uploaded signature with `gpgv`, which must print `Good signature from "Oaxaca Archive Signing Key"` ([docs/2, One-time setup](2%20-%20build-infra.md#one-time-setup-in-order), step 5, explains the other results).
+11. Lists the ISO that step 6 built with `make iso-publish ISO_PUBLISH_FLAGS=--dry-run` (its [ISO version](../infra/iso/README.md#iso-version), checked against the ISO's own `.disk/info`, and the files an upload would write) and asks `Upload the ISO to oaxaca-iso (get.oaxaca.page)? [y/N]`. On `y`, `make iso-publish` writes `SHA256SUMS`, signs it with the archive key (pinentry asks for the apt signing key passphrase unless gpg-agent still holds it from step 9), uploads the ISO, the checksums, the archive key's public half and `latest.json` to `https://get.oaxaca.page`, deletes all but the newest 2 ISOs, and checks the signature and the size the host serves ([infra/iso/README.md](../infra/iso/README.md), docs/7 choice 59). On anything else the release ends there, and `make iso-publish` uploads the ISO later. After an upload, publish the website, whose build reads `latest.json` for its download button.
 
 A release that stopped resumes with another `make release`: `distro.conf` already names the fork's commit, and the packages built so far are rebuilt. Until then, the four files of step 2 show as changed in `git status`; leave them for the release commit. After the release: `oaxaca-update` on each installed system, and for a new install, the ISO in `build/iso/` written to a USB stick as in [Building the distro from source](#building-the-distro-from-source), step 7.
 
@@ -875,7 +880,7 @@ A release that stopped resumes with another `make release`: `distro.conf` alread
 - Every decision in `docs/` is a choice with reasons and the rejected alternative, dated, not a claimed best practice.
 - Docs under `docs/` are dated records and are not templated; they name Oaxaca directly.
 - Secrets never enter the repo: the signing key lives in GnuPG, logs with hardware details stay under `~/.local/state/oaxaca/`.
-- Nothing in this repo commits on your behalf; `make publish PUBLISH_FLAGS=--push` and `make apt-infra` are the only commands that change anything outside this workstation: the first uploads to the apt repository's S3 bucket, the second creates or updates that bucket's CloudFormation stack.
+- Nothing in this repo commits on your behalf; `make publish PUBLISH_FLAGS=--push`, `make iso-publish`, `make apt-infra` and `make iso-infra` are the only commands that change anything outside this workstation: the first two upload to the apt repository's and the ISO downloads' S3 buckets, the last two create or update those buckets' CloudFormation stacks.
 
 ## Documents
 

@@ -3,15 +3,16 @@
 #
 # Anatomy: this script runs git and make only; each step below names the make target, and the
 # make target's script does the work (build.sh, rootfs-create.sh, rootfs-boot-test.sh,
-# iso-create.sh, iso-boot-test.sh, upgrade-test.sh, repo-publish.sh). What it adds is the order,
-# the stops between steps, and two decisions no other script makes:
+# iso-create.sh, iso-boot-test.sh, upgrade-test.sh, repo-publish.sh, iso-publish.sh). What it
+# adds is the order, the stops between steps, and two decisions no other script makes:
 #   - the desktop's version: OMARCHY_PORT_DATE, _COUNT and _COMMIT in distro.conf are set from
 #     the fork's pushed HEAD (build.sh only checks them against the commit it fetches);
 #   - the packages to build: those whose version at the top of the rendered debian/changelog is
 #     missing from the published source index. A package changed without a version bump is not
 #     built; repo-publish.sh's guard refuses its file if a build of it turns up.
 # The first failing step stops the release. Prompts: sudo (none expected), git's commit editor,
-# gpg's pinentry for the apt signing key passphrase, and the question before the upload.
+# gpg's pinentry for the apt signing key passphrase (for the repository and the ISO's checksums), and
+# the questions before the apt repository's upload and the ISO's upload.
 #
 # Before running: commit the fork's changes and this repository's (step 8 commits with git add -A,
 # so anything uncommitted lands in the release commit); when the fork changed, give the desktop package a
@@ -151,3 +152,10 @@ read -rp "Upload to $APT_S3_BUCKET? [y/N] " answer
 make publish PUBLISH_FLAGS=--push
 curl -fsSL "$APT_URL/dists/$BASE_SERIES/InRelease" | gpgv --keyring "$here/packages/archive-keyring/archive-keyring.gpg" -
 echo "== released $OMARCHY_PORT_VERSION: run $DISTRO_ID-update on installed systems; build/iso/ has the matching ISO"
+
+# 11. The ISO built in step 6 from these packages, with its signed checksums, to the downloads host;
+#     upload only on "y" (docs/7, choice 59). The dry run shows the ISO's version and what changes.
+make iso-publish ISO_PUBLISH_FLAGS=--dry-run
+read -rp "Upload the ISO to $ISO_S3_BUCKET ($ISO_HOST)? [y/N] " answer
+[[ $answer == y ]] || { echo "== ISO not uploaded: make iso-publish uploads it later"; exit 0; }
+make iso-publish
