@@ -21,6 +21,10 @@ The CloudFront setting that makes the [distribution](#cloudfront-distribution) s
 
 AWS CloudFormation creates AWS resources from a template, a YAML file that declares them, and keeps them together as a stack: deploying the template again changes the resources to match it.
 
+### Apt signing key
+
+The OpenPGP key pair named "Oaxaca Archive Signing Key", fingerprint `2A95E0E7A8E14C48320A00EB7C70659F7A4FDC5A` (`APT_KEY_FPR` in `distro.conf`). Its private key, in the GnuPG home on the workstation that runs releases and protected by the apt signing key passphrase, signs the apt repository and each ISO's `SHA256SUMS`. Its public key is `packages/archive-keyring/archive-keyring.asc` in this repository, installed on every system by `oaxaca-archive-keyring` and uploaded next to the ISOs as `archive-keyring.asc`.
+
 ### ISO version
 
 The ISO's build time in UTC to the minute, such as `20261024.0412`. `scripts/iso-create.sh` writes it into the ISO's `.disk/info` and into `build/iso/iso-version`, and the uploaded ISO's file name carries it.
@@ -31,7 +35,7 @@ The ISO's build time in UTC to the minute, such as `20261024.0412`. `scripts/iso
 |---|---|---|
 | `infra/iso/iso-host.yaml` | the [CloudFormation](#cloudformation-stack) template: the [bucket](#s3-bucket) (no public access of any kind, plain HTTP refused, kept when the stack is deleted), the [distribution](#cloudfront-distribution) with its [origin access control](#origin-access-control), the TLS certificate for `get.oaxaca.page` from AWS Certificate Manager, and the A and AAAA records for `get.oaxaca.page` in the Route 53 hosted zone of `oaxaca.page` | |
 | `scripts/iso-infra.sh` | looks up that hosted zone's ID, then runs the aws-cli's `cloudformation deploy` with the template as the stack `oaxaca-iso` | `make iso-infra` (create or update), `make iso-infra-check` (validate, show the stack, change nothing) |
-| `scripts/iso-publish.sh` | checks that `build/iso/oaxaca-26.10-amd64.iso` carries the [ISO version](#iso-version) in `build/iso/iso-version`, writes `SHA256SUMS`, signs it with the archive key, uploads the ISO, the checksums, the archive key's public half and `latest.json`, deletes all but the newest `ISO_KEEP` ISOs, and checks what the host serves | `make iso-publish` (uploads), `make iso-publish ISO_PUBLISH_FLAGS=--dry-run` (checks and lists, uploads nothing); `make release` runs both, asking in between |
+| `scripts/iso-publish.sh` | checks that `build/iso/oaxaca-26.10-amd64.iso` carries the [ISO version](#iso-version) in `build/iso/iso-version`, writes `SHA256SUMS`, signs it with the [apt signing key](#apt-signing-key)'s private key, uploads the ISO, the checksums, the archive key's public half and `latest.json`, deletes all but the newest `ISO_KEEP` ISOs, and checks what the host serves | `make iso-publish` (uploads), `make iso-publish ISO_PUBLISH_FLAGS=--dry-run` (checks and lists, uploads nothing); `make release` runs both, asking in between |
 
 The settings are in `distro.conf`, in shell syntax at the repository root: `ISO_S3_BUCKET=oaxaca-iso`, `ISO_HOST=get.oaxaca.page`, `ISO_URL=https://get.oaxaca.page` and `ISO_KEEP=2`. The stack uses the apt repository's region and aws-cli profile, `APT_S3_REGION=us-east-1` (CloudFront only uses certificates from `us-east-1`) and `APT_AWS_PROFILE=personal`, and the hosted zone of `APT_DOMAIN=oaxaca.page`.
 
@@ -39,9 +43,9 @@ The settings are in `distro.conf`, in shell syntax at the repository root: `ISO_
 
 ```
 26.10/<ISO version>/oaxaca-26.10-<ISO version>-amd64.iso
-26.10/<ISO version>/SHA256SUMS        the ISO's SHA-256, in sha256sum's format
-26.10/<ISO version>/SHA256SUMS.gpg    a detached signature of SHA256SUMS by the archive key
-archive-keyring.asc                     the archive key's public half
+26.10/<ISO version>/SHA256SUMS        the list of SHA-256 hashes of the ISOs in the folder: one line, this ISO's
+26.10/<ISO version>/SHA256SUMS.gpg    an OpenPGP detached signature of SHA256SUMS, by the apt signing key's private key
+archive-keyring.asc                     the apt signing key's public key
 latest.json                             the newest ISO: its file name, URL, size, SHA-256 and date
 ```
 
@@ -76,6 +80,18 @@ The newest `ISO_KEEP` ISO versions stay; each upload deletes the older ones. `la
 4. Publish the website, whose build reads `latest.json`.
 
 ## Checking a download
+
+Each ISO's folder holds two files for checking it, and the downloads host's root a third:
+
+- **`SHA256SUMS`**: the list of SHA-256 hashes of the ISOs in the folder, in `sha256sum`'s format. Each folder holds one ISO, so the list has one line, the ISO's SHA-256 hash and file name:
+  ```
+  3a6d7829164da6e9f24e16dbb002712bee2fd44c84a6adc7534e2375d0f492ac *oaxaca-26.10-20261024.0747-amd64.iso
+  ```
+  (from `https://get.oaxaca.page/26.10/20261024.0747/SHA256SUMS`, 2026-10-24). `sha256sum -c SHA256SUMS` hashes the downloaded ISO and compares the result with that line: it catches a corrupted or cut-off download, but not a replaced ISO, since whoever could replace the ISO on the host could replace `SHA256SUMS` too.
+- **`SHA256SUMS.gpg`**: an OpenPGP detached signature of the file `SHA256SUMS` (RSA over a SHA-512 digest), made with the [apt signing key](#apt-signing-key)'s private key by `scripts/iso-publish.sh`. `gpg --verify` proves `SHA256SUMS` is exactly what that private key signed, which only the holder of the private key can produce.
+- **`archive-keyring.asc`**: the apt signing key's public key, ASCII-armored, which `gpg --verify` needs to check `SHA256SUMS.gpg`.
+
+The three checks depend on each other: a public key whose fingerprint matches `2A95E0E7A8E14C48320A00EB7C70659F7A4FDC5A` is the distro's, a good signature means `SHA256SUMS` came from the holder of its private key, and `OK` from `sha256sum -c` means the ISO is the one that list names. The public key, the signature and the ISO all come from the same AWS account, so the fingerprint is worth comparing with a copy from elsewhere: `APT_KEY_FPR` in this repository's `distro.conf` on GitHub, or `gpg --show-keys /etc/apt/keyrings/oaxaca-archive-keyring.gpg` on an installed system.
 
 On a Linux machine, with the ISO, `SHA256SUMS`, `SHA256SUMS.gpg` and `archive-keyring.asc` in one folder:
 
