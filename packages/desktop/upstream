@@ -5,7 +5,7 @@ GIT=https://github.com/santisbon/omarchy
 REF=oaxaca
 # The +git<date>.<count>.<commit> part of the upstream version; build.sh checks the fetched
 # commit against all three. TAG is what the count is counted from.
-DATE=20261023
-COUNT=131
-COMMIT=28ecfdea
+DATE=20261024
+COUNT=132
+COMMIT=e1b9db70
 TAG=v4.0.6
