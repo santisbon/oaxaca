@@ -1,3 +1,11 @@
+oaxaca-desktop (4.0.6+git20261024.135.a91bf986-0oaxaca1) stonking; urgency=medium
+
+  * The user manual opens with "Welcome to Oaxaca!" and a note saying
+    it is Oaxaca's manual, based on Omarchy's, with notes marked
+    "Oaxaca:" wherever Oaxaca works differently.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sat, 24 Oct 2026 01:12:32 -0500
+
 oaxaca-desktop (4.0.6+git20261024.133.fe108d2d-0oaxaca1) stonking; urgency=medium
 
   * Oaxaca's artwork is redrawn as pixel art in agave blue-green
