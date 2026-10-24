@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261024.132.e1b9db70-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261024.133.fe108d2d-0oaxaca1) stonking; urgency=medium
 
   * Oaxaca's artwork is redrawn as pixel art in agave blue-green
     instead of red. The bar's menu button, the desktop's icon and fastfetch
