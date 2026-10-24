@@ -837,7 +837,15 @@ if [[ $profile == desktop ]]; then
 fi
 if [[ $upgrade == 1 ]]; then
   check "^update exit: 0$"
-  check "^upgrade changed: yes$"
+  # The update must leave the desktop at build/'s version: a new one when the release rebuilt the
+  # desktop, the published one when only other packages changed (2026-10-24: a release of the
+  # installer alone stopped here on the earlier check, "upgrade changed: yes").
+  want=${up_ver[$DISTRO_ID-desktop]:-}
+  if [[ -z $want ]]; then
+    echo "!! build/ has no $DISTRO_ID-desktop package to compare the upgraded version with" >&2; fail=1
+  else
+    check "^upgrade: .* -> ${want//./\\.}$"
+  fi
   check "^update log errors: 0$"
   check "^shell restarted: yes$"
 fi
