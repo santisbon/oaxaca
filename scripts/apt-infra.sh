@@ -45,7 +45,7 @@ echo "== deploying stack $stack (bucket $APT_S3_BUCKET, host $APT_HOST, public r
 echo "   a first deploy waits for the certificate's DNS validation and the distribution's rollout"
 aws cloudformation deploy --stack-name "$stack" --template-file "$template" \
   --parameter-overrides "BucketName=$APT_S3_BUCKET" "HostName=$APT_HOST" "HostedZoneId=$zone" \
-  "PublicRead=$APT_S3_PUBLIC_READ" --no-fail-on-empty-changeset
+  "PublicRead=$APT_S3_PUBLIC_READ" "WafAction=$WAF_ACTION" "WafRateLimit=$WAF_RATE_LIMIT" --no-fail-on-empty-changeset
 url=$(aws cloudformation describe-stacks --stack-name "$stack" \
   --query "Stacks[0].Outputs[?OutputKey=='RepositoryUrl'].OutputValue" --output text)
 echo "== repository URL: $url"

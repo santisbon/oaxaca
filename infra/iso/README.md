@@ -87,6 +87,10 @@ sha256sum -c SHA256SUMS
 
 `gpg --verify` must report a good signature from "Oaxaca Archive Signing Key", whose fingerprint is `2A95E0E7A8E14C48320A00EB7C70659F7A4FDC5A`, and `sha256sum -c` must print `OK` for the ISO.
 
+## WAF
+
+The distribution has its own AWS WAF web ACL, `oaxaca-iso-waf`, defined in the same template (docs/7, choice 61): AWS's managed IP reputation list, AWS's managed known bad inputs, and a per-IP rate limit of `WAF_RATE_LIMIT=2000` requests in 5 minutes. `WAF_ACTION=count` in `distro.conf` decides what the rules do: `count` records matches in CloudWatch metrics and the web ACL's sampled requests, `block` refuses them. To turn blocking on, review the matches in the AWS WAF console, set `WAF_ACTION=block`, and run the stack's `make` target again. The distribution is subscribed to CloudFront's Free flat-rate plan in the CloudFront console (Distributions, the distribution, its pricing plan), which includes the web ACL's cost and charges nothing extra however much traffic arrives.
+
 ## Teardown
 
 Deleting the stack removes the distribution, the certificate and the records, and keeps the bucket and its contents (`DeletionPolicy: Retain` in the template). Removing the downloads for good is two steps: delete the stack (`aws cloudformation delete-stack --stack-name oaxaca-iso`), then empty and delete the bucket (`aws s3 rb s3://oaxaca-iso --force`).

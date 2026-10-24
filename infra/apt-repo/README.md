@@ -78,6 +78,10 @@ apt reads the repository at a host name in a domain of our own, `apt.oaxaca.page
 
 Why not GitHub Pages: GitHub refuses files over 100 MB (`oaxaca-themes` is 111 MB, the fonts and desktop source tarballs 135 MB and 118 MB), and GitHub's "GitHub Pages limits" page says "Published GitHub Pages sites may be no larger than 1 GB"; the Pages checkout had already reached 758 MB. S3 has neither limit. Storage, requests and downloads are billed by AWS; see AWS's S3, CloudFront and Route 53 pricing pages for current prices.
 
+## WAF
+
+The distribution has its own AWS WAF web ACL, `oaxaca-apt-repo-waf`, defined in the same template (docs/7, choice 61): AWS's managed IP reputation list, AWS's managed known bad inputs, and a per-IP rate limit of `WAF_RATE_LIMIT=2000` requests in 5 minutes. `WAF_ACTION=count` in `distro.conf` decides what the rules do: `count` records matches in CloudWatch metrics and the web ACL's sampled requests, `block` refuses them. To turn blocking on, review the matches in the AWS WAF console, set `WAF_ACTION=block`, and run the stack's `make` target again. The distribution is subscribed to CloudFront's Free flat-rate plan in the CloudFront console (Distributions, the distribution, its pricing plan), which includes the web ACL's cost and charges nothing extra however much traffic arrives.
+
 ## Teardown
 
 Deleting the stack removes the distribution, the certificate and the records, and keeps the bucket and its contents (`DeletionPolicy: Retain` in the template). Removing the repository for good is two steps: delete the stack (`aws cloudformation delete-stack --stack-name oaxaca-apt-repo`), then empty and delete the bucket (`aws s3 rb s3://oaxaca-apt --force`).

@@ -42,7 +42,7 @@ echo "== deploying stack $stack (bucket $ISO_S3_BUCKET, host $ISO_HOST, region $
 echo "   a first deploy waits for the certificate's DNS validation and the distribution's rollout"
 aws cloudformation deploy --stack-name "$stack" --template-file "$template" \
   --parameter-overrides "BucketName=$ISO_S3_BUCKET" "HostName=$ISO_HOST" "HostedZoneId=$zone" \
-  --no-fail-on-empty-changeset
+  "WafAction=$WAF_ACTION" "WafRateLimit=$WAF_RATE_LIMIT" --no-fail-on-empty-changeset
 url=$(aws cloudformation describe-stacks --stack-name "$stack" \
   --query "Stacks[0].Outputs[?OutputKey=='DownloadsUrl'].OutputValue" --output text)
 echo "== downloads URL: $url"

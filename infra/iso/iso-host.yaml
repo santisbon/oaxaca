@@ -19,8 +19,74 @@ Parameters:
   HostedZoneId:
     Type: AWS::Route53::HostedZone::Id
     Description: The Route 53 hosted zone of the host name's domain (APT_DOMAIN in distro.conf)
+  WafAction:
+    Type: String
+    AllowedValues: [count, block]
+    Description: >-
+      What the web ACL's rules do with a matching request: "count" only records it (to review the
+      matches first), "block" refuses it (WAF_ACTION in the settings file)
+  WafRateLimit:
+    Type: Number
+    MinValue: 100
+    Description: The most requests one IP address may make in 5 minutes before the rate rule matches (WAF_RATE_LIMIT in the settings file)
+
+Conditions:
+  WafBlocks: !Equals [!Ref WafAction, block]
 
 Resources:
+  # AWS WAF for the distribution (a web ACL for CloudFront, which lives in us-east-1): AWS's managed
+  # list of IP addresses known for bots and attacks, AWS's managed rules for known exploit patterns
+  # in requests (such as Log4j probes), and a per-IP rate limit over 5 minutes. With WafAction
+  # "count" every rule only records its matches, in CloudWatch metrics and sampled requests; with
+  # "block" they refuse them. The web ACL is this distribution's own, as CloudFront's flat-rate
+  # pricing plans require one on each subscribed distribution.
+  WebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub "${AWS::StackName}-waf"
+      Scope: CLOUDFRONT
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub "${AWS::StackName}-waf"
+      Rules:
+        - Name: ip-reputation
+          Priority: 0
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesAmazonIpReputationList
+          OverrideAction: !If [WafBlocks, {None: {}}, {Count: {}}]
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: ip-reputation
+        - Name: known-bad-inputs
+          Priority: 1
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesKnownBadInputsRuleSet
+          OverrideAction: !If [WafBlocks, {None: {}}, {Count: {}}]
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: known-bad-inputs
+        - Name: rate-per-ip
+          Priority: 2
+          Statement:
+            RateBasedStatement:
+              AggregateKeyType: IP
+              Limit: !Ref WafRateLimit
+              EvaluationWindowSec: 300
+          Action: !If [WafBlocks, {Block: {}}, {Count: {}}]
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: rate-per-ip
+
   Bucket:
     Type: AWS::S3::Bucket
     # Kept when the stack is deleted: the bucket holds the published ISOs; removing it is a
@@ -110,6 +176,7 @@ Resources:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
+        WebACLId: !GetAtt WebACL.Arn
         Comment: !Sub "installation ISO at ${HostName}"
         Enabled: true
         Aliases:
