@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: "2010-09-09"
+# A monthly cost budget for the whole AWS account that hosts the distro's apt repository, ISO
+# downloads and website (docs/7, choice 60): an email when the month's actual cost passes 80% and
+# 100% of the limit, and when AWS forecasts the month to end above the limit. Each threshold emails
+# once per month when it is crossed, independently of the others. Deployed by
+# scripts/budget-infra.sh (make budget-infra), which passes the limit from distro.conf and the email
+# address from the environment, so no address is kept in the source tree. See infra/budget/README.md.
+Description: Monthly cost budget for the account, with email alerts at 80% and 100% of actual cost and 100% of forecast cost
+
+Parameters:
+  LimitUsd:
+    Type: Number
+    MinValue: 1
+    Description: The monthly limit in US dollars (BUDGET_LIMIT_USD in distro.conf)
+  Email:
+    Type: String
+    NoEcho: true
+    AllowedPattern: "^[^@\\s]+@[^@\\s]+$"
+    Description: The address the alerts go to (BUDGET_EMAIL in the environment of make budget-infra)
+
+Resources:
+  Budget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub "${AWS::StackName}-monthly"
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: !Ref LimitUsd
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref Email
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref Email
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref Email
+
+Outputs:
+  BudgetName:
+    Description: The budget's name in AWS Budgets
+    Value: !Sub "${AWS::StackName}-monthly"

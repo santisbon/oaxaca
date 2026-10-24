@@ -1,5 +1,5 @@
 # Entry points for the build. See docs/2 - build-infra.md, docs/3 - rootfs.md and docs/4 - session.md.
-.PHONY: render branding check-render check-versions upstream-check chroot build lint publish repo-seed machine-setup release release-message apt-infra apt-infra-check iso-infra iso-infra-check iso-publish rootfs rootfs-test drivers-check iso iso-test upgrade-test session-upgrade-test factory-reset-test clean
+.PHONY: render branding check-render check-versions upstream-check chroot build lint publish repo-seed machine-setup release release-message apt-infra apt-infra-check iso-infra iso-infra-check iso-publish budget-infra budget-infra-check rootfs rootfs-test drivers-check iso iso-test upgrade-test session-upgrade-test factory-reset-test clean
 
 # Root filesystem profile for rootfs, rootfs-test and drivers-check: base (step 3), session (step 4),
 # desktop (step 6) or live (step 7, the desktop plus casper and the installer: what the ISO ships).
@@ -58,6 +58,12 @@ iso-infra:         ## Create or update the S3 bucket, CloudFront distribution, c
 
 iso-infra-check:   ## Validate the ISO downloads' CloudFormation template and show the stack's state; changes nothing
 	scripts/iso-infra.sh --check
+
+budget-infra:      ## Create or update the account's monthly cost budget and its email alerts (CloudFormation, infra/budget/): BUDGET_EMAIL=<address> make budget-infra
+	scripts/budget-infra.sh
+
+budget-infra-check: ## Validate the budget's CloudFormation template and show the stack's state; changes nothing
+	scripts/budget-infra.sh --check
 
 iso-publish:       ## Upload build/iso's ISO with its signed checksums to the downloads host, keeping the newest ISO_KEEP: make iso-publish [ISO_PUBLISH_FLAGS=--dry-run]
 	scripts/iso-publish.sh $(ISO_PUBLISH_FLAGS)

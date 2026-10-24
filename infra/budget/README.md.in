@@ -1,0 +1,42 @@
+# The AWS account's cost budget
+
+The AWS account that hosts @DISTRO_NAME@'s apt repository (@APT_URL@), ISO downloads (@ISO_URL@) and website pays for every byte CloudFront sends, and each ISO download is about 3.3 GB. This folder holds a monthly cost budget for the whole account, with email alerts, so that a month that runs over shows up while it is happening (docs/7, choice 60).
+
+## Terms
+
+### AWS Budgets
+
+The AWS service that compares an account's cost with a limit. A budget's alert emails its subscribers once per month when its threshold is crossed; each threshold is separate, so a month that crosses 80% and then 100% sends two emails.
+
+### Forecasted cost
+
+AWS's estimate of what the whole month will cost, from the spending so far. An alert on it fires before the money is spent, while one on actual cost fires after.
+
+### CloudFormation stack
+
+AWS CloudFormation creates AWS resources from a template, a YAML file that declares them, and keeps them together as a stack: deploying the template again changes the resources to match it.
+
+## Anatomy
+
+| Piece | What it is | Command |
+|---|---|---|
+| `infra/budget/budget.yaml` | the [CloudFormation](#cloudformation-stack) template: one [budget](#aws-budgets) of `BUDGET_LIMIT_USD` a month for the account's total cost, with email alerts when the actual cost passes 80% and 100% of the limit and when the [forecasted cost](#forecasted-cost) passes 100% | |
+| `scripts/budget-infra.sh` | runs the aws-cli's `cloudformation deploy` with the template as the stack `@DISTRO_ID@-budget`, passing the limit from `distro.conf` and the address from `BUDGET_EMAIL`, then prints the budget and its alerts | `BUDGET_EMAIL=<address> make budget-infra` (create or update), `make budget-infra-check` (validate, show the stack, change nothing) |
+
+`BUDGET_LIMIT_USD=@BUDGET_LIMIT_USD@` is in `distro.conf`. The address is never in the repository: it comes from the environment, and the template marks it `NoEcho`, so CloudFormation does not show it in the stack's parameters either. The stack uses the apt repository's region and aws-cli profile, `APT_S3_REGION=@APT_S3_REGION@` and `APT_AWS_PROFILE=@APT_AWS_PROFILE@`.
+
+## Setting it up, once
+
+```sh
+BUDGET_EMAIL=<address> make budget-infra
+```
+
+The last lines name the budget, its limit and its three alerts. The emails come from AWS Budgets; no confirmation is needed.
+
+## Why not the CloudWatch billing alarm
+
+A CloudWatch alarm on the account's `EstimatedCharges` metric sends its email when its state changes from OK to ALARM. `EstimatedCharges` is the month's cost so far and restarts each month, so an alarm with a threshold below the normal month's bill goes to ALARM early in the month and then sends nothing more, however high the month goes. The budget's thresholds are each evaluated on their own, and the forecast alert warns before the limit is reached.
+
+## Teardown
+
+`aws cloudformation delete-stack --stack-name @DISTRO_ID@-budget` deletes the budget and its alerts.

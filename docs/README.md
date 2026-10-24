@@ -431,6 +431,7 @@ scripts/
   machine-setup.sh   installs the tools, checks the credentials, builds the chroot and seeds aptly, once per workstation (make machine-setup)
   release.sh         builds what is unpublished, tests the image, commits and publishes (make release); prints the release commit's message (make release-message)
   iso-infra.sh       creates or updates the ISO downloads' bucket, CloudFront distribution, certificate and DNS records at get.oaxaca.page (make iso-infra; infra/iso/)
+  budget-infra.sh    creates or updates the AWS account's monthly cost budget of $50 and its email alerts (make budget-infra)
   iso-publish.sh     uploads build/iso's ISO with its signed SHA256SUMS and latest.json to get.oaxaca.page, keeping the newest 2 (make iso-publish; asked by make release)
   repo-publish.sh    publishes build/ into the apt repository with aptly; refuses a published version with different content; --seed fills a new workstation's aptly database from the published repository
   version-check.sh   fails when a package directory changed since the last v* tag without a version bump (step 8)
@@ -454,6 +455,7 @@ packages/<dir>/       one source package per directory: debian/, and an "upstrea
 .github/workflows/upstream-check.yml   CI, weekly: make upstream-check
 infra/apt-repo/      the apt repository's hosting: its CloudFormation template and README (make apt-infra)
 infra/iso/           the ISO downloads' hosting at get.oaxaca.page: its CloudFormation template and README (make iso-infra)
+infra/budget/        the AWS account's monthly cost budget and its email alerts: its CloudFormation template and README (make budget-infra)
 docs/                the developer README (this file), plan, policy, build infrastructure, root filesystem, session layer, Hyprland and Quickshell, the Omarchy port, image and installer, update path, suspend baseline
 tests/
   factory-reset/       the guest's side of make factory-reset-test: the scripted install, the reset, the checks, a stand-in for gum
@@ -880,7 +882,7 @@ A release that stopped resumes with another `make release`: `distro.conf` alread
 - Every decision in `docs/` is a choice with reasons and the rejected alternative, dated, not a claimed best practice.
 - Docs under `docs/` are dated records and are not templated; they name Oaxaca directly.
 - Secrets never enter the repo: the signing key lives in GnuPG, logs with hardware details stay under `~/.local/state/oaxaca/`.
-- Nothing in this repo commits on your behalf; `make publish PUBLISH_FLAGS=--push`, `make iso-publish`, `make apt-infra` and `make iso-infra` are the only commands that change anything outside this workstation: the first two upload to the apt repository's and the ISO downloads' S3 buckets, the last two create or update those buckets' CloudFormation stacks.
+- Nothing in this repo commits on your behalf; `make publish PUBLISH_FLAGS=--push`, `make iso-publish`, `make apt-infra`, `make iso-infra` and `make budget-infra` are the only commands that change anything outside this workstation: the first two upload to the apt repository's and the ISO downloads' S3 buckets, the next two create or update those buckets' CloudFormation stacks, and the last creates or updates the account's cost budget.
 
 ## Documents
 
