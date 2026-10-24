@@ -1,8 +1,8 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
-  * The user manual opens with "Welcome to @DISTRO_NAME@!" and a note on what
-    it is: Omarchy's manual for the desktop @DISTRO_NAME@ adopts, with notes
-    marked "@DISTRO_NAME@:" where @DISTRO_NAME@ works differently.
+  * The user manual opens with "Welcome to @DISTRO_NAME@!" and a note saying
+    it is @DISTRO_NAME@'s manual, based on Omarchy's, with notes marked
+    "@DISTRO_NAME@:" wherever @DISTRO_NAME@ works differently.
 
  -- @MAINTAINER@  Sat, 24 Oct 2026 01:12:32 -0500
 
