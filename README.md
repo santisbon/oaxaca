@@ -3,6 +3,12 @@
 
 Oaxaca is Ubuntu 26.10 with the desktop of [Omarchy](https://omarchy.org). What Oaxaca offers, the ISO download and the manual are on Oaxaca's website, <https://oaxaca.page>. This repository holds the source the distro is built from.
 
+## What Oaxaca runs on
+
+- A 64-bit Intel or AMD PC that starts in UEFI mode. Computers that start only in the older BIOS mode are not supported; on a computer whose firmware offers both modes, Oaxaca starts when UEFI mode is selected.
+- At least 4 GB of memory and 20 GB of disk space.
+- The first computer Oaxaca is made for, and the one Oaxaca is tested on, is a Lenovo Legion Pro 7 laptop with Intel and NVIDIA graphics. The fixes Omarchy carries for other laptops (ASUS, Dell XPS, Framework, Microsoft Surface, MacBooks) are applied at installation on the models they are for.
+
 ## Apple hardware
 
 Oaxaca has not been tried on a Mac yet. The Mac support below is Omarchy's, adapted to Ubuntu, and the installer applies each Mac fix only on the models it is for.
@@ -12,12 +18,6 @@ Oaxaca has not been tried on a Mac yet. The Mac support below is Omarchy's, adap
 - **Macs from 2015 on with Broadcom Wi-Fi:** Wi-Fi connects to networks that accept both WPA2 and WPA3. On these Macs the Wi-Fi chip's own firmware fails the connection handshake with such networks, which looks like a rejected password, so Oaxaca has the system perform the handshake instead.
 - **The 12-inch MacBook (2015 to 2017) and the 2016 and 2017 MacBook Pros:** the keyboard, which connects over SPI rather than USB, works at the disk encryption prompt during startup, and the built-in SSD wakes up after sleep.
 - **Not supported:** Macs with Apple's T2 chip (most Macs from 2018 to 2020), Macs with Apple silicon (M1 and later), and the Broadcom BCM4360 Wi-Fi of 2013 to 2015 MacBooks, for which Oaxaca installs no driver.
-
-## What Oaxaca runs on
-
-- A 64-bit Intel or AMD PC that starts in UEFI mode. Computers that start only in the older BIOS mode are not supported; on a computer whose firmware offers both modes, Oaxaca starts when UEFI mode is selected.
-- At least 4 GB of memory and 20 GB of disk space.
-- The first computer Oaxaca is made for, and the one Oaxaca is tested on, is a Lenovo Legion Pro 7 laptop with Intel and NVIDIA graphics. The fixes Omarchy carries for other laptops (ASUS, Dell XPS, Framework, Microsoft Surface, MacBooks) are applied at installation on the models they are for; most of them have not been tried on those models yet.
 
 ## License
 
