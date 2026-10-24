@@ -1,5 +1,14 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * @DISTRO_NAME@ has its own artwork: a stepped fret from the Zapotec
+    mosaics at Mitla as its mark, and an "oaxaca" wordmark. The boot and
+    login screens show both, the bar's menu button and fastfetch show the
+    mark, and the screensaver shows both as text art.
+
+ -- @MAINTAINER@  Fri, 23 Oct 2026 20:56:07 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261023.131.28ecfdea-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Security: a FIDO2 key or fingerprint set up with Setup > Security serves
     only sudo and polkit prompts, as on Omarchy. The login screen asks for
     the password again, so the password unlocks the login keyring at login

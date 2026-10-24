@@ -1,3 +1,11 @@
+@DISTRO_ID@-installer (0.1.13) @BASE_SERIES@; urgency=medium
+
+  * The installer shows @DISTRO_NAME@'s mark and wordmark, and while it
+    installs, three slides: what @DISTRO_NAME@ is, four keys to start with,
+    and the snapshot taken before every update (docs/7, choice 58).
+
+ -- @MAINTAINER@  Fri, 23 Oct 2026 20:56:07 -0500
+
 @DISTRO_ID@-installer (0.1.12) @BASE_SERIES@; urgency=medium
 
   * The installation runs apt-get update in the new system again, so the

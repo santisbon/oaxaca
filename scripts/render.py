@@ -54,12 +54,14 @@ def render(src: pathlib.Path, conf: dict) -> str:
     if src.stem not in NO_HEADER and src.with_suffix("").name not in NO_HEADER and src.with_suffix("").suffix not in NO_HEADER_SUFFIXES:
         note = f"Generated from {src.relative_to(ROOT)} by scripts/render.py. Edit the .in file, not this one."
         suffix = src.with_suffix("").suffix
-        # Comment syntax of the rendered file: Markdown, Lua, troff (man pages, suffix .1 to .9),
-        # or "#" for everything else.
+        # Comment syntax of the rendered file: Markdown, Lua, QML, troff (man pages, suffix .1 to
+        # .9), or "#" for everything else.
         if suffix == ".md":
             header = f"<!-- {note} -->\n"
         elif suffix == ".lua":
             header = f"-- {note}\n"
+        elif suffix == ".qml":
+            header = f"// {note}\n"
         elif re.fullmatch(r"\.[1-9]", suffix):
             header = f'.\\" {note}\n'
         else:

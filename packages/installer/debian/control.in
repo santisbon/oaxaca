@@ -2,7 +2,7 @@ Source: @DISTRO_ID@-installer
 Section: misc
 Priority: optional
 Maintainer: @MAINTAINER@
-Build-Depends: debhelper-compat (= 13), imagemagick, fonts-dejavu-core
+Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.7.2
 Homepage: @DISTRO_HOME_URL@
 Rules-Requires-Root: no

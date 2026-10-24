@@ -1,5 +1,14 @@
 oaxaca-desktop (4.0.6+git20261023.131.28ecfdea-0oaxaca1) stonking; urgency=medium
 
+  * Oaxaca has its own artwork: a stepped fret from the Zapotec
+    mosaics at Mitla as its mark, and an "oaxaca" wordmark. The boot and
+    login screens show both, the bar's menu button and fastfetch show the
+    mark, and the screensaver shows both as text art.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 23 Oct 2026 20:56:07 -0500
+
+oaxaca-desktop (4.0.6+git20261023.131.28ecfdea-0oaxaca1) stonking; urgency=medium
+
   * Security: a FIDO2 key or fingerprint set up with Setup > Security serves
     only sudo and polkit prompts, as on Omarchy. The login screen asks for
     the password again, so the password unlocks the login keyring at login

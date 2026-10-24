@@ -101,7 +101,7 @@ The packages in Oaxaca's repository, one row per [source package](#source-packag
 | `hw-legion` | 0.1.2 | `oaxaca-hw-legion` | This repository | - | The Lenovo Legion Pro 7 hardware set, installed on that model only |
 | `gdk-pixbuf-compat` | 0.1.0 | `oaxaca-gdk-pixbuf-compat` | This repository | - | An empty package that provides `libgdk-pixbuf2.0-0`, the GdkPixbuf library's old package name, which Mojang's `Minecraft.deb` depends on (docs/6, choice 76) |
 | `live` | 0.1.9 | `oaxaca-live` | This repository | - | The ISO's live session on casper, and the guest half of the ISO boot test |
-| `installer` | 0.1.12 | `oaxaca-installer` | This repository | - | Calamares's settings, module configuration and branding |
+| `installer` | 0.1.13 | `oaxaca-installer` | This repository | - | Calamares's settings, module configuration and branding |
 | `calamares` | 3.3.14-0ubuntu30oaxaca3 | `calamares`, `calamares-data`, `libcalamares3.3`, `libcalamaresui3.3`, `libcalamares-dev` | Ubuntu's source package `calamares 3.3.14-0ubuntu30` | `keep-python-results-alive`, `replace-read-selection-before-revert`, `revert-device-on-gui-thread` (written for Oaxaca) | Two crashes in "Replace a partition" with encryption, and a garbled status message ("p<box>ckages") (docs/7) |
 | `plymouth` | 24.004.60+git20250831.4a3c171d-0ubuntu10oaxaca1 | `plymouth`, `libplymouth5`, `plymouth-label` and the rest of Ubuntu's Plymouth packages | Ubuntu's source package `plymouth 24.004.60+git20250831.4a3c171d-0ubuntu10` | `script-check-console-viewer` (Plymouth's upstream commit 88c8dd8d) | The boot splash's script plugin crashed without a console viewer (docs/7) |
 | `quickshell` | 0.3.2-0oaxaca2 | `quickshell` | Quickshell's v0.3.2 release tarball, with Debian's packaging | `session-lock-announce-unlock` (written for Oaxaca) | Ubuntu's archive has no Quickshell, and the Omarchy shell runs on Quickshell; the patch makes the lock screen work more than once per login (docs/5) |
@@ -242,7 +242,7 @@ The one list of open work for Oaxaca, this repository and the fork, checked agai
 - **Going back to the previous release's packages.** Btrfs installs get a Timeshift snapshot before every update ([docs/1](1%20-%20policy.md), "Timeshift snapshots on btrfs installs"); ext4 and xfs installs have none. The apt repository carries one version per package (aptly's `publish switch` replaces the previous snapshot), so `apt install <package>=<version>` cannot go back. To decide: whether to keep the previous release's packages published.
 - **A release notes page.** `oaxaca-update-confirm`'s "What's new" line points at the distro's home URL; no release notes page exists.
 - **The SSH agent and the Secret portal.** `gcr4`, a dependency of `gnome-keyring`, enables `gcr-ssh-agent.service`, an SSH agent on `$XDG_RUNTIME_DIR/gcr/ssh`; which agent the desktop uses is not decided. `gnome-keyring` ships `/usr/share/xdg-desktop-portal/portals/gnome-keyring.portal` for `org.freedesktop.impl.portal.Secret`, the interface sandboxed applications store secrets through, but Ubuntu's `/usr/share/xdg-desktop-portal/hyprland-portals.conf` (`[preferred]` `default=hyprland;gtk`, in the `.108` image) names no backend for that interface; a line `org.freedesktop.impl.portal.Secret=gnome-keyring` in the desktop's portal configuration would add one.
-- **Branding artwork**: `logo.svg`, `icon.png`, the Plymouth and SDDM logos, the icon font's U+E900 glyph, the installer's three images (rendered from the distro's name today), the installer's slideshow, and translations of the installer launcher's name.
+- **Translations of the installer launcher's name.** The launcher reads "Install Oaxaca" in English only. The rest of the branding is done (docs/6, choice 104; docs/7, choice 58).
 - **Install > Gaming > Xbox Controllers.** `xpadneo-dkms` needs a Secure Boot key enrolled; the kernel's own drivers already run the controller over USB and Bluetooth (docs/6, choice 18).
 
 ### To investigate
@@ -420,10 +420,11 @@ What no layer reaches: plugins that need software Ubuntu does not package (for e
 
 ```
 distro.conf          the only place the distro's name and identity live
-Makefile             entry points: render, check-versions, upstream-check, chroot, build, publish, rootfs, rootfs-test, drivers-check, iso, iso-test, upgrade-test, session-upgrade-test, factory-reset-test
+Makefile             entry points: render, branding, check-versions, upstream-check, chroot, build, publish, rootfs, rootfs-test, drivers-check, iso, iso-test, upgrade-test, session-upgrade-test, factory-reset-test
 sbuild.conf          sbuild settings for this repo (loaded through SBUILD_CONFIG)
 scripts/
   render.py          fills @TOKEN@ templates (*.in) from distro.conf
+  branding.py        draws the distro's artwork (the mark, the wordmark, the text art, the installer's images) into the packages (make branding; docs/6, choice 104)
   keygen.sh          creates the apt signing key (run once, by hand)
   chroot-create.sh   builds the clean build chroot with mmdebstrap
   build.sh           builds packages with sbuild, checks them with lintian

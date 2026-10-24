@@ -3,7 +3,7 @@ Source: oaxaca-installer
 Section: misc
 Priority: optional
 Maintainer: santisbon <santisbon@users.noreply.github.com>
-Build-Depends: debhelper-compat (= 13), imagemagick, fonts-dejavu-core
+Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.7.2
 Homepage: https://github.com/santisbon/oaxaca
 Rules-Requires-Root: no

@@ -3,7 +3,7 @@ Source: oaxaca-desktop
 Section: x11
 Priority: optional
 Maintainer: santisbon <santisbon@users.noreply.github.com>
-Build-Depends: debhelper-compat (= 13), imagemagick, fonts-dejavu-core, perl
+Build-Depends: debhelper-compat (= 13), imagemagick, perl
 Standards-Version: 4.7.2
 Homepage: https://github.com/santisbon/oaxaca
 Rules-Requires-Root: no

@@ -30,14 +30,15 @@ override_dh_auto_build:
 	bash $(R)/port/rename.sh --tree $(R)
 	# Omarchy's "version" file is not maintained (policy, section 3); the package version is.
 	printf '%s\n' '$(UPSTREAM_VERSION)' > $(R)/version
-	# Branding: placeholders made from the distro's name until the distro has artwork.
-	# The text ones are templates in debian/extra; the images are rendered here.
+	# Branding: the distro's artwork, drawn by scripts/branding.py into debian/extra (docs/6,
+	# choice 104), in place of Omarchy's logos in the fork's tree. The boot and login screens
+	# show the lockup; the icon is the mark on a dark tile.
 	cp debian/extra/logo.txt $(R)/logo.txt
 	cp debian/extra/icon.txt $(R)/icon.txt
 	cp debian/extra/logo.svg $(R)/logo.svg
-	magick -background none -fill white -font DejaVu-Sans-Bold -pointsize 44 -size 256x256 -gravity center 'label:$(NAME)' PNG32:$(R)/icon.png
-	cp $(R)/icon.png $(R)/default/sddm/$(ID)/logo.png
-	cp $(R)/icon.png $(R)/default/plymouth/logo.png
+	cp debian/extra/icon.png $(R)/icon.png
+	cp debian/extra/splash-logo.png $(R)/default/sddm/$(ID)/logo.png
+	cp debian/extra/splash-logo.png $(R)/default/plymouth/logo.png
 	# Application icons in the sizes the freedesktop icon lookup expects (Omarchy's recipe).
 	mkdir -p $(R)/icons/256x256 $(R)/icons/48x48 $(R)/icons/scalable
 	set -e; for icon in $(R)/applications/icons/*; do \

@@ -1,5 +1,5 @@
-# Branding of the installer window; the images beside this file are placeholders rendered
-# from the distro's name at build time (debian/rules).
+# Branding of the installer window. logo.png, icon.png and welcome.png, in the same folder as
+# this file, are the distro's artwork, drawn by scripts/branding.py (docs/7, choice 58).
 ---
 componentName: @DISTRO_ID@
 welcomeStyleCalamares: false

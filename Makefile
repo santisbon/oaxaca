@@ -1,5 +1,5 @@
 # Entry points for the build. See docs/2 - build-infra.md, docs/3 - rootfs.md and docs/4 - session.md.
-.PHONY: render check-render check-versions upstream-check chroot build lint publish repo-seed machine-setup release release-message apt-infra apt-infra-check rootfs rootfs-test drivers-check iso iso-test upgrade-test session-upgrade-test factory-reset-test clean
+.PHONY: render branding check-render check-versions upstream-check chroot build lint publish repo-seed machine-setup release release-message apt-infra apt-infra-check rootfs rootfs-test drivers-check iso iso-test upgrade-test session-upgrade-test factory-reset-test clean
 
 # Root filesystem profile for rootfs, rootfs-test and drivers-check: base (step 3), session (step 4),
 # desktop (step 6) or live (step 7, the desktop plus casper and the installer: what the ISO ships).
@@ -13,6 +13,9 @@ UPGRADE ?= 0
 
 render:            ## Render every *.in file from distro.conf
 	scripts/render.py
+
+branding:          ## Draw the distro's artwork into the desktop and installer packages, and build/branding/mark.svg for the icon font
+	scripts/branding.py
 
 check-render: render   ## Fail if committed rendered files don't match distro.conf (CI)
 	@git diff --exit-code -- . ':!build' >/dev/null || { echo "rendered files are out of date: run 'make render' and commit the result"; git --no-pager diff --stat -- . ':!build'; exit 1; }
