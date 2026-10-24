@@ -1,19 +1,7 @@
 <!-- Generated from README.md.in by scripts/render.py. Edit the .in file, not this one. -->
 # Oaxaca
 
-Oaxaca is a Linux distribution for desktop and laptop PCs: Ubuntu 26.10 underneath, and on top the desktop of [Omarchy](https://omarchy.org), a keyboard-driven desktop known for its themes and its tiling windows, which Omarchy itself ships only on Arch Linux. Oaxaca brings that desktop to Ubuntu, so you get Omarchy's look and workflow with Ubuntu's software, updates and hardware support.
-
-## Why install Oaxaca
-
-**Software made for Ubuntu works.** Oaxaca is Ubuntu 26.10: the same kernel, drivers and security updates, from Ubuntu's own archive, installed and updated with apt. Software that vendors publish for Ubuntu installs the same way as on Ubuntu, from the vendors' own packages and repositories; the menu's Install entries set up Chrome, VS Code, 1Password, Spotify, Signal, Tailscale and others that way. The Snap Store and Flathub are both ready to use from the start, so applications that come as snaps or Flatpaks install without any setup.
-
-**Secure Boot can stay on.** Oaxaca starts with Secure Boot on or off, through the same chain of signed programs Ubuntu uses, and never asks you to turn Secure Boot off or to enroll a key of your own. NVIDIA graphics work with Secure Boot on too: the installer picks NVIDIA's open driver with modules Canonical signed, so the driver loads with Secure Boot on, and the USB stick carries the driver, so installing the driver needs no network.
-
-**Your data is protected and recoverable.** The installer encrypts the disk by default. With the installer's default file system, btrfs, Oaxaca also takes a snapshot of the system with Timeshift before every update, so an update that goes wrong can be rolled back, and when the computer changes hands, Setup > Reset Computer returns the computer to a fresh install that asks the next owner to set up an account.
-
-**The Omarchy desktop, with Omarchy's plugins and themes.** Hyprland's tiling windows, Omarchy's bar, menus, key bindings and themes, and the extras people share for Omarchy: the plugins in Omarchy's marketplace (<https://plugins.omarchy.org>) and the themes on Omarchy's theme list (<https://omarchy.org/themes/>) are added from the menu and work on Oaxaca, except plugins that need software only Arch Linux provides.
-
-**Laptops with two GPUs are handled.** On a laptop with both built-in graphics and an NVIDIA or AMD graphics card, the desktop and ordinary applications run on the built-in graphics, and the graphics card is used by the programs that ask for it, such as games started from Steam. AMD graphics cards have not been tried on real hardware yet.
+Oaxaca is Ubuntu 26.10 with the desktop of [Omarchy](https://omarchy.org). What Oaxaca offers, the ISO download and the manual are on Oaxaca's website, <https://oaxaca.page>. This repository holds the source the distro is built from.
 
 ## Apple hardware
 
@@ -30,10 +18,6 @@ Oaxaca has not been tried on a Mac yet. The Mac support below is Omarchy's, adap
 - A 64-bit Intel or AMD PC that starts in UEFI mode. Computers that start only in the older BIOS mode are not supported; on a computer whose firmware offers both modes, Oaxaca starts when UEFI mode is selected.
 - At least 4 GB of memory and 20 GB of disk space.
 - The first computer Oaxaca is made for, and the one Oaxaca is tested on, is a Lenovo Legion Pro 7 laptop with Intel and NVIDIA graphics. The fixes Omarchy carries for other laptops (ASUS, Dell XPS, Framework, Microsoft Surface, MacBooks) are applied at installation on the models they are for; most of them have not been tried on those models yet.
-
-## Getting Oaxaca
-
-Oaxaca is new, and there is no download yet: the USB installer is built from this repository's source, as [docs/README.md, "Building the distro from source"](docs/README.md#building-the-distro-from-source) describes. Once installed, Oaxaca updates from its own package repository and Ubuntu's.
 
 ## License
 
