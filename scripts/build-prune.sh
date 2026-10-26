@@ -9,7 +9,9 @@
 #     dpkg-deb -f (so an epoch, which the file name leaves out, still counts);
 #   - source packages: every .dsc but the newest per source name (its Version field), with the
 #     files that .dsc lists (.tar.xz, .debian.tar.xz, .orig*.tar.*) unless the newest .dsc lists
-#     them too, and the source version's .changes, .buildinfo and .build logs;
+#     them too, any other tarball of the source that the newest .dsc does not list, and the older
+#     versions' .changes, .buildinfo and .build logs; of the newest version, every per-run .build
+#     log but the one its <source>_<version>_<arch>.build link names;
 #   - unpacked source trees: build/<source>-<upstream version>/ (build.sh's tree for packages
 #     with an orig tarball, such as the desktop) for every upstream version but the newest's.
 # Subfolders (apt-cache/, rootfs/, iso/, git/ and the rest) and files that match none of the above
@@ -67,10 +69,21 @@ done
 for src in "${!srcbest[@]}"; do
   newest=${srcv[$src]#*:}
   upstream=${newest%-*}
-  # .changes, .buildinfo and .build logs are named <source>_<version without epoch>_<arch>...
+  # .changes, .buildinfo and .build logs are named <source>_<version without epoch>_<arch>...;
+  # sbuild writes one log per run, <...>_<arch>-<UTC time>.build, and links <...>_<arch>.build to
+  # the latest, so of the newest version only the linked log stays.
   for f in "$dir/${src}"_*.changes "$dir/${src}"_*.buildinfo "$dir/${src}"_*.build; do
     v=${f##*/}; v=${v#"${src}_"}; v=${v%%_*}
-    [[ $v == "$newest" ]] || doomed+=("$f")
+    if [[ $v != "$newest" ]]; then
+      doomed+=("$f")
+    elif [[ $f == *Z.build && ! -L $f ]]; then
+      link=${f%-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T*Z.build}.build
+      [[ -L $link && $(readlink "$link") == "${f##*/}" ]] || doomed+=("$f")
+    fi
+  done
+  # Source tarballs that the newest .dsc does not list, including those whose .dsc is gone.
+  for f in "$dir/${src}"_*.tar.*; do
+    [[ -n ${keep[${f##*/}]:-} ]] || doomed+=("$f")
   done
   for d in "$dir/${src}"-[0-9]*/; do
     d=${d%/}
