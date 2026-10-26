@@ -1,5 +1,17 @@
 oaxaca-desktop (4.0.6+git20261024.135.a91bf986-0oaxaca1) stonking; urgency=medium
 
+  * A C and C++ compiler and the development files that Omarchy plugins
+    build against are preinstalled (build-essential, libssl-dev and the Qt 6
+    and PulseAudio development packages), so a plugin's own setup works as
+    written for Omarchy.
+  * The manual explains that the factory snapshot is not one of Timeshift's,
+    how to get Steam's window off a game, and the one-time password and blue
+    screen that the Xbox controller driver asks for when Secure Boot is on.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Mon, 26 Oct 2026 13:17:32 -0500
+
+oaxaca-desktop (4.0.6+git20261024.135.a91bf986-0oaxaca1) stonking; urgency=medium
+
   * The user manual opens with "Welcome to Oaxaca!" and a note saying
     it is Oaxaca's manual, based on Omarchy's, with notes marked
     "Oaxaca:" wherever Oaxaca works differently.

@@ -1,5 +1,17 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * A C and C++ compiler and the development files that Omarchy plugins
+    build against are preinstalled (build-essential, libssl-dev and the Qt 6
+    and PulseAudio development packages), so a plugin's own setup works as
+    written for Omarchy.
+  * The manual explains that the factory snapshot is not one of Timeshift's,
+    how to get Steam's window off a game, and the one-time password and blue
+    screen that the Xbox controller driver asks for when Secure Boot is on.
+
+ -- @MAINTAINER@  Mon, 26 Oct 2026 13:17:32 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261024.135.a91bf986-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * The user manual opens with "Welcome to @DISTRO_NAME@!" and a note saying
     it is @DISTRO_NAME@'s manual, based on Omarchy's, with notes marked
     "@DISTRO_NAME@:" wherever @DISTRO_NAME@ works differently.
