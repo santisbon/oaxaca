@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261024.135.a91bf986-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261026.140.4ef5ff47-0oaxaca1) stonking; urgency=medium
 
   * A C and C++ compiler and the development files that Omarchy plugins
     build against are preinstalled (build-essential, libssl-dev and the Qt 6
