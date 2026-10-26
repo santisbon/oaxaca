@@ -164,7 +164,7 @@ What the test checks inside the guest, and the line each check must print: `syst
 
 ## Verified on 2026-10-07
 
-All on this workstation (Kubuntu 26.04.1, 24 CPUs, KVM), with the archive mirror delivering around 1 MB/s that afternoon.
+All on the Legion laptop, then running Kubuntu 26.04.1 (24 CPUs, KVM), with the archive mirror delivering around 1 MB/s that afternoon.
 
 - `make build PKG=packages/base`: the metapackage builds in the clean chroot, lintian quiet. The `.deb` installs three files besides its docs: `/usr/lib/os-release`, `/etc/apt/apt.conf.d/50oaxaca-no-recommends` and `/etc/netplan/01-oaxaca-network-manager.yaml` (mode 0600). The package's preinst and postrm maintainer scripts, which add and remove the diversion, ride in the `.deb`'s control archive and are not installed as files.
 - `make rootfs`: 8 min 56 s, 1.6 GB tarball, 325 packages in the manifest. Inside the tarball: kernel `7.3.0-9-generic` with its initramfs under `/boot`, `oaxaca-base 0.1.0`, `network-manager 1.58.1-1ubuntu3` with `netplan.io 1.2.2-3`, `apparmor 6.0.0~alpha1-0ubuntu4`, `pipewire 1.6.8-1ubuntu4` with `wireplumber 0.5.17-1ubuntu1`, `shim-signed 1.59+15.8-0ubuntu2`, `grub-efi-amd64-signed 1.215+2.14-2ubuntu1`, `dbus-broker 37-5ubuntu5`. The hook-written files read as designed: `hostname` is `oaxaca`, `resolv.conf` is the stub-resolver symlink, `ubuntu.sources` is the two-stanza file shown above, `/etc/locale.conf` (which `/etc/default/locale` now links to) holds `LANG=en_US.UTF-8`, `/etc/localtime` points at `Etc/UTC`, `/etc/machine-id` is empty. dpkg's diversion table lists `/usr/lib/os-release` diverted to `/usr/lib/os-release.ubuntu` by `oaxaca-base`, and that `.ubuntu` file still says `Ubuntu Stonking Stingray (development branch)`.

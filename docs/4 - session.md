@@ -140,7 +140,7 @@ make rootfs PROFILE=base          # step 3's tarball, oaxaca-26.10-amd64-base.ta
 
 ## Verified on 2026-10-08
 
-All on this workstation (Kubuntu 26.04.1, 24 CPUs, KVM, Intel iGPU render node), the archive mirror delivering around 30 MB/s that morning.
+All on the Legion laptop, then running Kubuntu 26.04.1 (24 CPUs, KVM, Intel iGPU render node), the archive mirror delivering around 30 MB/s that morning.
 
 - `make build PKG="packages/session packages/nvidia"`: both build in the clean chroot. lintian reports one warning for `oaxaca-nvidia`, `groff-message` on the man page. The groff warning is an artifact of this workstation: lintian runs `man` with its output captured in a file, and `man-db` here then closes groff's stdout (strace: `write(1, ...) = -1 EBADF`), so every package with a man page fails the check, Ubuntu's `uwsm` and `hyprland` included; the page renders with `man -l`, and CI's lintian on a GitHub runner is the check that counts.
 - `make rootfs`: 1 min 44 s, 2.2 GB tarball, 563 packages in the manifest (step 3's base was 1.6 GB and 325); 591 packages after GNOME Keyring was added on 2026-10-09 (`gnome-keyring`, `libpam-gnome-keyring`, `libsecret-1-0`, and their dependencies `gcr`, `gcr4`, `pinentry-gnome3` among them). Inside: `hyprland 0.56.2+ds-1`, `uwsm 0.26.6+ds-1`, `sddm 0.21.0+git20251101.dfa5315-1ubuntu2`, `xwayland 2:24.1.13-1`, `ubuntu-drivers-common 1:0.10.13`, Mesa `26.2.4-1ubuntu1`.

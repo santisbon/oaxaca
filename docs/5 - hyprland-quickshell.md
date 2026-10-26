@@ -104,7 +104,7 @@ The first `make rootfs-test` on a workstation clones Omarchy's `shell/` and `con
 
 ## Verified on 2026-10-09
 
-All on this workstation (Kubuntu 26.04.1, 24 CPUs, KVM, Intel iGPU render node).
+All on the Legion laptop, then running Kubuntu 26.04.1 (24 CPUs, KVM, Intel iGPU render node).
 
 - `make build PKG=packages/quickshell`: the first run downloaded `build/quickshell_0.3.2.orig.tar.gz` (500 985 bytes, checksum matched) and failed in `dh_installman`, because Debian's `debian/qs.1` is a symlink to `quickshell.1` and the file copy that created `packages/quickshell/` had skipped symlinks; with the symlink added, the build takes 3 min 10 s in the chroot (`Build needed 00:03:10`) and yields `quickshell_0.3.2-0oaxaca1_amd64.deb`, 1.7 MB. lintian: the `groff-message` warning that this workstation raises for every man page (step 4's finding) on `quickshell.1` and `qs.1`, and `newer-standards-version 4.7.4 (current is 4.7.3)`, which says this workstation's lintian is older than the Standards-Version Debian's packaging declares; neither is an error, and CI's lintian is the check that counts.
 - `make build PKG=packages/session`: builds; `oaxaca-session` now carries `Depends: … quickshell (>= 0.3.2)`.
