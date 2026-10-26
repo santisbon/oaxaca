@@ -109,8 +109,8 @@ fetch() {
   echo "$sum  $file" | sha256sum --check --quiet || { echo "!! $file does not match the SHA-256 given for $url" >&2; exit 1; }
 }
 
-# lintian checks only this run's .changes files: build/ keeps every earlier build, whose
-# .changes can name files deleted since (lintian then prints "Skipping ... does not exist").
+# lintian checks only this run's .changes files: build/ keeps earlier builds until make prune
+# (make release runs it), and an earlier build's .changes can name files deleted since (lintian then prints "Skipping ... does not exist").
 stamp=$(mktemp)
 trap 'rm -f "$stamp"' EXIT
 built=0

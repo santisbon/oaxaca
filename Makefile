@@ -1,5 +1,5 @@
 # Entry points for the build. See docs/2 - build-infra.md, docs/3 - rootfs.md and docs/4 - session.md.
-.PHONY: render branding check-render check-versions upstream-check chroot build lint publish repo-seed machine-setup release release-message apt-infra apt-infra-check iso-infra iso-infra-check iso-publish budget-infra budget-infra-check rootfs rootfs-test drivers-check iso iso-test upgrade-test session-upgrade-test factory-reset-test clean
+.PHONY: render branding check-render check-versions upstream-check chroot build lint publish repo-seed machine-setup release release-message prune apt-infra apt-infra-check iso-infra iso-infra-check iso-publish budget-infra budget-infra-check rootfs rootfs-test drivers-check iso iso-test upgrade-test session-upgrade-test factory-reset-test clean
 
 # Root filesystem profile for rootfs, rootfs-test and drivers-check: base (step 3), session (step 4),
 # desktop (step 6) or live (step 7, the desktop plus casper and the installer: what the ISO ships).
@@ -43,6 +43,9 @@ machine-setup:     ## Install the build, test and publish tools, check the crede
 
 release:           ## Build what is unpublished, test the image, commit, and publish after a prompt (docs/README.md, Releasing)
 	scripts/release.sh
+
+prune:             ## Delete every build in build/ but the newest of each package (make release runs it after the upload): make prune [PRUNE_FLAGS=--dry-run]
+	scripts/build-prune.sh $(PRUNE_FLAGS)
 
 release-message:   ## Print the commit message make release would use, without changing anything (docs/README.md, Releasing)
 	@scripts/release.sh --message

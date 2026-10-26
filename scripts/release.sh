@@ -153,7 +153,11 @@ make publish PUBLISH_FLAGS=--push
 curl -fsSL "$APT_URL/dists/$BASE_SERIES/InRelease" | gpgv --keyring "$here/packages/archive-keyring/archive-keyring.gpg" -
 echo "== released $OMARCHY_PORT_VERSION: run $DISTRO_ID-update on installed systems; build/iso/ has the matching ISO"
 
-# 11. The ISO built in step 6 from these packages, with its signed checksums, to the downloads host;
+# 11. Delete the builds this release superseded from build/, keeping the newest of each package,
+#     which is the published one (build-prune.sh). The ISO in build/iso/ stays.
+make prune
+
+# 12. The ISO built in step 6 from these packages, with its signed checksums, to the downloads host;
 #     upload only on "y" (docs/7, choice 59). The dry run shows the ISO's version and what changes.
 make iso-publish ISO_PUBLISH_FLAGS=--dry-run
 read -rp "Upload the ISO to $ISO_S3_BUCKET ($ISO_HOST)? [y/N] " answer
