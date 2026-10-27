@@ -1,5 +1,14 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Install > Service > iPhone asks for a key press on each Bluetooth
+    keyboard and a move of each Bluetooth mouse after restarting
+    Bluetooth, which is what reconnects them.
+  * Install > Service > iPhone prints what the user has to do in yellow.
+
+ -- @MAINTAINER@  Tue, 27 Oct 2026 16:59:13 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261027.155.cf95f0b3-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Remove > Services > iPhone removes iphonebridge after an install
     whose pairing failed; it used to stop right after stopping the
     daemon.
