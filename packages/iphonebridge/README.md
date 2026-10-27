@@ -3,7 +3,7 @@
 
 iphonebridge, a Bluetooth bridge that brings a paired iPhone's messages, contacts, notifications, calls and media controls to the desktop, published in Oaxaca's repository (docs/6, choice 109). Install > Service > iPhone installs it; no package depends on it.
 
-The repository serves iphonebridge's own release `.deb` unchanged, the only package of that kind: no source package, no `debian/` here, no build in the chroot. The package keeps iphonebridge's name and version (`0.20.1`), and its maintainer scripts are iphonebridge's.
+The repository serves iphonebridge's own release `.deb` unchanged, the only package of that kind: no source package, no `debian/` here, no build in the chroot. The package keeps iphonebridge's name and version (`0.20.2`), and its maintainer scripts are iphonebridge's.
 
 | Path | What |
 |---|---|
