@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261027.149.79284018-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261027.151.87475bad-0oaxaca1) stonking; urgency=medium
 
   * Remove > Services > iPhone says what it is doing; removing the
     iPhone's pairing can take half a minute with nothing on screen.
