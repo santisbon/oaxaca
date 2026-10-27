@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261026.140.4ef5ff47-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261027.143.668e0da6-0oaxaca1) stonking; urgency=medium
 
   * Install > Service > AirPods adds an AirPods panel to the bar, with each
     pod's and the case's battery and the listening controls, pairing the
