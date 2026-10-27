@@ -1,5 +1,13 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Install > Service > AirPods finds AirPods that aren't paired yet; it
+    reported "No AirPods found" even while the case's light was flashing
+    white.
+
+ -- @MAINTAINER@  Mon, 26 Oct 2026 22:38:57 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261027.143.668e0da6-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Install > Service > AirPods adds an AirPods panel to the bar, with each
     pod's and the case's battery and the listening controls, pairing the
     AirPods first if they aren't paired yet. The panel comes from

@@ -1,5 +1,13 @@
 oaxaca-desktop (4.0.6+git20261027.143.668e0da6-0oaxaca1) stonking; urgency=medium
 
+  * Install > Service > AirPods finds AirPods that aren't paired yet; it
+    reported "No AirPods found" even while the case's light was flashing
+    white.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Mon, 26 Oct 2026 22:38:57 -0500
+
+oaxaca-desktop (4.0.6+git20261027.143.668e0da6-0oaxaca1) stonking; urgency=medium
+
   * Install > Service > AirPods adds an AirPods panel to the bar, with each
     pod's and the case's battery and the listening controls, pairing the
     AirPods first if they aren't paired yet. The panel comes from
