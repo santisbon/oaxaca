@@ -1,5 +1,14 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Install > Service > iPhone waits for Bluetooth keyboards and mice to
+    reconnect after restarting Bluetooth, so the pairing code can be
+    confirmed on the keyboard.
+  * The iPhone app's launcher icon is the menu's phone glyph.
+
+ -- @MAINTAINER@  Tue, 27 Oct 2026 15:34:38 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261027.153.98e3c979-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Install > Service > iPhone finishes only when messages, contacts,
     per-app notifications, calls and media controls all work, and says
     which ones it is still waiting for. It connects the iPhone over
