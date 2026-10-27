@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261027.145.93251e2b-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261027.146.cee307bb-0oaxaca1) stonking; urgency=medium
 
   * Install > Service > AirPods no longer reports the AirPods daemon as
     unconfined just because the daemon hasn't finished starting: the
