@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261027.143.668e0da6-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261027.144.b327c362-0oaxaca1) stonking; urgency=medium
 
   * Install > Service > AirPods finds AirPods that aren't paired yet; it
     reported "No AirPods found" even while the case's light was flashing
