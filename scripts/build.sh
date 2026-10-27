@@ -47,6 +47,14 @@
 #                                      plymouth its patches, their series lines and one
 #                                      changelog entry. No fork of the source: the orig tarball stays
 #                                      theirs and dpkg-source -b applies the added patch
+#   DEB=<.deb url> SHA256=<hex>        a project's own release .deb, published unchanged
+#                                      (iphonebridge): downloaded once into build/ under its
+#                                      file name, <package>_<version>_<architecture>.deb, and
+#                                      checked against the SHA-256. No source package, no
+#                                      sbuild, no lintian: the repository serves the same bytes
+#                                      as the release, so apt runs the project's own maintainer
+#                                      scripts. The package directory holds the upstream file
+#                                      and a README, no debian/
 # and may add:
 #   COMPONENT_NAMES=(<n> ...)          extra orig tarballs, one per name, fetched from
 #   COMPONENT_URLS=(<url> ...)         COMPONENT_URLS and checked against COMPONENT_SHA256S,
@@ -117,6 +125,18 @@ built=0
 for pkg in "${pkgs[@]}"; do
   pkg=$(cd "$pkg" && pwd)
   name=$(basename "$pkg")
+  if grep -q '^DEB=' "$pkg/upstream" 2>/dev/null; then
+    DEB= SHA256= RELEASES=
+    # shellcheck source=/dev/null
+    source "$pkg/upstream"
+    deb="$out/$(basename "$DEB")"
+    echo "== fetching $name ($(basename "$DEB"))"
+    fetch "$DEB" "$deb" "$SHA256"
+    # The other scripts read a package's name and version from its file name.
+    want="$(dpkg-deb -f "$deb" Package)_$(dpkg-deb -f "$deb" Version | sed 's/^[0-9]*://')_$(dpkg-deb -f "$deb" Architecture).deb"
+    [[ $(basename "$deb") == "$want" ]] || { echo "!! $name: $(basename "$deb") holds $want; the release's file name has to match its contents" >&2; exit 1; }
+    continue
+  fi
   if [[ ! -f $pkg/debian/changelog ]]; then
     echo "!! $name: no debian/changelog (run 'make render')" >&2; exit 1
   fi
@@ -254,9 +274,12 @@ for pkg in "${pkgs[@]}"; do
   built=$((built + 1))
 done
 
-if ((built == 0)); then echo "nothing built"; exit 0; fi
-echo "== lintian"
-mapfile -t changes < <(find "$out" -maxdepth 1 -name '*.changes' -newer "$stamp")
-lintian --fail-on error --info "${changes[@]}"
+if ((built == 0)); then
+  echo "nothing built in the chroot"
+else
+  echo "== lintian"
+  mapfile -t changes < <(find "$out" -maxdepth 1 -name '*.changes' -newer "$stamp")
+  lintian --fail-on error --info "${changes[@]}"
+fi
 echo "== artifacts in build/"
 ls -1 "$out"/*.deb "$out"/*.dsc 2>/dev/null

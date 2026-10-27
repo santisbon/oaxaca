@@ -42,6 +42,13 @@ def load_conf():
         if m:
             key = "VERSION_" + changelog.parent.parent.name.upper().replace("-", "_")
             conf[key] = TOKEN.sub(lambda t: f"@{t.group(1)}@" if t.group(1) else conf[t.group(2)], m.group(1))
+    # A package directory whose upstream file names a release .deb (DEB=, published unchanged)
+    # has no changelog: its version is the one in the .deb's file name,
+    # <package>_<version>_<architecture>.deb.
+    for upstream in sorted((ROOT / "packages").glob("*/upstream")):
+        m = re.search(r"^DEB=\S*/[^_/]+_([^_/]+)_[^_/]+\.deb$", upstream.read_text(), flags=re.M)
+        if m:
+            conf["VERSION_" + upstream.parent.name.upper().replace("-", "_")] = m.group(1)
     return conf
 
 

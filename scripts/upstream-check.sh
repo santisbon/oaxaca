@@ -3,11 +3,12 @@
 # the version this repository builds.
 #
 # Anatomy: this script runs curl, python3 (to read the JSON answer), sed and dpkg. For every package directory whose upstream
-# file sets RELEASES=<owner>/<repo> (today packages/localsend), it asks GitHub's REST API for that
+# file sets RELEASES=<owner>/<repo> (today packages/localsend and packages/iphonebridge), it asks GitHub's REST API for that
 # repository's latest release (GET /repos/<owner>/<repo>/releases/latest, which skips drafts and
 # pre-releases), drops a leading "v" from the release's tag, and compares the result with the
-# upstream part of the first version in the package's rendered debian/changelog
-# (dpkg --compare-versions). A newer release fails the check and prints what to update.
+# upstream part of the first version in the package's rendered debian/changelog, or for a
+# release .deb published unchanged (DEB=, today packages/iphonebridge) the version in the .deb's
+# file name (dpkg --compare-versions). A newer release fails the check and prints what to update.
 # Why: these packages repackage a project's release, and nothing else would notice a new one.
 # LocalSend receives files over the network, so a fix release left unpackaged matters.
 # GitHub allows 60 unauthenticated API requests an hour per address; with GITHUB_TOKEN or
@@ -50,7 +51,14 @@ for upstream in packages/*/upstream; do
   releases=$(sed -n 's/^RELEASES=//p' "$upstream")
   [[ -n $releases ]] || continue
   dir=$(dirname "$upstream")
-  ours=$(sed -n '1s/^[^(]*(\([^)]*\)).*/\1/p' "$dir/debian/changelog")
+  deb=$(sed -n 's/^DEB=//p' "$upstream")
+  if [[ -n $deb ]]; then
+    ours=$(basename "$deb" | cut -d_ -f2)
+    todo="Point DEB= at the new release's .deb, update SHA256=, make build PKG=$dir"
+  else
+    ours=$(sed -n '1s/^[^(]*(\([^)]*\)).*/\1/p' "$dir/debian/changelog")
+    todo="Update the version and the SHA-256s in $upstream, add a changelog entry, make build PKG=$dir"
+  fi
   ours=${ours#*:}; ours=${ours%-*}
   if ! latest=$(curl -fsSL "${auth[@]}" -H 'Accept: application/vnd.github+json' \
       "https://api.github.com/repos/$releases/releases/latest" |
@@ -65,7 +73,7 @@ for upstream in packages/*/upstream; do
   fi
   if dpkg --compare-versions "$latest" gt "$ours"; then
     echo "!! $(basename "$dir"): $releases released $latest; this repository builds $ours."
-    echo "   Update the version and the SHA-256s in $upstream, add a changelog entry, make build PKG=$dir"
+    echo "   $todo"
     ((status == 2)) || status=1
   else
     echo "-- $(basename "$dir"): $ours is current ($releases's latest release is $latest)"

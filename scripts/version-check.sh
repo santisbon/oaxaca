@@ -5,7 +5,9 @@
 # Anatomy: this script runs git and dpkg only. The last release is the newest v* tag reachable
 # from HEAD (git describe). For every directory under packages/ that differs from that tag
 # (git diff --quiet), the first line of its rendered debian/changelog at HEAD must carry a
-# version that dpkg --compare-versions ranks above the version in the same file at the tag.
+# version that dpkg --compare-versions ranks above the version in the same file at the tag. A
+# package directory whose upstream file names a release .deb (DEB=, published unchanged) has no
+# debian/changelog; its version is the one in the .deb's file name, <package>_<version>_<arch>.deb.
 # Why: apt identifies a package by name and version; a package rebuilt with new content under a
 # version users already have is never offered to them (scripts/repo-publish.sh refuses to
 # publish such a file for the same reason). A directory that did not change needs no bump, and
@@ -31,6 +33,7 @@ fi
 echo "version-check: comparing against $tag"
 
 version_of() { sed -n '1s/^[^(]*(\([^)]*\)).*/\1/p'; }
+deb_version_of() { sed -n 's|^DEB=.*/[^_/]*_\([^_]*\)_[^_]*\.deb$|\1|p'; }
 
 status=0
 for dir in packages/*; do
@@ -39,8 +42,15 @@ for dir in packages/*; do
   if git diff --quiet "$tag" -- "$dir"; then
     continue
   fi
-  new=$(version_of < "$dir/debian/changelog")
-  old=$(git show "$tag:$dir/debian/changelog" 2>/dev/null | version_of || true)
+  if grep -q '^DEB=' "$dir/upstream" 2>/dev/null; then
+    new=$(deb_version_of < "$dir/upstream")
+    old=$(git show "$tag:$dir/upstream" 2>/dev/null | deb_version_of || true)
+    bump="point DEB= in its upstream file at a newer release"
+  else
+    new=$(version_of < "$dir/debian/changelog")
+    old=$(git show "$tag:$dir/debian/changelog" 2>/dev/null | version_of || true)
+    bump="add a debian/changelog.in entry"
+  fi
   if [[ -z $old ]]; then
     echo "  $name: new since $tag ($new)"
     continue
@@ -48,7 +58,7 @@ for dir in packages/*; do
   if dpkg --compare-versions "$new" gt "$old"; then
     echo "  $name: changed, $old -> $new"
   else
-    echo "  $name: CHANGED since $tag but the version is still $new (was $old at $tag): add a debian/changelog.in entry"
+    echo "  $name: CHANGED since $tag but the version is still $new (was $old at $tag): $bump"
     status=1
   fi
 done

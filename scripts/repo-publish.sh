@@ -8,7 +8,9 @@
 # the local repo and removes every older version of those packages from it, so the repository
 # offers one version of each. It then removes what the tree no longer builds: packages whose
 # source has no directory under packages/, and binary packages left over from an older version
-# of a source (a binary package dropped from a control file). It takes a snapshot and publishes
+# of a source (a binary package dropped from a control file); a release .deb published unchanged
+# (DEB= in a package directory's upstream file) leaves when no upstream file names it any more. It
+# takes a snapshot and publishes
 # it (aptly writes dists/ and pool/ under its public/ directory and signs the Release file with
 # the archive key from distro.conf, asking gpg for the apt signing key passphrase). With --push,
 # the aws-cli's "s3 sync" uploads public/ to the bucket APT_S3_BUCKET, in three passes so a client never reads an index that names a missing
@@ -153,6 +155,26 @@ while read -r src ver; do
   fi
   aptly repo remove "$repo" "$query" | sed -n 's/^\[-\] \(.*\) removed$/dropped from the repository: \1/p'
 done <<<"$sources"
+
+# The same for the release .debs published unchanged (DEB= in a package directory's upstream
+# file, today packages/iphonebridge): such a package has no source package in the repository, so
+# the loop above never sees it. A binary package that no source package in the repository builds
+# stays only while an upstream file names it.
+declare -A wanted_deb
+for upstream in "$here"/packages/*/upstream; do
+  deb=$(sed -n 's/^DEB=//p' "$upstream")
+  [[ -z $deb ]] || wanted_deb[$(basename "$deb" | cut -d_ -f1)]=1
+done
+query='!$Architecture (source)'
+while read -r src _; do
+  [[ -z $src ]] || query+=", !(\$Source ($src) | Name ($src))"
+done <<<"$sources"
+# aptly exits 1 with "ERROR: no results" when nothing matches.
+orphans=$(aptly repo search -format='{{.Package}}' "$repo" "$query" 2>/dev/null | sort -u || true)
+for name in $orphans; do
+  [[ -n ${wanted_deb[$name]:-} ]] && continue
+  aptly repo remove "$repo" "Name ($name)" | sed -n 's/^\[-\] \(.*\) removed$/dropped from the repository: \1/p'
+done
 
 base="$repo-$(date +%Y%m%dT%H%M%S)"
 snap="$base"; n=1

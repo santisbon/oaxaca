@@ -8,8 +8,10 @@
 #   - the desktop's version: OMARCHY_PORT_DATE, _COUNT and _COMMIT in distro.conf are set from
 #     the fork's pushed HEAD (build.sh only checks them against the commit it fetches);
 #   - the packages to build: those whose version at the top of the rendered debian/changelog is
-#     missing from the published source index. A package changed without a version bump is not
-#     built; repo-publish.sh's guard refuses its file if a build of it turns up.
+#     missing from the published source index, and those whose upstream file names a release .deb
+#     (DEB=, published unchanged, with no source package) missing from the published binary
+#     index. A package changed without a version bump is not built; repo-publish.sh's guard
+#     refuses its file if a build of it turns up.
 # The first failing step stops the release. Prompts: sudo (none expected), git's commit editor,
 # gpg's pinentry for the apt signing key passphrase (for the repository and the ISO's checksums), and
 # the questions before the apt repository's upload and the ISO's upload.
@@ -36,6 +38,8 @@ changelog=packages/desktop/debian/changelog.in
 
 # The published versions, "<source> <version>" per line, from the repository's source index.
 published=$(curl -fsSL "$APT_URL/dists/$BASE_SERIES/$APT_COMPONENT/source/Sources.gz" | gunzip | awk '/^Package:/ {p=$2} /^Version:/ {print p" "$2}')
+# The same from the binary index, for the release .debs published unchanged.
+published_debs=$(curl -fsSL "$APT_URL/dists/$BASE_SERIES/$APT_COMPONENT/binary-amd64/Packages" | awk '/^Package:/ {p=$2} /^Version:/ {print p" "$2}')
 # The fork's HEAD as the desktop's version parts: commit date in UTC, commits since Omarchy's tag,
 # short hash.
 d=$(TZ=UTC git -C "$fork" log -1 --format=%cd --date=format-local:%Y%m%d)
@@ -45,18 +49,31 @@ c=$(git -C "$fork" rev-parse --short=8 HEAD)
 # The package directories whose version at the top of the rendered debian/changelog is not
 # published. Before step 2 the desktop's rendered changelog still names distro.conf's commit, so
 # with --message the desktop counts as changed when the fork has moved past that commit.
+# A package directory's "<name> <version>": the top of its rendered debian/changelog, or for a
+# release .deb (DEB= in its upstream file) the .deb's file name, <package>_<version>_<arch>.deb.
+name_version() {
+  local deb
+  deb=$(sed -n 's/^DEB=//p' "$1/upstream" 2>/dev/null)
+  if [[ -n $deb ]]; then
+    basename "$deb" | awk -F_ '{print $1" "$2}'
+  else
+    sed -n '1s/^\([^ ]*\) (\([^)]*\)).*/\1 \2/p' "$1/debian/changelog"
+  fi
+}
 unpublished() {
-  local dir top
+  local dir top index
   for dir in packages/*/; do
-    top=$(sed -n '1s/^\([^ ]*\) (\([^)]*\)).*/\1 \2/p' "$dir/debian/changelog")
-    if [[ $dir == packages/desktop/ && $c != "$OMARCHY_PORT_COMMIT" ]] || ! grep -qxF "$top" <<<"$published"; then
+    top=$(name_version "$dir")
+    index=$published
+    grep -q '^DEB=' "$dir/upstream" 2>/dev/null && index=$published_debs
+    if [[ $dir == packages/desktop/ && $c != "$OMARCHY_PORT_COMMIT" ]] || ! grep -qxF "$top" <<<"$index"; then
       echo "${dir%/}"
     fi
   done
 }
 # The release commit's message from the package directories given: the desktop as
 # "desktop <OMARCHY_PORT_VERSION>" (the version without its Debian revision), first; every other
-# package as "<directory name> <version at the top of its debian/changelog>".
+# package as "<directory name> <version>" (name_version above).
 release_message() {
   local dir parts=()
   for dir in "$@"; do
@@ -64,7 +81,7 @@ release_message() {
   done
   for dir in "$@"; do
     [[ $dir == packages/desktop ]] && continue
-    parts+=("${dir#packages/} $(sed -n '1s/^[^ ]* (\([^)]*\)).*/\1/p' "$dir/debian/changelog")")
+    parts+=("${dir#packages/} $(name_version "$dir" | cut -d' ' -f2)")
   done
   local IFS=,
   printf 'Release: %s\n' "${parts[*]}" | sed 's/,/, /g'
