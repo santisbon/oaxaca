@@ -1,5 +1,14 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Install > Service > AirPods pairs the AirPods as soon as it finds them,
+    and asks which AirPods to pair only when it finds more than one; the
+    pairing failed with "not available" when the AirPods were picked more
+    than about 30 seconds after they were found.
+
+ -- @MAINTAINER@  Mon, 26 Oct 2026 23:45:14 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261027.144.b327c362-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Install > Service > AirPods finds AirPods that aren't paired yet; it
     reported "No AirPods found" even while the case's light was flashing
     white.
