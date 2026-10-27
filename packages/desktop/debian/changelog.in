@@ -1,5 +1,26 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Install > Service > AirPods adds an AirPods panel to the bar, with each
+    pod's and the case's battery and the listening controls, pairing the
+    AirPods first if they aren't paired yet. The panel comes from
+    @DISTRO_NAME@'s fork of the omarchy-pods plugin, whose background
+    program is confined by an AppArmor profile. Remove > Services > AirPods
+    takes the panel, the background program, the profile and the AirPods'
+    settings away again.
+  * Install > Service lists Spotify, AirPods, 1Password, Mullvad VPN and
+    Signal first, and Remove > Services follows the same order.
+  * Remove > Services > Spotify and 1Password, and the new Remove > Editor >
+    VSCode and Sublime Text, remove the app together with its publisher's apt
+    repository, which Remove > Package leaves behind.
+  * The manual's Getting Started page no longer links to Omarchy's ISO,
+    points to the website's commands for checking @DISTRO_NAME@'s ISO, and
+    explains that gpg's "key is not certified" warning doesn't mean the ISO
+    is bad.
+
+ -- @MAINTAINER@  Mon, 26 Oct 2026 20:47:37 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261026.140.4ef5ff47-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * A C and C++ compiler and the development files that Omarchy plugins
     build against are preinstalled (build-essential, libssl-dev and the Qt 6
     and PulseAudio development packages), so a plugin's own setup works as
