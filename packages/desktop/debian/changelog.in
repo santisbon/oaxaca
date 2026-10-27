@@ -1,5 +1,17 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Install > Service > iPhone installs iphonebridge from the distro's
+    repository, pairs the iPhone, and sets up its messages, contacts,
+    per-app notifications and calls, with iphonebridge's daemon confined by
+    AppArmor. Remove > Services > iPhone removes iphonebridge, oFono, the
+    pairing and iphonebridge's data.
+  * Install > Service > AirPods shows the AirPods widget in the bar right
+    away; the widget was missing until the shell restarted.
+
+ -- @MAINTAINER@  Tue, 27 Oct 2026 10:29:43 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261027.146.cee307bb-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Install > Service > AirPods no longer reports the AirPods daemon as
     unconfined just because the daemon hasn't finished starting: the
     installer waits up to 10 seconds for the daemon's AppArmor profile.
