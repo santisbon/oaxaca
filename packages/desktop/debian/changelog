@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261027.153.98e3c979-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261027.154.b0150cc3-0oaxaca1) stonking; urgency=medium
 
   * Install > Service > iPhone waits for Bluetooth keyboards and mice to
     reconnect after restarting Bluetooth, so the pairing code can be
