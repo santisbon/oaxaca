@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261027.144.b327c362-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261027.145.93251e2b-0oaxaca1) stonking; urgency=medium
 
   * Install > Service > AirPods pairs the AirPods as soon as it finds them,
     and asks which AirPods to pair only when it finds more than one; the
