@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261027.146.cee307bb-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261027.149.79284018-0oaxaca1) stonking; urgency=medium
 
   * Install > Service > iPhone installs iphonebridge from the distro's
     repository, pairs the iPhone, and sets up its messages, contacts,
