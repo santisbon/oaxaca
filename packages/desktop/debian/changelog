@@ -1,5 +1,13 @@
 oaxaca-desktop (4.0.6+git20261027.154.b0150cc3-0oaxaca1) stonking; urgency=medium
 
+  * Remove > Services > iPhone removes iphonebridge after an install
+    whose pairing failed; it used to stop right after stopping the
+    daemon.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Tue, 27 Oct 2026 16:12:41 -0500
+
+oaxaca-desktop (4.0.6+git20261027.154.b0150cc3-0oaxaca1) stonking; urgency=medium
+
   * Install > Service > iPhone waits for Bluetooth keyboards and mice to
     reconnect after restarting Bluetooth, so the pairing code can be
     confirmed on the keyboard.
