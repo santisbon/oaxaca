@@ -1,5 +1,18 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Install > Service > iPhone finishes only when messages, contacts,
+    per-app notifications, calls and media controls all work, and says
+    which ones it is still waiting for. It connects the iPhone over
+    classic Bluetooth so calls and media controls come up, restarts oFono
+    after a crash, and needs iphonebridge 0.20.5 or later.
+  * Remove > Services > iPhone also removes the oFono restart setting.
+  * Crashes are recorded: the desktop installs systemd-coredump, so
+    the "Process crashed" notification and the crash diagnosis work.
+
+ -- @MAINTAINER@  Tue, 27 Oct 2026 14:18:54 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261027.151.87475bad-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Remove > Services > iPhone says what it is doing; removing the
     iPhone's pairing can take half a minute with nothing on screen.
   * Install > Service > iPhone says that some of the iPhone's toggles
