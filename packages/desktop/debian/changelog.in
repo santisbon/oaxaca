@@ -1,5 +1,13 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Install > Service > AirPods no longer reports the AirPods daemon as
+    unconfined just because the daemon hasn't finished starting: the
+    installer waits up to 10 seconds for the daemon's AppArmor profile.
+
+ -- @MAINTAINER@  Tue, 27 Oct 2026 00:23:34 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261027.145.93251e2b-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Install > Service > AirPods pairs the AirPods as soon as it finds them,
     and asks which AirPods to pair only when it finds more than one; the
     pairing failed with "not available" when the AirPods were picked more
