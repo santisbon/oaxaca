@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261027.151.87475bad-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261027.153.98e3c979-0oaxaca1) stonking; urgency=medium
 
   * Install > Service > iPhone finishes only when messages, contacts,
     per-app notifications, calls and media controls all work, and says
