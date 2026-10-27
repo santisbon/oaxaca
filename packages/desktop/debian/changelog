@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261027.156.7a8aa83f-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261027.157.b91cfa14-0oaxaca1) stonking; urgency=medium
 
   * Remove > Services > iPhone prints what the user has to do in yellow,
     and asks for a key press on each Bluetooth keyboard and a move of
