@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261027.157.b91cfa14-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261028.159.fe5295ae-0oaxaca1) stonking; urgency=medium
 
   * Install > Service > Sidra (Apple Music) installs Sidra, an Apple
     Music app, from the Snap Store; Remove > Services removes it.
