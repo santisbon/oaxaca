@@ -2,7 +2,7 @@
 # downloads it into build/ and checks it against the SHA-256, and make publish adds it to the
 # repository as it is, so the repository serves the same bytes as the GitHub release and apt runs
 # iphonebridge's own maintainer scripts (docs/6, choice 109). The SHA-256 is the digest GitHub
-# records for the release's file (gh release view v0.20.5 -R santisbon/iphonebridge, 2026-10-27).
-DEB=https://github.com/santisbon/iphonebridge/releases/download/v0.20.5/iphonebridge_0.20.5_all.deb
-SHA256=6793b3d907f2348ca54e632069932da63025b70661fbba9a0b61fb55aaa4b225
+# records for the release's file (gh release view v0.21.0 -R santisbon/iphonebridge, 2026-10-28).
+DEB=https://github.com/santisbon/iphonebridge/releases/download/v0.21.0/iphonebridge_0.21.0_all.deb
+SHA256=487872394030a295cb4e1fd57fde03966dd598f129041ec9ee959f87930cbeda
 RELEASES=santisbon/iphonebridge
