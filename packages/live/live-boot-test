@@ -114,11 +114,13 @@ echo "live packages: installed layer $(grep -c -E "$live_re" /rofs/var/lib/dpkg/
 # Installer steps that run inside the target (shellprocess with dontChroot false) must not call
 # a program from a package only the live layer has: the target is the installed system's layer
 # (casper/filesystem.manifest); sddm-last-user, shipped in the installer package, failed that way
-# on 2026-10-12.
+# on 2026-10-12. Only an absolute path that is an executable file here counts as a program: the
+# system step's commands also name data files, such as /cdrom/pool/Packages (docs/7, choice 64).
 bad=()
 for conf in /etc/calamares/modules/shellprocess_*.conf; do
   grep -q '^dontChroot: *true' "$conf" && continue
   for prog in $(sed -n 's/^ *- *"\(.*\)"$/\1/p' "$conf" | tr ' ' '\n' | grep '^/\|^-/' | sed 's/^-//'); do
+    [[ -f $prog && -x $prog ]] || continue
     owner=$(dpkg -S "$prog" 2>/dev/null | cut -d: -f1 | head -1)
     cut -f1 /cdrom/casper/filesystem.manifest | grep -qx "$owner" || bad+=("$(basename "$conf"):$prog($owner)")
   done
