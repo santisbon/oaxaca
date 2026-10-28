@@ -1,5 +1,13 @@
 oaxaca-desktop (4.0.6+git20261028.163.8870e4ed-0oaxaca1) stonking; urgency=medium
 
+  * The update tells users of the AirPods plugin how to install its fix:
+    Bluetooth keyboards and mice reconnect within seconds after a restart,
+    and the AirPods play at their best quality.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Wed, 28 Oct 2026 17:05:39 -0500
+
+oaxaca-desktop (4.0.6+git20261028.163.8870e4ed-0oaxaca1) stonking; urgency=medium
+
   * The manual's Oaxaca notes name Oaxaca's commands, folders and menu
     entries, such as Update > Oaxaca and oaxaca pkg add.
   * The manual's Oaxaca notes no longer point to the distro's design
