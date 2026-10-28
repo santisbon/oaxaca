@@ -17,10 +17,10 @@ render:            ## Render every *.in file from distro.conf
 branding:          ## Draw the distro's artwork into the desktop and installer packages, and build/branding/mark.svg for the icon font
 	scripts/branding.py
 
-check-render: render   ## Fail if committed rendered files don't match distro.conf (CI)
+check-render: render   ## Fail if committed rendered files don't match distro.conf
 	@git diff --exit-code -- . ':!build' >/dev/null || { echo "rendered files are out of date: run 'make render' and commit the result"; git --no-pager diff --stat -- . ':!build'; exit 1; }
 
-check-versions:    ## Fail if a package directory changed since the last v* tag without a version bump (CI)
+check-versions:    ## Fail if a package directory changed since the last v* tag without a version bump
 	scripts/version-check.sh
 
 upstream-check:    ## Fail if a repackaged program has a newer GitHub release (RELEASES=), or Ubuntu a newer upload of a rebuilt package (DSC=)

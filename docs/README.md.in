@@ -51,7 +51,7 @@ Nothing is ever installed and then stripped out: the root filesystem is assemble
   - [`mmdebstrap` with `dpkg-scanpackages` (`make upgrade-test`)](#mmdebstrap-with-dpkg-scanpackages-make-upgrade-test)
   - [`qemu-system-x86_64` on the published desktop (`make session-upgrade-test`)](#qemu-system-x86_64-on-the-published-desktop-make-session-upgrade-test)
   - [`curl` with GitHub's API (`make upstream-check`)](#curl-with-githubs-and-launchpads-apis-make-upstream-check)
-  - [GitHub Actions (`.github/workflows/build.yml`)](#github-actions-githubworkflowsbuildyml)
+  - [GitHub Actions (`.github/workflows/upstream-check.yml`)](#github-actions-githubworkflowsupstream-checkyml)
   - [`scripts/suspend-baseline.sh` (measurement, not build)](#scriptssuspend-baselinesh-measurement-not-build)
 - [How the pieces fit together](#how-the-pieces-fit-together)
 - [Building the distro from source](#building-the-distro-from-source)
@@ -403,7 +403,6 @@ scripts/
   suspend-baseline.sh  one measured suspend/resume cycle, used for the baseline
 packages/<dir>/       one source package per directory: debian/, and an "upstream" file naming what a
                      third-party package is built from; each one is a row of "At a glance"
-.github/workflows/build.yml   CI: the same make targets on an Ubuntu runner
 .github/workflows/upstream-check.yml   CI, weekly: make upstream-check
 infra/apt-repo/      the apt repository's hosting: its CloudFormation template and README (make apt-infra)
 infra/iso/           the ISO downloads' hosting at @ISO_HOST@: its CloudFormation template and README (make iso-infra)
@@ -427,7 +426,7 @@ The distro's name, `@DISTRO_NAME@`, and its lowercase identifier, `@DISTRO_ID@`,
 
 ```
 make render            # render every *.in
-make check-render      # what CI runs: render, then fail if anything changed
+make check-render      # render, then fail if anything changed
 ```
 
 ### `mmdebstrap` (`make chroot`)
@@ -593,11 +592,9 @@ A newer Ubuntu upload of a rebuilt package: read its changelog for the distro's 
 
 A new LocalSend release: in `packages/localsend/upstream`, change the version in both URLs and both SHA-256s (GitHub shows each file's SHA-256 on the release page), add a changelog entry, `make build PKG=packages/localsend`, then publish. A new ttfx release: see `packages/ttfx/README.md`. A new Voxtype release: in `packages/voxtype/sources.list`, change the version in the URL and the SHA-256, add a changelog entry, `make build PKG=packages/voxtype`, then publish. A new iphonebridge release: in `packages/iphonebridge/upstream`, point `DEB=` at the new release's `.deb` and set `SHA256=` to the digest GitHub shows for that file, `make build PKG=packages/iphonebridge`, then publish.
 
-### GitHub Actions (`.github/workflows/build.yml`)
+### GitHub Actions (`.github/workflows/upstream-check.yml`)
 
-Both workflows, `build` and `upstream-check`, are disabled on GitHub since 2026-10-19 (the workflow files are unchanged); turning them back on is in [To do](#to-do).
-
-On every push, pull request and `v*` tag, four jobs run on `ubuntu-26.04` runners. `prepare` runs `make check-render` and `make check-versions`, lists the directories under `packages/` and runs `make chroot` once (cached weekly). `build` runs one job per package directory, in parallel: a job whose package directory, `distro.conf`, build scripts and chroot week are unchanged since its last successful build restores that build from the cache and uploads it; otherwise it installs sbuild, mmdebstrap and cargo and runs `make build PKG=packages/<directory>` with `TMPDIR=/var/tmp` (sbuild unpacks the chroot and builds under `/tmp` otherwise, a 3.9 GB tmpfs on the runner; `quickshell` needs 4.8 GB there) and `DEB_BUILD_OPTIONS=parallel=2` (the runner has 16 GB; `quickshell` peaks at 12.4 GB with four compiler jobs and 1.9 GB with two). Each job uploads its packages and sbuild's build log as the artifact `packages-<directory>`. `upgrade-test` gathers every artifact into `build/` and runs `make upgrade-test` against the published archive. On a tag, `release` gathers every artifact and attaches the packages to a GitHub Release. The runners use the same toolchain as the workstation, so a green run means the packages build from a clean checkout. Publishing stays on the workstation, where the signing key is.
+The one workflow, `upstream-check`, runs `make upstream-check` weekly on an `ubuntu-26.04` runner. It is disabled on GitHub since 2026-10-19; turning it back on is in [To do](#to-do). Building, testing and publishing run on the workstation, through `make release` (docs/2, choice 8).
 
 ### `scripts/suspend-baseline.sh` (measurement, not build)
 
@@ -634,7 +631,7 @@ Ubuntu archive + build/{archive-keyring,apt-source,base[,nvidia,session,quickshe
                                                 tar + mke2fs (+ Omarchy's shell/ for the session profile; /etc/skel and apply-system for desktop) ──▶ ext4 image ──qemu──▶ boot checks   (make rootfs-test)
                                                 tar + unshare/chroot ──▶ ubuntu-drivers devices, @DISTRO_ID@-drivers-install --show, apt --simulate   (make drivers-check)
 
-@APT_URL@ (N) + build/*.deb (N+1) ──mmdebstrap (minbase + N), apt-get full-upgrade, @DISTRO_ID@-migrate──▶ build/upgrade-test/report.txt   (make upgrade-test; CI)
+@APT_URL@ (N) + build/*.deb (N+1) ──mmdebstrap (minbase + N), apt-get full-upgrade, @DISTRO_ID@-migrate──▶ build/upgrade-test/report.txt   (make upgrade-test)
 @APT_URL@ (N, desktop tarball) + build/*.deb (N+1) ──qemu: log in on N, @DISTRO_ID@-update -y inside the session──▶ desktop checks on N+1   (make session-upgrade-test)
 
 desktop tarball (the installed system) + live tarball (PROFILE=live: desktop + casper + @DISTRO_ID@-live + @DISTRO_ID@-installer) + the NVIDIA driver pool (apt download) ──mksquashfs (two layers: the desktop, then what the live tarball adds), signed shim and GRUB into a FAT image, xorriso──▶ build/iso/@DISTRO_ID@-@BASE_VERSION@-amd64.iso (+ -test.iso)   (make iso)
@@ -642,7 +639,7 @@ desktop tarball (the installed system) + live tarball (PROFILE=live: desktop + c
                                                               qemu + OVMF (Secure Boot on, then off) ──▶ live session checks   (make iso-test)
 ```
 
-CI runs the first three rows (render, chroot, build) and the upgrade test on every push and hands the packages to a GitHub Release; the workstation runs the publish and push rows and the root filesystem rows.
+The workstation runs every row, through `make release`.
 
 ## Building the distro from source
 
@@ -739,7 +736,7 @@ Step 4 matters most on a new machine. The new machine's aptly database starts em
 | 3 | `packages/<package>/debian/changelog.in` of every other package that changed, where `<package>` is the package's directory name (`installer`, `live`, ...) | this repository |
 | 4 | the `docs/` documents that record each change, such as `docs/6 - omarchy-port.md`; `docs/README.md.in` where it describes changed behavior | this repository |
 
-Files with a `.in` template are never edited directly: `make render` writes each one from its template, and both are committed (CI's `make check-render` fails when they differ).
+Files with a `.in` template are never edited directly: `make render` writes each one from its template, and both are committed (`make check-render` fails when they differ).
 
 1. **Commit the fork's changes** on the `@OMARCHY_PORT_REF@` branch in `~/Projects/omarchy` (`make release` pushes them, and refuses a fork with uncommitted changes).
 2. **When the fork changed, give the desktop package a new changelog entry.** The top entry of `packages/desktop/debian/changelog.in` carries the placeholder `@@OMARCHY_PORT_VERSION@@`, which `make render` fills from `distro.conf`, so the top entry always names the version being built. Before `make release` moves `distro.conf` to the fork's new commit, write the published version into the top entry, while `distro.conf` still names that version:

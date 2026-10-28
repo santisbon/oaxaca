@@ -24,7 +24,7 @@
 # Not covered: a running desktop (first-run, the shell), the kernel and the bootloader, which
 # are the boot tests' job. Before the first release the published set is small, so N is too.
 #
-# Usage: scripts/upgrade-test.sh      (make upgrade-test; CI's upgrade-test job)
+# Usage: scripts/upgrade-test.sh      (make upgrade-test; step 7 of make release)
 # Env:   UBUNTU_MIRROR, UBUNTU_SECURITY_MIRROR   as in rootfs-create.sh
 # Needs: mmdebstrap, uidmap, ubuntu-keyring, dpkg-dev (dpkg-scanpackages), curl.
 set -euo pipefail

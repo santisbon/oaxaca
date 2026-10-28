@@ -18,7 +18,7 @@
 # here. The publish guard catches that case by content, and PORT.md asks for a changelog entry
 # with every port change.
 #
-# Usage: scripts/version-check.sh        (make check-versions; CI's prepare job)
+# Usage: scripts/version-check.sh        (make check-versions)
 # Env:   VERSION_CHECK_TAG  a ref to compare against instead of the newest v* tag
 set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
