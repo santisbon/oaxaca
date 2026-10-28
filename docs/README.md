@@ -253,7 +253,9 @@ sudo apt-get --solver internal --fix-policy install
 
 ### Secure Boot
 
-Oaxaca boots with Secure Boot on or off and never asks the user to enroll a key. Both the live USB and the installed system boot through Ubuntu's own signed chain: shim (signed by Microsoft, so the firmware trusts it) loads Canonical's signed GRUB and kernel. Secure Boot is supported, never required: Oaxaca does not check or change the firmware setting.
+Oaxaca boots with Secure Boot on or off. Both the live USB and the installed system boot through Ubuntu's own signed chain: shim (signed by Microsoft, so the firmware trusts it) loads Canonical's signed GRUB and kernel. Secure Boot is supported, never required: Oaxaca does not check or change the firmware setting.
+
+With Secure Boot on, the kernel loads only modules signed by a key the firmware or shim trusts. Everything the system and the installer put in place is signed by Canonical, so no key of the user's own is needed for them. A kernel module that DKMS builds on the machine is the one exception: Install > Gaming > Xbox Controllers installs `xpadneo-dkms` from Ubuntu's archive, and Ubuntu's DKMS (`dkms` 3.2.2-1ubuntu1) signs the module with a Machine Owner Key it keeps in `/var/lib/shim-signed/mok/` (`MOK.der`, `MOK.priv`), which has to be enrolled once. Ubuntu's packaging asks for the enrollment itself, so the user needs to know nothing about keys. Verified on 2026-10-27 on a fresh install on the Legion laptop with Secure Boot on: the enrollment was asked for once, the user typed only a password, and the controller worked.
 
 ### NVIDIA and AMD GPUs
 
