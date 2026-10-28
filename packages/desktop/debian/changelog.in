@@ -1,5 +1,14 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * The manual's Oaxaca notes name Oaxaca's commands, folders and menu
+    entries, such as Update > Oaxaca and oaxaca pkg add.
+  * The manual's Oaxaca notes no longer point to the distro's design
+    documents or build settings, and give the address for bug reports.
+
+ -- @MAINTAINER@  Tue, 27 Oct 2026 23:41:50 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261028.159.fe5295ae-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Install > Service > Sidra (Apple Music) installs Sidra, an Apple
     Music app, from the Snap Store; Remove > Services removes it.
   * The manual no longer says Oaxaca never asks to enroll a key.
