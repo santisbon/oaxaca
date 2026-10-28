@@ -1,5 +1,13 @@
 oaxaca-desktop (4.0.6+git20261027.157.b91cfa14-0oaxaca1) stonking; urgency=medium
 
+  * Install > Service > Sidra (Apple Music) installs Sidra, an Apple
+    Music app, from the Snap Store; Remove > Services removes it.
+  * The manual no longer says Oaxaca never asks to enroll a key.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Tue, 27 Oct 2026 20:46:17 -0500
+
+oaxaca-desktop (4.0.6+git20261027.157.b91cfa14-0oaxaca1) stonking; urgency=medium
+
   * Remove > Services > iPhone prints what the user has to do in yellow,
     and asks for a key press on each Bluetooth keyboard and a move of
     each Bluetooth mouse after restarting Bluetooth.
