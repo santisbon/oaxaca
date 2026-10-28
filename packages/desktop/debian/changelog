@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261028.159.fe5295ae-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261028.163.8870e4ed-0oaxaca1) stonking; urgency=medium
 
   * The manual's Oaxaca notes name Oaxaca's commands, folders and menu
     entries, such as Update > Oaxaca and oaxaca pkg add.
