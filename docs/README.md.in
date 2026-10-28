@@ -594,7 +594,7 @@ A new LocalSend release: in `packages/localsend/upstream`, change the version in
 
 ### GitHub Actions (`.github/workflows/upstream-check.yml`)
 
-The one workflow, `upstream-check`, runs `make upstream-check` weekly on an `ubuntu-26.04` runner. It is disabled on GitHub since 2026-10-19; turning it back on is in [To do](#to-do). Building, testing and publishing run on the workstation, through `make release` (docs/2, choice 8).
+The one workflow, `upstream-check`, runs `make upstream-check` weekly on an `ubuntu-26.04` runner. It is disabled on GitHub since 2026-10-19; `gh workflow enable upstream-check` turns it back on. Building, testing and publishing run on the workstation, through `make release` (docs/2, choice 8).
 
 ### `scripts/suspend-baseline.sh` (measurement, not build)
 
