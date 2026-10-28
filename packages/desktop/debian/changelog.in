@@ -4,6 +4,9 @@
     entries, such as Update > Oaxaca and oaxaca pkg add.
   * The manual's Oaxaca notes no longer point to the distro's design
     documents or build settings, and give the address for bug reports.
+  * Getting Started has a table of NVIDIA GPU architectures with the
+    driver each one needs, and how to install the 580 driver on Volta,
+    Pascal and Maxwell cards.
 
  -- @MAINTAINER@  Tue, 27 Oct 2026 23:41:50 -0500
 
