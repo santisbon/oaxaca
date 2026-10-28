@@ -1,3 +1,12 @@
+@DISTRO_ID@-installer (0.1.16) @BASE_SERIES@; urgency=medium
+
+  * An install without a network completes on machines whose hardware
+    scripts install packages the installed system lacks, such as
+    libmfx-gen1.2 on Intel HD Graphics: the system step reads them from
+    the medium's package pool (docs/7, choice 64).
+
+ -- @MAINTAINER@  Wed, 28 Oct 2026 12:24:33 -0500
+
 @DISTRO_ID@-installer (0.1.15) @BASE_SERIES@; urgency=medium
 
   * The welcome page no longer checks for a network: an install without

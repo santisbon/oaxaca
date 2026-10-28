@@ -686,7 +686,7 @@ A change reaches users one of two ways. The installation ISO (the [live medium](
 1. The installer: Calamares (our rebuild) and KPMcore (Ubuntu's), `@DISTRO_ID@-installer` (its pages and settings, `keep-previous-loader`, `hardware-install`, `sddm-last-user`) and the install-time steps (`@DISTRO_ID@-apply-system --first-install`, the drivers and hardware steps). They run only from the medium, so a fix helps the next install only.
 2. The live session: `@DISTRO_ID@-live`, the live user and what the live desktop starts.
 3. The medium's boot setup: its GRUB menu, kernel command line and EFI System Partition image.
-4. The medium's package pool (`/cdrom/pool`, `scripts/driver-pool.sh`): the NVIDIA driver branch and the hardware packages the installer installs without a network.
+4. The medium's package pool (`/cdrom/pool`, `scripts/driver-pool.sh`): the NVIDIA driver branch, the hardware packages, and every package the install-time scripts install that the installed system lacks, so the installer needs no network (docs/7, choice 64).
 5. Anything that has to be right on the first boot after an install, before an update can run: an installed system that cannot boot, or whose sources entry names the wrong repository URL (`@DISTRO_ID@-apt-source`), never receives the fix through apt. The initramfs hook that put the disk encryption passphrase prompt on a screenless GPU (docs/7, choice 39) was such a change.
 6. Every new install: it gets the ISO's package versions. With a network, `@DISTRO_ID@-update` brings it up to date right after, but a defect that bites before that first update stays. So an ISO is offered for installing only when it was built after every change in this repository and the fork, and its package versions are the published ones.
 

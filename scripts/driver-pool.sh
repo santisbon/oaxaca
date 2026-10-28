@@ -31,6 +31,17 @@
 # the installed system's layer does not carry (docs/7, choice 55). The tarball given is the
 # desktop one, that installed system, so every closure is relative to what an installation has.
 #
+# And every package the installer's system step installs that the installed system lacks: that
+# step runs <id>-apply-system, which runs the install-time scripts under /usr/share/<id>/install
+# (config, hardware, login, post-install), and those scripts install packages with <id>-pkg-add,
+# such as libmfx-gen1.2 on Intel HD Graphics (docs/7, choice 64). The package names are read from
+# the scripts in the tarball, so a new script's packages join the pool with no edit here. An
+# argument to <id>-pkg-add that is not a literal package name fails the build, because the
+# script's packages could not be known here, and so does a named package that ends up neither
+# in the tarball nor in the pool. One package is exempt: firmware-b43-installer downloads
+# Broadcom's firmware while it installs, so the 2012 and early-2013 MacBooks that get it need a
+# network at install whatever the pool holds.
+#
 # No chroot and no user namespace: Ubuntu's AppArmor (kernel.apparmor_restrict_unprivileged_userns=1)
 # gives a namespace that /usr/bin/unshare makes from an unconfined terminal no capabilities, so the
 # chroot's mounts failed ("unshare: cannot change root filesystem propagation: Permission denied",
@@ -114,9 +125,36 @@ echo "branch: $best (nvidia-driver-$best-open, linux-modules-nvidia-$best-open-$
 # otherwise. Without it in the pool the drivers step installed nothing and nouveau drove the GPU
 # (Legion laptop, 2026-10-12, docs/7 choice 36).
 flavour=${kver#*-*-}
+# The install-time scripts' packages (the header's last paragraph). The scripts come from the
+# tarball, which holds them with the distro's command names (<id>-pkg-add).
+network_only=" firmware-b43-installer "
+mkdir -p "$work/scripts"
+tar -xf "$tarball" -C "$work/scripts" "./usr/share/$DISTRO_ID/install/config" "./usr/share/$DISTRO_ID/install/hardware" \
+  "./usr/share/$DISTRO_ID/install/login" "./usr/share/$DISTRO_ID/install/post-install"
+install_pkgs=()
+while IFS=: read -r file num text; do
+  [[ $text =~ ^[[:space:]]*# ]] && continue
+  read -ra names <<<"${text#*"$DISTRO_ID"-pkg-add}"
+  for name in "${names[@]}"; do
+    [[ $name =~ ^[a-z0-9][a-z0-9.+-]+$ ]] \
+      || { echo "${file#"$work/scripts"}:$num: '$name' is not a package name; the pool cannot carry what this line installs" >&2; exit 1; }
+    [[ $network_only == *" $name "* || " ${install_pkgs[*]} " == *" $name "* ]] || install_pkgs+=("$name")
+  done
+done < <(grep -rnE "(^|[^a-z-])$DISTRO_ID-pkg-add( |$)" "$work/scripts")
+installed=$(awk '/^Package:/{p=$2} /^Status: install ok installed$/{print p}' "$root/var/lib/dpkg/status")
+from_archive=() pool_needed=()
+for name in "${install_pkgs[@]}"; do
+  grep -qxF "$name" <<<"$installed" && continue
+  pool_needed+=("$name")
+  # One of ours, built in build/ (asusctl, qmk-hid): the newest .deb joins local/. Otherwise
+  # Ubuntu's archive has it.
+  deb=$(newest_deb "$here/build/${name}_"*.deb)
+  if [[ -n $deb ]]; then cp "$deb" "$work/local/"; else from_archive+=("$name"); fi
+done
+echo "== install-time packages the tarball lacks: ${pool_needed[*]:-none}"
 apt-get -q -y --install-recommends --download-only -o Dir::Cache::archives="$root/pool" \
   install "nvidia-driver-$best-open" "linux-modules-nvidia-$best-open-$flavour" "linux-modules-nvidia-$best-open-$kver" nvidia-vaapi-driver \
-  btrfs-progs timeshift xfsprogs "$work"/local/*.deb >"$work/apt-download.log" 2>&1 \
+  btrfs-progs timeshift xfsprogs "${from_archive[@]}" "$work"/local/*.deb >"$work/apt-download.log" 2>&1 \
   || { echo "apt download: FAILED"; tail -20 "$work/apt-download.log"; exit 1; }
 echo "$best" > "$root/pool/branch"
 ls "$root/pool/"*.deb | wc -l | sed 's/^/debs: /'
@@ -124,6 +162,12 @@ cp "$work/root/pool/"*.deb "$pool/"
 cp "$work/local/"*.deb "$pool/"
 cp "$work/root/pool/branch" "$pool/branch"
 (cd "$pool" && dpkg-scanpackages . /dev/null 2>/dev/null > Packages && gzip -9 -n -k Packages)
+# The check: every package an install-time script installs is in the tarball or in the pool, so
+# the installer's system step needs no network (docs/7, choice 64).
+for name in "${pool_needed[@]}"; do
+  grep -qxF "Package: $name" "$pool/Packages" \
+    || { echo "$name: an install-time script installs it, and it is neither in the tarball nor in the pool" >&2; exit 1; }
+done
 # The license, at the pool's root as well as inside every package: the NVIDIA agreement's
 # section 1.1(d) permits distributing the driver for use with OSI-licensed kernels provided
 # the binaries are unmodified and "this Agreement is provided to each SOFTWARE recipient".
