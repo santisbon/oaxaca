@@ -7,6 +7,9 @@
   * Getting Started has a table of NVIDIA GPU architectures with the
     driver each one needs, and how to install the 580 driver on Volta,
     Pascal and Maxwell cards.
+  * The manual's Mac notes say Oaxaca has not been tested on a Mac yet,
+    instead of saying no Mac has run it, and name the Apple hardware
+    tested so far: the Apple Studio Display, AirPods and the iPhone.
 
  -- @MAINTAINER@  Tue, 27 Oct 2026 23:41:50 -0500
 
