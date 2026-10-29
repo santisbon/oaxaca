@@ -8,7 +8,7 @@
 -- command can be told from one that runs a built-in dispatcher (moving a window, say). Every
 -- other hl call does nothing. The output is one tab-separated line per binding:
 --   <keys> <description> <command, or empty for a built-in dispatcher>
--- The fork's test/shell.d/hyprland-binding-commands-test.sh uses the same stand-in on the
+-- santisbon/omarchy's test/shell.d/hyprland-binding-commands-test.sh uses the same stand-in on the
 -- un-renamed tree.
 --
 -- Usage: HOME=<home> OMARCHY_PATH=/usr/share/<id> lua5.4 boot-test-bindings.lua <hyprland.lua>

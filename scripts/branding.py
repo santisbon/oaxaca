@@ -24,7 +24,7 @@ Writes, all committed:
   packages/desktop/debian/extra/icon.txt         the mark as text art (fastfetch)
   packages/installer/calamares/branding/distro/{logo,icon,welcome}.png
                                                  the installer's sidebar logo, window icon, welcome image
-and, not committed, build/branding/mark.svg: the mark alone, one color, one <path>, which the fork's
+and, not committed, build/branding/mark.svg: the mark alone, one color, one <path>, which santisbon/omarchy's
 omarchy-dev-font takes for the icon font's U+E900.
 
 PNGs are rasterized by ImageMagick with their metadata stripped, so a rerun writes the same bytes.

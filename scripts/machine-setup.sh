@@ -13,7 +13,7 @@
 #
 # Usage: scripts/machine-setup.sh [--tools]   (make machine-setup [SETUP_FLAGS=--tools])
 #        --tools  install the tools and stop: enough to build and test, without publishing
-# Env:   OMARCHY_FORK_DIR  the fork's checkout (default ~/Projects/omarchy)
+# Env:   OMARCHY_FORK_DIR  the checkout of santisbon/omarchy, Oaxaca's fork of omacom/omarchy (default ~/Projects/omarchy)
 set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
 cd "$here"
@@ -29,9 +29,9 @@ case ${1:-} in
 esac
 
 # Build tools (git, curl and cargo for build.sh's downloads; sbuild, mmdebstrap and uidmap for the
-# chroot), the boot tests' QEMU, OVMF and fakeroot (rootfs-boot-test.sh's ext4 image), the ISO's squashfs, FAT and xorriso tools, the fork's test
-# tools (lua5.5, ripgrep, and nodejs for the tests that run JavaScript under node), Qt's QML tools
-# (qt6-declarative-dev-tools, for checking the fork's shell QML with /usr/lib/qt6/bin/qmllint), and
+# chroot), the boot tests' QEMU, OVMF and fakeroot (rootfs-boot-test.sh's ext4 image), the ISO's squashfs, FAT and xorriso tools, the test
+# tools of santisbon/omarchy (lua5.5, ripgrep, and nodejs for the tests that run JavaScript under node), Qt's QML tools
+# (qt6-declarative-dev-tools, for checking the QML of santisbon/omarchy's Quickshell desktop shell with /usr/lib/qt6/bin/qmllint), and
 # aptly for publishing; all from Ubuntu's archive (aptly is in universe).
 sudo apt install git curl cargo python3 sbuild mmdebstrap uidmap devscripts debhelper lintian \
   qemu-system-x86 e2fsprogs ovmf fakeroot squashfs-tools xorriso dosfstools mtools lua5.5 ripgrep nodejs \
@@ -47,7 +47,7 @@ missing=()
 gpg --list-secret-keys "$APT_KEY_FPR" >/dev/null 2>&1 || missing+=("the apt signing key $APT_KEY_FPR in GnuPG (docs/2, Backing up the signing key)")
 aws sts get-caller-identity --profile "$APT_AWS_PROFILE" >/dev/null 2>&1 || missing+=("the aws-cli profile $APT_AWS_PROFILE (aws configure --profile $APT_AWS_PROFILE)")
 git ls-remote origin HEAD >/dev/null 2>&1 || missing+=("GitHub access to this repository over SSH")
-git -C "$fork" ls-remote origin "$OMARCHY_PORT_REF" >/dev/null 2>&1 || missing+=("the Omarchy fork cloned at $fork, with GitHub access over SSH")
+git -C "$fork" ls-remote origin "$OMARCHY_PORT_REF" >/dev/null 2>&1 || missing+=("$OMARCHY_FORK (branch $OMARCHY_PORT_REF) cloned at $fork, with GitHub access over SSH")
 grep -q "^$USER:" /etc/subuid || missing+=("subordinate ids for $USER in /etc/subuid (mmdebstrap's unshare mode)")
 [[ -w /dev/kvm ]] || missing+=("write access to /dev/kvm (QEMU's boot tests)")
 if ((${#missing[@]})); then

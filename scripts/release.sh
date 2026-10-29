@@ -6,7 +6,7 @@
 # iso-create.sh, iso-boot-test.sh, upgrade-test.sh, repo-publish.sh, iso-publish.sh). What it
 # adds is the order, the stops between steps, and two decisions no other script makes:
 #   - the desktop's version: OMARCHY_PORT_DATE, _COUNT and _COMMIT in distro.conf are set from
-#     the fork's pushed HEAD (build.sh only checks them against the commit it fetches);
+#     the pushed HEAD of ~/Projects/omarchy, branch oaxaca of santisbon/omarchy, (build.sh only checks them against the commit it fetches);
 #   - the packages to build: those whose version at the top of the rendered debian/changelog is
 #     missing from the published source index, and those whose upstream file names a release .deb
 #     (DEB=, published unchanged, with no source package) missing from the published binary
@@ -16,8 +16,8 @@
 # gpg's pinentry for the apt signing key passphrase (for the repository and the ISO's checksums), and
 # the questions before the apt repository's upload and the ISO's upload.
 #
-# Before running: commit the fork's changes and this repository's (step 8 commits with git add -A,
-# so anything uncommitted lands in the release commit); when the fork changed, give the desktop package a
+# Before running: commit the changes in ~/Projects/omarchy and in this repository (step 8 commits with git add -A,
+# so anything uncommitted lands in the release commit); when ~/Projects/omarchy has a new commit, give the desktop package a
 # new changelog entry; bump every other package that changed (docs/README.md, "Releasing").
 #
 # The release commit's message is computed, not typed: "Release: " and, comma-separated, the
@@ -27,7 +27,7 @@
 #
 # Usage: scripts/release.sh             (make release; make machine-setup first on a new workstation)
 #        scripts/release.sh --message   (make release-message)
-# Env:   OMARCHY_FORK_DIR  the fork's checkout (default ~/Projects/omarchy)
+# Env:   OMARCHY_FORK_DIR  the checkout of santisbon/omarchy, Oaxaca's fork of omacom/omarchy (default ~/Projects/omarchy)
 set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
 cd "$here"
@@ -40,7 +40,7 @@ changelog=packages/desktop/debian/changelog.in
 published=$(curl -fsSL "$APT_URL/dists/$BASE_SERIES/$APT_COMPONENT/source/Sources.gz" | gunzip | awk '/^Package:/ {p=$2} /^Version:/ {print p" "$2}')
 # The same from the binary index, for the release .debs published unchanged.
 published_debs=$(curl -fsSL "$APT_URL/dists/$BASE_SERIES/$APT_COMPONENT/binary-amd64/Packages" | awk '/^Package:/ {p=$2} /^Version:/ {print p" "$2}')
-# The fork's HEAD as the desktop's version parts: commit date in UTC, commits since Omarchy's tag,
+# The HEAD of ~/Projects/omarchy as the desktop's version parts: commit date in UTC, commits since Omarchy's tag,
 # short hash.
 d=$(TZ=UTC git -C "$fork" log -1 --format=%cd --date=format-local:%Y%m%d)
 n=$(git -C "$fork" rev-list --count "$OMARCHY_TAG"..HEAD)
@@ -48,7 +48,7 @@ c=$(git -C "$fork" rev-parse --short=8 HEAD)
 
 # The package directories whose version at the top of the rendered debian/changelog is not
 # published. Before step 2 the desktop's rendered changelog still names distro.conf's commit, so
-# with --message the desktop counts as changed when the fork has moved past that commit.
+# with --message the desktop counts as changed when ~/Projects/omarchy has a commit newer than that one.
 # A package directory's "<name> <version>": the top of its rendered debian/changelog, or for a
 # release .deb (DEB= in its upstream file) the .deb's file name, <package>_<version>_<arch>.deb.
 name_version() {
@@ -95,12 +95,12 @@ if [[ ${1:-} == --message ]]; then
   exit 0
 fi
 
-# 1. Push the fork: the desktop build clones the fork's branch from GitHub, not the local checkout.
+# 1. Push ~/Projects/omarchy: the desktop build clones santisbon/omarchy's branch from GitHub, not the local checkout.
 [[ $(git -C "$fork" branch --show-current) == "$OMARCHY_PORT_REF" ]] || { echo "!! $fork is not on $OMARCHY_PORT_REF" >&2; exit 1; }
 [[ -z $(git -C "$fork" status --porcelain) ]] || { echo "!! $fork has uncommitted changes: commit them first" >&2; exit 1; }
 git -C "$fork" push
 
-# 2. Point distro.conf at the fork's HEAD (d, n and c above: together the desktop's version) and
+# 2. Point distro.conf at the HEAD of ~/Projects/omarchy (d, n and c above: together the desktop's version) and
 #    render every template.
 if [[ $c != "$OMARCHY_PORT_COMMIT" ]]; then
   # The desktop changelog's top entry carries the version placeholder; the entry below it has to
@@ -110,7 +110,7 @@ if [[ $c != "$OMARCHY_PORT_COMMIT" ]]; then
   pub=$(awk -v s="$DISTRO_ID-desktop" '$1 == s {print $2}' <<<"$published")
   pub=${pub%-*}
   if ! head -1 "$changelog" | grep -qF '(@OMARCHY_PORT_VERSION@-' || ! grep -qF "($pub-" "$changelog"; then
-    echo "!! the fork moved to $c, but $changelog has no new entry above the published $pub's:" >&2
+    echo "!! $fork ($OMARCHY_FORK, branch $OMARCHY_PORT_REF) is at $c, but $changelog has no new entry above the published $pub's:" >&2
     echo "   write $pub into the top entry's first line, add a new entry above it" >&2
     echo "   with the placeholder (docs/README.md, \"Before each release\"), then run make release again" >&2
     exit 1

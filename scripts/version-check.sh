@@ -13,7 +13,7 @@
 # publish such a file for the same reason). A directory that did not change needs no bump, and
 # a package new since the tag passes.
 #
-# Blind spot, by design: packages/desktop builds the fork's branch named in its upstream file
+# Blind spot, by design: packages/desktop builds the branch of santisbon/omarchy named in its upstream file
 # (REF=<branch>), so a change on that branch alone leaves this repository unchanged and passes
 # here. The publish guard catches that case by content, and PORT.md asks for a changelog entry
 # with every port change.

@@ -78,7 +78,7 @@ Where every part of Oaxaca comes from, then each package in Oaxaca's own apt rep
 | Added apt repository | `mise` | mise's own repository, `https://mise.jdx.dev/deb`, suite `stable`. On an installed system: `/etc/apt/sources.list.d/mise.sources` | Omarchy preinstalls mise, and Ubuntu's archive does not carry mise (docs/6, choice 69) |
 | App stores | Nothing preinstalled from either store | Ubuntu's `snapd` (the Snap Store) and `flatpak` with Flathub as a system remote | Applications Ubuntu does not ship as packages install without setup (docs/6, choice 17) |
 | Publishers' repositories | Chrome, VS Code, 1Password, Spotify, Signal, Tailscale and others; none in the image | Each publisher's own apt repository, added by the menu's Install entries when the user picks one | The publishers' own packages, as on Ubuntu |
-| Omarchy port | Omarchy v4.0.6 on apt instead of pacman | The fork <https://github.com/santisbon/omarchy>, branch `oaxaca` on top of the tag `v4.0.6`, built at commit `74e1c7bf` into the `desktop` row of the next table; what the port leaves out, and why, is in the fork's [PORT-REMOVALS.md](https://github.com/santisbon/omarchy/blob/oaxaca/PORT-REMOVALS.md) | Omarchy ships only for Arch Linux ([The Omarchy desktop](#the-omarchy-desktop)) |
+| Omarchy port | Omarchy v4.0.6 on apt instead of pacman | `santisbon/omarchy` <https://github.com/santisbon/omarchy>, Oaxaca's fork of omacom/omarchy, branch `oaxaca` on top of the tag `v4.0.6`, built at commit `74e1c7bf` into the `desktop` row of the next table; what the port leaves out, and why, is in `santisbon/omarchy`'s [PORT-REMOVALS.md](https://github.com/santisbon/omarchy/blob/oaxaca/PORT-REMOVALS.md) | Omarchy ships only for Arch Linux ([The Omarchy desktop](#the-omarchy-desktop)) |
 | Installation ISO | The live session and the installer (Calamares), which installs onto an encrypted disk by default | Two squashfs layers (compressed read-only file system images, the second stacked on the first): the installed system's (the desktop root filesystem) and the live session's on top (casper, Ubuntu's boot code for live sessions, and Calamares's dependencies from Ubuntu's archive, plus `calamares`, `oaxaca-live` and `oaxaca-installer` from the next table); a package pool on the medium holding Ubuntu's NVIDIA driver packages (`restricted`), the file system tools and the hardware packages | An install works offline and removes nothing (docs/7, choices 20, 41, 55) |
 
 The packages in Oaxaca's repository, one row per [source package](#source-package) (the directory under `packages/`). "This repository" means the package's files are all in its `packages/<dir>/`. A dash in the Patches column means none.
@@ -88,7 +88,7 @@ The packages in Oaxaca's repository, one row per [source package](#source-packag
 | `archive-keyring` | 0.1.2 | `oaxaca-archive-keyring`, `oaxaca-apt-source` | This repository | - | The key that signs Oaxaca's repository, and apt's sources entry for the repository |
 | `base` | 0.1.8 | `oaxaca-base` | This repository | - | The base system metapackage (kernel, boot chain, init, network, sound) and the apt pins that keep `xdg-desktop-portal-gnome` and `sudo-rs` out |
 | `session` | 0.1.8 | `oaxaca-session` | This repository | - | The graphics and session metapackage (Mesa, Hyprland, Xwayland, uwsm, SDDM, portals, GNOME Keyring, Quickshell), the backlight udev rule, the GPU environment generator and the volume monitors unit |
-| `desktop` | 4.0.6+git20261028.165.74e1c7bf-0oaxaca1 | `oaxaca-desktop`, `-tools`, `-shell`, `-themes`, `-config` | The Omarchy fork (above), renamed from `omarchy` to `oaxaca` at build time | - (the port's changes are commits on the fork) | The Omarchy desktop: commands, shell, themes, settings, and the metapackage that pulls in the applications |
+| `desktop` | 4.0.6+git20261028.165.74e1c7bf-0oaxaca1 | `oaxaca-desktop`, `-tools`, `-shell`, `-themes`, `-config` | `santisbon/omarchy` (above), renamed from `omarchy` to `oaxaca` at build time | - (the port's changes are commits on `santisbon/omarchy`) | The Omarchy desktop: commands, shell, themes, settings, and the metapackage that pulls in the applications |
 | `fonts` | 3.5.1+ia20261002-0oaxaca1 | `oaxaca-fonts` | The Nerd Fonts 3.5.1 release zip (JetBrains Mono Nerd Font, four faces) and the `iaolo/iA-Fonts` commits Omarchy's recipes pin (iA Writer, 16 faces), downloaded from the file list in `sources.list` | - | Omarchy's fonts, which Ubuntu's archive does not carry |
 | `nvidia` | 0.1.4 | `oaxaca-nvidia` | This repository | - | The NVIDIA install path: `oaxaca-drivers-install` picks the newest open driver branch with Canonical's signed prebuilt modules; an initramfs hook |
 | `hybrid-backlight` | 0.1.0 | `oaxaca-hybrid-backlight` | This repository | - | Hides the NVIDIA GPU's phantom backlight on hybrid-graphics laptops |
@@ -222,7 +222,7 @@ The library through which a program hands [codec](#codec) work to the graphics c
 
 ## To do
 
-The one list of open work for Oaxaca, this repository and the fork, is the GitHub project [Oaxaca](https://github.com/users/santisbon/projects/4): one draft issue per item, each with its Area (such as "To design" or "When something changes upstream") and its Status. Each item says what is known and where its background is. When an item is done, it is marked Done there, and the work is recorded where the work happened: a changelog entry, a numbered choice in one of the step documents, or the fork's [PORT-REMOVALS.md](https://github.com/santisbon/omarchy/blob/oaxaca/PORT-REMOVALS.md), "Restored".
+The one list of open work for Oaxaca, this repository and `santisbon/omarchy`, is the GitHub project [Oaxaca](https://github.com/users/santisbon/projects/4): one draft issue per item, each with its Area (such as "To design" or "When something changes upstream") and its Status. Each item says what is known and where its background is. When an item is done, it is marked Done there, and the work is recorded where the work happened: a changelog entry, a numbered choice in one of the step documents, or `santisbon/omarchy`'s [PORT-REMOVALS.md](https://github.com/santisbon/omarchy/blob/oaxaca/PORT-REMOVALS.md), "Restored".
 
 ## The installed system in detail
 
@@ -300,7 +300,7 @@ Which [codecs](#codec) and [VA-API drivers](#va-api-driver) a stock Ubuntu Deskt
 
 The [top-level README](../README.md) lists what Oaxaca does on Apple hardware; this section gives each item's mechanism and the file it comes from. Only the Studio Display has been tried, on the Legion laptop; no Mac has run Oaxaca yet.
 
-How the Mac fixes are applied: the installer's system step runs `oaxaca-apply-system`, which runs `oaxaca-apply-hardware`, which runs the Omarchy fork's `install/hardware/all.sh`, and that script runs one script per hardware fix. Each script reads the machine's model name (`/sys/class/dmi/id/product_name`, such as `MacBook8,1`) or its PCI IDs (the vendor and device numbers each chip reports, listed by `lspci -nn`, such as `14e4:4331`), and changes nothing on other machines. Every path below that starts with `install/` or `bin/` is in the fork (<https://github.com/santisbon/omarchy>, branch `oaxaca`).
+How the Mac fixes are applied: the installer's system step runs `oaxaca-apply-system`, which runs `oaxaca-apply-hardware`, which runs `install/hardware/all.sh` from `santisbon/omarchy`, and that script runs one script per hardware fix. Each script reads the machine's model name (`/sys/class/dmi/id/product_name`, such as `MacBook8,1`) or its PCI IDs (the vendor and device numbers each chip reports, listed by `lspci -nn`, such as `14e4:4331`), and changes nothing on other machines. Every path below that starts with `install/` or `bin/` is in `santisbon/omarchy` (<https://github.com/santisbon/omarchy>, branch `oaxaca`).
 
 #### Apple Studio Display
 
@@ -327,13 +327,13 @@ These models' keyboards connect over SPI (a chip-to-chip bus) instead of USB, th
 
 #### Not supported
 
-- **Macs with Apple's T2 chip** (most Macs from 2018 to 2020). Omarchy's `install/hardware/apple/fix-t2.sh` sets these Macs up with an out-of-tree kernel and that kernel's pacman repository; the port removed the script (the fork's `PORT-REMOVALS.md`, "Apple T2").
+- **Macs with Apple's T2 chip** (most Macs from 2018 to 2020). Omarchy's `install/hardware/apple/fix-t2.sh` sets these Macs up with an out-of-tree kernel and that kernel's pacman repository; the port removed the script (`santisbon/omarchy`'s `PORT-REMOVALS.md`, "Apple T2").
 - **The Broadcom BCM4360 Wi-Fi** of 2013 to 2015 MacBooks. The chip's only driver is Broadcom's out-of-tree `wl`, packaged as `broadcom-sta-dkms`: DKMS builds the module on the machine, and with Secure Boot on the kernel loads such a module only when it is signed with a Machine Owner Key, which Oaxaca never asks the user to enroll (`PORT-REMOVALS.md`, "The BCM4360's Wi-Fi driver").
 - **Macs with Apple silicon** (M1 and later). Oaxaca is built only for 64-bit Intel and AMD processors (amd64).
 
 ### The Omarchy desktop
 
-[Omarchy](https://github.com/omacom/omarchy) is a Linux distribution: Arch Linux's base (kernel, pacman, boot loader, snapshots) with Omarchy's own layer on top, shipped as two Arch packages (the commands, the Quickshell shell, the themes, and the settings, units and starter files a new user gets) plus a package list and setup scripts that tune the Arch base. Oaxaca takes only that layer and puts Ubuntu underneath instead of Arch. In Oaxaca's fork of Omarchy (the "Omarchy port" row of [At a glance](#at-a-glance), which names the fork, branch and commit), pacman and the AUR are replaced by apt (and, for the few applications Ubuntu does not ship as regular packages, the Snap Store or Flathub), the scripts that configured Arch's base are dropped in favor of Ubuntu's own configuration, and the package list is translated to Ubuntu's names. The build turns the fork into the five packages of the `desktop` row, and updates arrive through apt like the rest of the system.
+[Omarchy](https://github.com/omacom/omarchy) is a Linux distribution: Arch Linux's base (kernel, pacman, boot loader, snapshots) with Omarchy's own layer on top, shipped as two Arch packages (the commands, the Quickshell shell, the themes, and the settings, units and starter files a new user gets) plus a package list and setup scripts that tune the Arch base. Oaxaca takes only that layer and puts Ubuntu underneath instead of Arch. In `santisbon/omarchy`, Oaxaca's fork of Omarchy (the "Omarchy port" row of [At a glance](#at-a-glance), which names that repository's branch and commit), pacman and the AUR are replaced by apt (and, for the few applications Ubuntu does not ship as regular packages, the Snap Store or Flathub), the scripts that configured Arch's base are dropped in favor of Ubuntu's own configuration, and the package list is translated to Ubuntu's names. The build turns `santisbon/omarchy` into the five packages of the `desktop` row, and updates arrive through apt like the rest of the system.
 
 ### Plugins and themes written for Omarchy
 
@@ -353,7 +353,7 @@ Omarchy runs on Arch Linux and Oaxaca on Ubuntu, so a plugin or theme that insta
 The translation table is a plain text file, one Arch name per line followed by its Ubuntu packages, lines starting with `#` ignored:
 
 - on an installed system: `/usr/share/oaxaca/default/oaxaca/arch-package-names`;
-- in the source: `default/omarchy/arch-package-names` in the Omarchy fork (<https://github.com/santisbon/omarchy>, branch `oaxaca`).
+- in the source: `default/omarchy/arch-package-names` in `santisbon/omarchy` (<https://github.com/santisbon/omarchy>, branch `oaxaca`).
 
 Lines from that file:
 
@@ -364,7 +364,7 @@ qt6-declarative qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtq
 ttf-jetbrains-mono-nerd oaxaca-fonts
 ```
 
-The table has 162 entries (2026-10-17), drawn from every package name that the 5602 plugins listed in Omarchy's marketplace ask for in their code, build files and messages (5575 of them could be fetched; 881 name a package), plus the Arch packages Omarchy itself installs. Each Ubuntu package was chosen by the files both distributions install (commands, libraries, Python modules), checked by hand, and is in Ubuntu 26.10's archive or Oaxaca's own repository. An Arch name that is also an Ubuntu package name is never in the table, so the table cannot change what an Ubuntu name installs. Names with no entry are installed as they are, and apt says so when Ubuntu has no such package: software Ubuntu does not package (such as `ruff`, `croc`, `himalaya` or `spotifyd`), AUR-only packages, and the publishers' own packages (Chrome, VS Code, 1Password, Spotify, Signal, Tailscale, Mullvad), which come from the publishers' repositories through the menu's Install > Browser, Editor and Service entries instead. To add a translation, edit the file in the fork and open a pull request against `oaxaca`; on your own machine you can also edit the installed copy, which the next update of `oaxaca-config` replaces.
+The table has 162 entries (2026-10-17), drawn from every package name that the 5602 plugins listed in Omarchy's marketplace ask for in their code, build files and messages (5575 of them could be fetched; 881 name a package), plus the Arch packages Omarchy itself installs. Each Ubuntu package was chosen by the files both distributions install (commands, libraries, Python modules), checked by hand, and is in Ubuntu 26.10's archive or Oaxaca's own repository. An Arch name that is also an Ubuntu package name is never in the table, so the table cannot change what an Ubuntu name installs. Names with no entry are installed as they are, and apt says so when Ubuntu has no such package: software Ubuntu does not package (such as `ruff`, `croc`, `himalaya` or `spotifyd`), AUR-only packages, and the publishers' own packages (Chrome, VS Code, 1Password, Spotify, Signal, Tailscale, Mullvad), which come from the publishers' repositories through the menu's Install > Browser, Editor and Service entries instead. To add a translation, edit the file in `santisbon/omarchy` and open a pull request against `oaxaca`; on your own machine you can also edit the installed copy, which the next update of `oaxaca-config` replaces.
 
 What no layer reaches: plugins that need software Ubuntu does not package (for example `xray`, which is only in Arch's user repository, the AUR), features built on pacman's own files (a widget that watches pacman's log stays idle), and commands Omarchy added after the version Oaxaca carries (v4.0.6). The reasoning, and the sample of marketplace plugins it was measured on, is choice 86 in [docs/6 - omarchy-port.md](6%20-%20omarchy-port.md).
 
@@ -413,7 +413,7 @@ tests/
   factory-reset/       the guest's side of make factory-reset-test: the scripted install, the reset, the checks, a stand-in for gum
   iso-drive/<name>/    driven installer and live-session checks: DRIVE=tests/iso-drive/<name> make iso-test puts the folder's run.sh on a disk the guest runs (docs/7, choices 26, 38, 41, 42)
   gpu-env/run.sh       the session's GPU script against made-up machines (docs/7, choice 43); runs directly, no build
-  launch-dgpu/run.sh   the port's menu launcher and discrete-GPU launcher, from a fork checkout (docs/7, choice 43); runs directly
+  launch-dgpu/run.sh   the port's menu launcher and discrete-GPU launcher, from a checkout of santisbon/omarchy (docs/7, choice 43); runs directly
 build/               build output (not committed)
 ```
 
@@ -462,7 +462,7 @@ So `minbase` and `buildd` are siblings, not a ladder: `minbase` is "enough to ru
 make build                                  # every directory under packages/
 make build PKG=packages/hybrid-backlight    # one package
 make build PKG=packages/quickshell          # a third-party package: downloads its upstream tarball into build/ first
-UPSTREAM_DIR=~/Projects/omarchy make build PKG=packages/desktop   # the Omarchy port from the local checkout (without UPSTREAM_DIR: from the fork's ref)
+UPSTREAM_DIR=~/Projects/omarchy make build PKG=packages/desktop   # the Omarchy port from the local checkout (without UPSTREAM_DIR: from santisbon/omarchy at the ref in packages/desktop/upstream)
 WITH_REPO=1 make build                      # also enable our published repo in the chroot,
                                             # for packages that build-depend on ours
 ```
@@ -625,7 +625,7 @@ build/ ──aptly (snapshot, publish, sign with the gpg key)──▶ ~/.local/
                                                                       │
                      installed systems: oaxaca-apt-source + oaxaca-archive-keyring ──▶ apt update
 
-~/Projects/omarchy (the fork's oaxaca branch) ──git archive, rename at build──▶ build/oaxaca-{desktop,tools,shell,themes,config}*.deb   (make build PKG=packages/desktop)
+~/Projects/omarchy (santisbon/omarchy, branch oaxaca) ──git archive, rename at build──▶ build/oaxaca-{desktop,tools,shell,themes,config}*.deb   (make build PKG=packages/desktop)
 
 Ubuntu archive + build/{archive-keyring,apt-source,base[,nvidia,session,quickshell[,fonts,desktop,tools,shell,themes,config,asdcontrol,hyprland-preview-share-picker,nwg-displays,plymouth,libplymouth5,plymouth-label[,live,installer]]]}.deb ──mmdebstrap (minbase)──▶ build/rootfs/oaxaca-26.10-amd64-<profile>.tar
                                                                                         │        (make rootfs PROFILE=base|session|desktop|live)
@@ -646,7 +646,7 @@ The workstation runs every row, through `make release`.
 
 Going from a fresh clone of this repository to a bootable USB stick is a chain of `make` targets, then one `dd`. Every target is described above; this list gives the order the targets run in on a clean checkout and what each one leaves behind. Nothing here needs root except the final write to the stick. Two targets are missing on purpose. `make render` is absent because every rendered file is committed next to its `.in` template (CI's `make check-render` keeps the two in step), so a clone is complete, and `make build` runs `render` first anyway. `make publish` is absent because no step reads the published repository or the secret signing key: `make rootfs` installs our packages from the `.deb` files in `build/` and writes only Ubuntu's apt sources into the tarball, and the one key file the build needs, the public `packages/archive-keyring/archive-keyring.gpg`, is committed. Publishing matters after installation: the installed system's apt sources entry points at `https://apt.oaxaca.page`, so `apt update` on an installed machine needs the repository published, which is the "Releasing" line under Day-to-day.
 
-1. Install the tools. `make machine-setup SETUP_FLAGS=--tools` runs `scripts/machine-setup.sh`, which installs them from Ubuntu's archive (the list, with what each tool is for, is at the top of the script) and stops; without `SETUP_FLAGS` the script goes on to the publishing setup in [Releasing](#releasing). `lua5.5` and `ripgrep` are not for the build: the Omarchy fork's own tests (`./test/all` in the fork's checkout; the fork's `PORT.md`, "Tests") need `lua5.5`'s `lua` command to read the fork's Hyprland configuration, which is written in Lua, `ripgrep`'s `rg` for three more test files, and `nodejs`'s `node` for the 47 test files that run JavaScript (the shell's `Model.js` files among them). `qt6-declarative-dev-tools` is not for the build or the tests either: `qt6-declarative-dev-tools` provides `/usr/lib/qt6/bin/qmllint`, which checks the fork's shell QML by hand:
+1. Install the tools. `make machine-setup SETUP_FLAGS=--tools` runs `scripts/machine-setup.sh`, which installs them from Ubuntu's archive (the list, with what each tool is for, is at the top of the script) and stops; without `SETUP_FLAGS` the script goes on to the publishing setup in [Releasing](#releasing). `lua5.5` and `ripgrep` are not for the build: the tests of `santisbon/omarchy` (`./test/all` in `~/Projects/omarchy`; `~/Projects/omarchy/PORT.md`, "Tests") need `lua5.5`'s `lua` command to read the Hyprland configuration in `~/Projects/omarchy`, which is written in Lua, `ripgrep`'s `rg` for three more test files, and `nodejs`'s `node` for the 47 test files that run JavaScript (the shell's `Model.js` files among them). `qt6-declarative-dev-tools` is not for the build or the tests either: `qt6-declarative-dev-tools` provides `/usr/lib/qt6/bin/qmllint`, which checks the QML of the Quickshell desktop shell in `~/Projects/omarchy` by hand:
 
    ```sh
    make machine-setup SETUP_FLAGS=--tools
@@ -667,7 +667,7 @@ Going from a fresh clone of this repository to a bootable USB stick is a chain o
    `conv=fsync` makes `dd` wait until the stick has the data before it exits. Any program that writes a raw image to a device does the same job (GNOME Disks' "Restore Disk Image", `cp image /dev/sdX`); the ISO is not re-packed by any of them.
 8. Boot the stick with the firmware's boot menu, Secure Boot on or off. The live session logs in as `oaxaca` and opens the installer; the installer's pages and what runs after them are in [docs/7 - image-installer.md](7%20-%20image-installer.md). This last step is verified in QEMU only so far; the first run on the Legion laptop is carried in that document.
 
-Rebuilding after a change repeats the chain from the step whose input changed: a package edit is steps 3 to 7 (`make build PKG=packages/<dir>` for just that package), a change to the fork's branch is the same with `PKG=packages/desktop`, and an ISO-only change (the GRUB menu, the EFI image) is steps 5 to 7.
+Rebuilding after a change repeats the chain from the step whose input changed: a package edit is steps 3 to 7 (`make build PKG=packages/<dir>` for just that package), a change to `santisbon/omarchy`'s branch is the same with `PKG=packages/desktop`, and an ISO-only change (the GRUB menu, the EFI image) is steps 5 to 7.
 
 ## Day-to-day
 
@@ -681,7 +681,7 @@ Releasing: the hand edits in [Before each release](#before-each-release), `make 
 
 A change reaches users one of two ways. The installation ISO (the [live medium](7%20-%20image-installer.md#live-medium-and-casper) built by `make iso`) is what a new install is made from; the apt repository at `https://apt.oaxaca.page` (filled by `make publish PUBLISH_FLAGS=--push`) is what an installed system updates from, through `oaxaca-update`, the port of Omarchy's update command (`apt-get update`, `apt-get full-upgrade`, then the [migrations](8%20-%20update-path.md#migration), the user's hooks, the cleanup and the reboot offer; [docs/8 - update-path.md](8%20-%20update-path.md)).
 
-**Through the apt repository, no new ISO:** any change inside a [package](#package) that is installed on the system: the desktop (`oaxaca-desktop`, `-tools`, `-shell`, `-themes`, `-config`, built from the Omarchy fork), `oaxaca-base`, `oaxaca-session`, `oaxaca-nvidia`, `oaxaca-hw-legion`, and the Ubuntu packages their dependency lists add. The package's version has to be bumped (`make check-versions`), then built and published; installed systems get it with `oaxaca-update`. What a package install alone cannot change, such as files already in users' home folders (`/etc/skel` only seeds new users), ships as a migration in the fork's `migrations/`, which `oaxaca-update` runs after the packages.
+**Through the apt repository, no new ISO:** any change inside a [package](#package) that is installed on the system: the desktop (`oaxaca-desktop`, `-tools`, `-shell`, `-themes`, `-config`, built from `santisbon/omarchy`), `oaxaca-base`, `oaxaca-session`, `oaxaca-nvidia`, `oaxaca-hw-legion`, and the Ubuntu packages their dependency lists add. The package's version has to be bumped (`make check-versions`), then built and published; installed systems get it with `oaxaca-update`. What a package install alone cannot change, such as files already in users' home folders (`/etc/skel` only seeds new users), ships as a migration in `migrations/` of `santisbon/omarchy`, which `oaxaca-update` runs after the packages.
 
 **Only through a new ISO:**
 1. The installer: Calamares (our rebuild) and KPMcore (Ubuntu's), `oaxaca-installer` (its pages and settings, `keep-previous-loader`, `hardware-install`, `sddm-last-user`) and the install-time steps (`oaxaca-apply-system --first-install`, the drivers and hardware steps). They run only from the medium, so a fix helps the next install only.
@@ -689,7 +689,7 @@ A change reaches users one of two ways. The installation ISO (the [live medium](
 3. The medium's boot setup: its GRUB menu, kernel command line and EFI System Partition image.
 4. The medium's package pool (`/cdrom/pool`, `scripts/driver-pool.sh`): the NVIDIA driver branch, the hardware packages, and every package the install-time scripts install that the installed system lacks, so the installer needs no network (docs/7, choice 64).
 5. Anything that has to be right on the first boot after an install, before an update can run: an installed system that cannot boot, or whose sources entry names the wrong repository URL (`oaxaca-apt-source`), never receives the fix through apt. The initramfs hook that put the disk encryption passphrase prompt on a screenless GPU (docs/7, choice 39) was such a change.
-6. Every new install: it gets the ISO's package versions. With a network, `oaxaca-update` brings it up to date right after, but a defect that bites before that first update stays. So an ISO is offered for installing only when it was built after every change in this repository and the fork, and its package versions are the published ones.
+6. Every new install: it gets the ISO's package versions. With a network, `oaxaca-update` brings it up to date right after, but a defect that bites before that first update stays. So an ISO is offered for installing only when it was built after every change in this repository and `santisbon/omarchy`, and its package versions are the published ones.
 
 **In practice:** a package change is bump, `make build PKG=packages/<dir>`, `make publish PUBLISH_FLAGS=--push`, then `oaxaca-update` on the installed system; before the next install, `make rootfs PROFILE=desktop && make rootfs && make iso && make iso-test` from the same sources. [Releasing](#releasing) does both in one pass.
 
@@ -704,7 +704,7 @@ Two scripts run the whole process; each one's header comment says what the scrip
 - `scripts/machine-setup.sh` (`make machine-setup`), once per workstation;
 - `scripts/release.sh` (`make release`), once per release.
 
-Both expect this repository cloned at `~/Projects/oaxaca` and the Omarchy fork at `~/Projects/omarchy` (branch `oaxaca`; `OMARCHY_FORK_DIR=<path>` names another checkout), and these credentials in place:
+Both expect this repository cloned at `~/Projects/oaxaca` and `santisbon/omarchy` cloned at `~/Projects/omarchy` (branch `oaxaca`; `OMARCHY_FORK_DIR=<path>` names another checkout), and these credentials in place:
 
 - an SSH key that GitHub accepts for both repositories, for `git push`;
 - the apt signing key in GnuPG, restored from the password manager as in [docs/2, Backing up the signing key](2%20-%20build-infra.md#backing-up-the-signing-key);
@@ -732,15 +732,15 @@ Step 4 matters most on a new machine. The new machine's aptly database starts em
 
 | Step | Files edited by hand | Where |
 |---|---|---|
-| 1 | the port's changes | the fork, `~/Projects/omarchy`, branch `oaxaca` |
-| 2 | `packages/desktop/debian/changelog.in`, when the fork changed | this repository |
+| 1 | the port's changes | `santisbon/omarchy`, cloned at `~/Projects/omarchy`, branch `oaxaca` |
+| 2 | `packages/desktop/debian/changelog.in`, when `~/Projects/omarchy` has new commits | this repository |
 | 3 | `packages/<package>/debian/changelog.in` of every other package that changed, where `<package>` is the package's directory name (`installer`, `live`, ...) | this repository |
 | 4 | the `docs/` documents that record each change, such as `docs/6 - omarchy-port.md`; `docs/README.md.in` where it describes changed behavior | this repository |
 
 Files with a `.in` template are never edited directly: `make render` writes each one from its template, and both are committed (`make check-render` fails when they differ).
 
-1. **Commit the fork's changes** on the `oaxaca` branch in `~/Projects/omarchy` (`make release` pushes them, and refuses a fork with uncommitted changes).
-2. **When the fork changed, give the desktop package a new changelog entry.** The top entry of `packages/desktop/debian/changelog.in` carries the placeholder `@OMARCHY_PORT_VERSION@`, which `make render` fills from `distro.conf`, so the top entry always names the version being built. Before `make release` moves `distro.conf` to the fork's new commit, write the published version into the top entry, while `distro.conf` still names that version:
+1. **Commit the changes in `~/Projects/omarchy`** on the `oaxaca` branch in `~/Projects/omarchy` (`make release` pushes them, and refuses to run while `~/Projects/omarchy` has uncommitted changes).
+2. **When `~/Projects/omarchy` has new commits, give the desktop package a new changelog entry.** The top entry of `packages/desktop/debian/changelog.in` carries the placeholder `@OMARCHY_PORT_VERSION@`, which `make render` fills from `distro.conf`, so the top entry always names the version being built. Before `make release` moves `distro.conf` to the new commit of `~/Projects/omarchy`, write the published version into the top entry, while `distro.conf` still names that version:
 
    ```sh
    ( cd ~/Projects/oaxaca && source distro.conf && sed -i "1s/@OMARCHY_PORT_VERSION@/$OMARCHY_PORT_VERSION/" packages/desktop/debian/changelog.in && head -1 packages/desktop/debian/changelog.in )
@@ -756,7 +756,7 @@ Files with a `.in` template are never edited directly: `make render` writes each
     -- @MAINTAINER@  Fri, 16 Oct 2026 18:00:00 -0500
    ```
 
-   `make release` stops with this instruction when the fork moved and the entry is missing.
+   `make release` stops with this instruction when `~/Projects/omarchy` is at a newer commit than the published desktop packages and the entry is missing.
 3. **Bump every other package that changed**: a new entry at the top of its `debian/changelog.in` with a higher version, following [docs/1, Version scheme](1%20-%20policy.md). A package changed without a new version is not built.
 4. **Document each change, render, and commit this repository.** Each change gets its bullets in the changed packages' `debian/changelog.in` entries (steps 2 and 3) and, when it is a decision, a numbered choice in the `docs/` document of its roadmap step, with `docs/README.md.in` updated where it describes the changed behavior. Then render and commit:
 
@@ -777,7 +777,7 @@ Files with a `.in` template are never edited directly: `make render` writes each
    Release: desktop 4.0.6+git20261022.128.a95cf5f7
    ```
 
-   The desktop's version is computed from the fork's HEAD: `4.0.6` is Omarchy's tag (`OMARCHY_TAG` in `distro.conf`), then the commit's date in UTC, the number of the fork's commits since the tag, and the commit's short hash. Every other entry is a package directory whose version at the top of `debian/changelog` is not published yet, with that version. A package missing from the list will not be built, usually because step 3 was skipped. The command stops with "has uncommitted changes" when the fork has uncommitted changes, since a commit changes the hash, and prints "nothing to release" when every version is published.
+   The desktop's version is computed from the HEAD of `~/Projects/omarchy`: `4.0.6` is Omarchy's tag (`OMARCHY_TAG` in `distro.conf`), then the commit's date in UTC, the number of commits in `~/Projects/omarchy` since the tag, and the commit's short hash. Every other entry is a package directory whose version at the top of `debian/changelog` is not published yet, with that version. A package missing from the list will not be built, usually because step 3 was skipped. The command stops with "has uncommitted changes" when `~/Projects/omarchy` has uncommitted changes, since a commit changes the hash, and prints "nothing to release" when every version is published.
 
 ### Each release
 
@@ -802,8 +802,8 @@ cd ~/Projects/oaxaca && make release
 
 What `make release` does, stopping at the first failure:
 
-1. Pushes the fork, after checking it is on `oaxaca` with nothing uncommitted: the desktop build clones the fork's branch from GitHub, not the local checkout.
-2. Sets `OMARCHY_PORT_DATE`, `_COUNT` and `_COMMIT` in `distro.conf` from the fork's HEAD (commit date in UTC, commits since `v4.0.6`, short hash: together the desktop's version) and runs `make render`. When the fork moved, the render rewrites four files, which the release commit (step 8) carries; none of them is edited by hand:
+1. Pushes `~/Projects/omarchy`, after checking that the checkout is on `oaxaca` with nothing uncommitted: the desktop build clones `santisbon/omarchy`'s branch from GitHub, not the local checkout.
+2. Sets `OMARCHY_PORT_DATE`, `_COUNT` and `_COMMIT` in `distro.conf` from the HEAD of `~/Projects/omarchy` (commit date in UTC, commits since `v4.0.6`, short hash: together the desktop's version) and runs `make render`. When `~/Projects/omarchy` has new commits, the render rewrites four files, which the release commit (step 8) carries; none of them is edited by hand:
    - `distro.conf`: the three `OMARCHY_PORT_` values;
    - `packages/desktop/upstream`, from `upstream.in`: `DATE=`, `COUNT=` and `COMMIT=`, which `scripts/build.sh` checks against the commit it fetches;
    - `packages/desktop/debian/changelog`, from `changelog.in`: the top entry's version;
@@ -825,7 +825,7 @@ What `make release` does, stopping at the first failure:
 11. Deletes the builds this release superseded from `build/` with `make prune` (`scripts/build-prune.sh`), keeping the newest build of each package, which is the published one: older `.deb` files, older source packages with their `.changes`, `.buildinfo` and `.build` logs, the newest version's earlier `.build` logs (sbuild writes one per run), tarballs no newest `.dsc` lists, and older unpacked source trees such as `build/oaxaca-desktop-<version>/`. `build/`'s subfolders (`apt-cache/`, `rootfs/`, `iso/`, `git/`) stay. `make prune PRUNE_FLAGS=--dry-run` lists what it would delete.
 12. Lists the ISO that step 6 built with `make iso-publish ISO_PUBLISH_FLAGS=--dry-run` (its [ISO version](../infra/iso/README.md#iso-version), checked against the ISO's own `.disk/info`, and the files an upload would write) and asks `Upload the ISO to oaxaca-iso (get.oaxaca.page)? [y/N]`. On `y`, `make iso-publish` writes `SHA256SUMS`, signs it with the archive key (pinentry asks for the apt signing key passphrase unless gpg-agent still holds it from step 9), uploads the ISO, the checksums, the archive key's public half and `latest.json` to `https://get.oaxaca.page`, deletes all but the newest 2 ISOs, and checks the signature and the size the host serves ([infra/iso/README.md](../infra/iso/README.md), docs/7 choice 59). On anything else the release ends there, and `make iso-publish` uploads the ISO later. After an upload, publish the website, whose build reads `latest.json` for its download button.
 
-A release that stopped resumes with another `make release`: `distro.conf` already names the fork's commit, and the packages built so far are rebuilt. Until then, the four files of step 2 show as changed in `git status`; leave them for the release commit. After the release: `oaxaca-update` on each installed system, and for a new install, the ISO in `build/iso/` written to a USB stick as in [Building the distro from source](#building-the-distro-from-source), step 7.
+A release that stopped resumes with another `make release`: `distro.conf` already names the commit of `~/Projects/omarchy`, and the packages built so far are rebuilt. Until then, the four files of step 2 show as changed in `git status`; leave them for the release commit. After the release: `oaxaca-update` on each installed system, and for a new install, the ISO in `build/iso/` written to a USB stick as in [Building the distro from source](#building-the-distro-from-source), step 7.
 
 ## Conventions
 
@@ -843,8 +843,8 @@ A release that stopped resumes with another `make release`: `distro.conf` alread
 - [docs/3 - rootfs.md](3%20-%20rootfs.md): roadmap step 3. What the base metapackage pulls in and why, the files the build writes into the root filesystem, the choices (os-release diversion, netplan kept, Recommends on with two packages pinned out), how to run the build and the boot test, and what was verified
 - [docs/4 - session.md](4%20-%20session.md): roadmap step 4. What the session metapackage pulls in, the NVIDIA install path (ubuntu-drivers, prebuilt signed modules, early KMS hook), SDDM's Wayland greeter under Hyprland, the choices, the graphical boot test, the driver check on this laptop, and what was verified.
 - [docs/5 - hyprland-quickshell.md](5%20-%20hyprland-quickshell.md): roadmap step 5. Omarchy's Hyprland and Quickshell pins against the archive, why Hyprland stays and Quickshell is backported, how a third-party package is built from Debian's packaging plus an upstream tarball, and the QEMU check that runs Omarchy's shell.
-- [docs/6 - omarchy-port.md](6%20-%20omarchy-port.md): roadmap step 6. The fork and its port branch, the rename script, how Omarchy's two packages become five, what the port changed (apt, PAM, Ubuntu names, drops), the third-party packages, the choices (no browser in the metapackage, no migrations, install-time setup as a script), the desktop boot test, and what was verified.
+- [docs/6 - omarchy-port.md](6%20-%20omarchy-port.md): roadmap step 6. `santisbon/omarchy` and that repository's port branch, the rename script, how Omarchy's two packages become five, what the port changed (apt, PAM, Ubuntu names, drops), the third-party packages, the choices (no browser in the metapackage, no migrations, install-time setup as a script), the desktop boot test, and what was verified.
 - [docs/7 - image-installer.md](7%20-%20image-installer.md): roadmap step 7. The live ISO (casper, the squashfs, the EFI partition image with Ubuntu's signed shim and GRUB), the installer (Calamares from Ubuntu's archive, its module sequence and every configuration), the Plymouth theme through alternatives, the boot test under OVMF with Secure Boot on and off, what the installed system still needs checked by hand, and the KPMcore rebuild that lets an encrypted install work in every partitioning mode (choice 11, 2026-10-11).
 - [docs/8 - update-path.md](8%20-%20update-path.md): roadmap step 8. How an installed system updates (`oaxaca-update` on apt, unattended security updates from Ubuntu), the migrations runner and the rule for the port's own migrations, the N to N+1 upgrade test and its CI job, the version-bump check and the publish guard, the unattended-upgrades origin bug and its fix, what the series upgrade will need, and what was verified.
 - [docs/suspend-baseline.md](suspend-baseline.md): the three measured suspend scenarios on the Legion laptop, the known noise, and the phantom-backlight finding.
-- the fork's [PORT-REMOVALS.md](https://github.com/santisbon/omarchy/blob/oaxaca/PORT-REMOVALS.md): the removal audit. What the port still lacks from Omarchy v4.0.6, why, whether the reason holds on Ubuntu, and everything restored since 2026-10-16 with its choice.
+- `santisbon/omarchy`'s [PORT-REMOVALS.md](https://github.com/santisbon/omarchy/blob/oaxaca/PORT-REMOVALS.md): the removal audit. What the port still lacks from Omarchy v4.0.6, why, whether the reason holds on Ubuntu, and everything restored since 2026-10-16 with its choice.

@@ -2,7 +2,7 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: omarchy
 Upstream-Contact: https://github.com/omacom/omarchy
 Source: https://github.com/omacom/omarchy
-Comment: The port (the oaxaca branch of the fork named in distro.conf) keeps Omarchy's
+Comment: The port (the oaxaca branch of santisbon/omarchy, named in distro.conf) keeps Omarchy's
  MIT license. The Omarchy name is a trademark of the Omacom Foundation and is not used
  by the built packages: the build renames the tree to the distro's name and replaces
  Omarchy's logos with the distro's placeholders.

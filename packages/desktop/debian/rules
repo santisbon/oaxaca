@@ -15,7 +15,7 @@ export DISTRO_ID_UPPER = $(UPPER)
 export DISTRO_HOME_URL = https://github.com/santisbon/oaxaca
 export DISTRO_BUG_URL = https://github.com/santisbon/oaxaca/issues
 export DISTRO_MANUAL_URL = https://oaxaca.page/manual/
-# owner/name of the Omarchy fork on GitHub, kept unrenamed by port/rename.sh: the agent skills
+# owner/name of santisbon/omarchy, Oaxaca's fork of omacom/omarchy, on GitHub, kept unrenamed by port/rename.sh: the agent skills
 # (default/agents/skills) send bug reports there.
 export DISTRO_FORK_REPO = $(patsubst https://github.com/%,%,https://github.com/santisbon/omarchy)
 
@@ -32,7 +32,7 @@ override_dh_auto_build:
 	# Omarchy's "version" file is not maintained (policy, section 3); the package version is.
 	printf '%s\n' '$(UPSTREAM_VERSION)' > $(R)/version
 	# Branding: the distro's artwork, drawn by scripts/branding.py into debian/extra (docs/6,
-	# choice 104), in place of Omarchy's logos in the fork's tree. The boot and login screens
+	# choice 104), in place of Omarchy's logos in santisbon/omarchy's tree. The boot and login screens
 	# show the lockup; the icon is the mark on a dark tile.
 	cp debian/extra/logo.txt $(R)/logo.txt
 	cp debian/extra/icon.txt $(R)/icon.txt

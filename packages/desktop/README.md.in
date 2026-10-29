@@ -1,6 +1,6 @@
 # @DISTRO_ID@-desktop
 
-The Omarchy port: roadmap step 6. One source package built from the `@OMARCHY_PORT_REF@` branch of the fork `@OMARCHY_FORK@` (Omarchy `@OMARCHY_TAG@` plus the port commits), producing five binary packages, all at version `@OMARCHY_PORT_VERSION@-0@DISTRO_ID@<N>`: the Omarchy tag, `+git` and the date (UTC) of the fork commit built (`OMARCHY_PORT_DATE` in `distro.conf`, which `scripts/build.sh` checks against the commit), then the Debian revision. See `docs/6 - omarchy-port.md`.
+The Omarchy port: roadmap step 6. One source package built from the `@OMARCHY_PORT_REF@` branch of `@GITHUB_OWNER@/omarchy` (`@OMARCHY_FORK@`) (Omarchy `@OMARCHY_TAG@` plus the port commits), producing five binary packages, all at version `@OMARCHY_PORT_VERSION@-0@DISTRO_ID@<N>`: the Omarchy tag, `+git` and the date (UTC) of the commit of `@GITHUB_OWNER@/omarchy` built (`OMARCHY_PORT_DATE` in `distro.conf`, which `scripts/build.sh` checks against the commit), then the Debian revision. See `docs/6 - omarchy-port.md`.
 
 | Binary package | What it carries | Omarchy's own package it mirrors |
 |---|---|---|
@@ -12,7 +12,7 @@ The Omarchy port: roadmap step 6. One source package built from the `@OMARCHY_PO
 
 ## How the build works
 
-`scripts/build.sh` reads the `upstream` file (`GIT=`, `REF=`) and makes the orig tarball with `git archive` from the fork; with `UPSTREAM_DIR=~/Projects/omarchy make build PKG=packages/desktop` it takes the local checkout instead, uncommitted changes included, which is how the port is developed before it is pushed. `debian/rules` then copies the tree to `debian/renamed/`, runs the port's `port/rename.sh` on that copy with `DISTRO_ID=@DISTRO_ID@` and `DISTRO_NAME=@DISTRO_NAME@`, writes the `version` file from the changelog, renders the branding placeholders, converts the application icons to the hicolor sizes, and `debian/install-tree.sh` lays the renamed copy out into the four package directories the way Omarchy's two recipes (`omacom/omarchy-pkgs`, `pkgbuilds/omarchy` and `pkgbuilds/omarchy-settings`) do. The metapackage's dependency list is the `port:Depends` substitution variable, filled from the package list in the renamed tree.
+`scripts/build.sh` reads the `upstream` file (`GIT=`, `REF=`) and makes the orig tarball with `git archive` from `@GITHUB_OWNER@/omarchy`; with `UPSTREAM_DIR=~/Projects/omarchy make build PKG=packages/desktop` it takes the local checkout instead, uncommitted changes included, which is how the port is developed before it is pushed. `debian/rules` then copies the tree to `debian/renamed/`, runs the port's `port/rename.sh` on that copy with `DISTRO_ID=@DISTRO_ID@` and `DISTRO_NAME=@DISTRO_NAME@`, writes the `version` file from the changelog, renders the branding placeholders, converts the application icons to the hicolor sizes, and `debian/install-tree.sh` lays the renamed copy out into the four package directories the way Omarchy's two recipes (`omacom/omarchy-pkgs`, `pkgbuilds/omarchy` and `pkgbuilds/omarchy-settings`) do. The metapackage's dependency list is the `port:Depends` substitution variable, filled from the package list in the renamed tree.
 
 ## Branding
 
@@ -20,4 +20,4 @@ Omarchy's name is a trademark and its logos are Omarchy's. The build replaces th
 
 ## What is not here
 
-The port's choices and drop list are in `docs/6 - omarchy-port.md`; the branch's own rules are in the fork's `PORT.md`.
+The port's choices and drop list are in `docs/6 - omarchy-port.md`; the branch's own rules are in `@GITHUB_OWNER@/omarchy`'s `PORT.md`.
