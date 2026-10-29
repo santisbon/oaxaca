@@ -3,8 +3,11 @@
   * The update tells users of the AirPods plugin how to install its fix:
     Bluetooth keyboards and mice reconnect within seconds after a restart,
     and the AirPods play at their best quality.
-  * Gemini CLI and OpenCode install Node.js before themselves, so they
-    install on a system whose first login had no network.
+  * OpenCode installs Node.js before itself, so it installs on a system
+    whose first login had no network.
+  * Antigravity replaces Gemini CLI under Setup > Defaults > Agent, since
+    Google no longer lets individual accounts sign in to Gemini CLI. A
+    default agent of Gemini becomes Antigravity.
 
  -- @MAINTAINER@  Wed, 28 Oct 2026 17:05:39 -0500
 
