@@ -1,5 +1,13 @@
 oaxaca-desktop (4.0.6+git20261028.165.74e1c7bf-0oaxaca1) stonking; urgency=medium
 
+  * Antigravity replaces Gemini CLI under Setup > Defaults > Agent, since
+    Google no longer lets individual accounts sign in to Gemini CLI. A
+    default agent of Gemini becomes Antigravity.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Wed, 28 Oct 2026 20:41:10 -0500
+
+oaxaca-desktop (4.0.6+git20261028.165.74e1c7bf-0oaxaca1) stonking; urgency=medium
+
   * The update tells users of the AirPods plugin how to install its fix:
     Bluetooth keyboards and mice reconnect within seconds after a restart,
     and the AirPods play at their best quality.
