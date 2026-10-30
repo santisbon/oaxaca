@@ -1,5 +1,13 @@
 oaxaca-desktop (4.0.6+git20261030.172.355f202e-0oaxaca1) stonking; urgency=medium
 
+  * With a VPN on, the network panel shows the Wi-Fi or Ethernet connection
+    underneath, including Wi-Fi's QR code button.
+  * The network panel shows the Wi-Fi band again: iw is preinstalled.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 30 Oct 2026 12:21:38 -0500
+
+oaxaca-desktop (4.0.6+git20261030.172.355f202e-0oaxaca1) stonking; urgency=medium
+
   * Install > Editor > VSCode installs Microsoft's .deb again, with OpenSSL 3
     for its extension signature check and its AppArmor profile loaded. The
     update tells users of the snap how to switch back.

@@ -1,5 +1,13 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * With a VPN on, the network panel shows the Wi-Fi or Ethernet connection
+    underneath, including Wi-Fi's QR code button.
+  * The network panel shows the Wi-Fi band again: iw is preinstalled.
+
+ -- @MAINTAINER@  Fri, 30 Oct 2026 12:21:38 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261030.172.355f202e-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Install > Editor > VSCode installs Microsoft's .deb again, with OpenSSL 3
     for its extension signature check and its AppArmor profile loaded. The
     update tells users of the snap how to switch back.
