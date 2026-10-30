@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261030.170.f590adbe-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261030.172.355f202e-0oaxaca1) stonking; urgency=medium
 
   * Install > Editor > VSCode installs Microsoft's .deb again, with OpenSSL 3
     for its extension signature check and its AppArmor profile loaded. The
