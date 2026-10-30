@@ -253,7 +253,7 @@ sudo apt-get --solver internal --fix-policy install
 
 ### Secure Boot
 
-Oaxaca boots with Secure Boot on or off. Both the live USB and the installed system boot through Ubuntu's own signed chain: shim (signed by Microsoft, so the firmware trusts it) loads Canonical's signed GRUB and kernel. Secure Boot is supported, never required: Oaxaca does not check or change the firmware setting.
+Oaxaca boots with Secure Boot on or off. Both the live USB and the installed system boot through Ubuntu's own signed chain: shim (signed by Microsoft, so the firmware trusts it) loads Canonical's signed GRUB and kernel. Secure Boot is supported, never required: Oaxaca never changes the firmware setting, and reads it only to decide whether a Mac's BCM4360 Wi-Fi gets its DKMS driver ("Macs from 2013 to 2015: the BCM4360 Wi-Fi", below).
 
 With Secure Boot on, the kernel loads only modules signed by a key the firmware or shim trusts. Everything the system and the installer put in place is signed by Canonical, so no key of the user's own is needed for them. A kernel module that DKMS builds on the machine is the one exception: Install > Gaming > Xbox Controllers installs `xpadneo-dkms` from Ubuntu's archive, and Ubuntu's DKMS (`dkms` 3.2.2-1ubuntu1) signs the module with a Machine Owner Key it keeps in `/var/lib/shim-signed/mok/` (`MOK.der`, `MOK.priv`), which has to be enrolled once. Ubuntu's packaging asks for the enrollment itself, so the user needs to know nothing about keys. Verified on 2026-10-27 on a fresh install on the Legion laptop with Secure Boot on: the enrollment was asked for once, the user typed only a password, and the controller worked.
 
@@ -298,7 +298,7 @@ Which [codecs](#codec) and [VA-API drivers](#va-api-driver) a stock Ubuntu Deskt
 
 ### Apple hardware
 
-The [top-level README](../README.md) lists what Oaxaca does on Apple hardware; this section gives each item's mechanism and the file it comes from. Only the Studio Display has been tried, on the Legion laptop; no Mac has run Oaxaca yet.
+The [top-level README](../README.md) lists what Oaxaca does on Apple hardware; this section gives each item's mechanism and the file it comes from. The Studio Display has been tried on the Legion laptop. One Mac has run Oaxaca: a tester's MacBookAir7,2, whose BCM4360 Wi-Fi worked once `broadcom-sta-dkms` was installed by hand, the step the installer now takes; an installation with the installer's step has not been tried.
 
 How the Mac fixes are applied: the installer's system step runs `oaxaca-apply-system`, which runs `oaxaca-apply-hardware`, which runs `install/hardware/all.sh` from `santisbon/omarchy`, and that script runs one script per hardware fix. Each script reads the machine's model name (`/sys/class/dmi/id/product_name`, such as `MacBook8,1`) or its PCI IDs (the vendor and device numbers each chip reports, listed by `lspci -nn`, such as `14e4:4331`), and changes nothing on other machines. Every path below that starts with `install/` or `bin/` is in `santisbon/omarchy` (<https://github.com/santisbon/omarchy>, branch `oaxaca`).
 
@@ -311,7 +311,11 @@ How the Mac fixes are applied: the installer's system step runs `oaxaca-apply-sy
 
 #### MacBooks from 2012 and early 2013: the BCM4331 Wi-Fi
 
-`install/hardware/fix-bcm43xx.sh`, on PCI ID `14e4:4331`, installs Ubuntu's `firmware-b43-installer`. The kernel's `b43` driver runs the chip but needs Broadcom's firmware, which may not be redistributed, so the package downloads Broadcom's driver during installation and extracts the firmware from it: installing on these MacBooks needs a network connection. Omarchy installs `broadcom-wl-dkms` for this chip instead; the port changed the script because of the Secure Boot reason under "Not supported" below.
+`install/hardware/fix-bcm43xx.sh`, on PCI ID `14e4:4331`, installs Ubuntu's `firmware-b43-installer`. The kernel's `b43` driver runs the chip but needs Broadcom's firmware, which may not be redistributed, so the package downloads Broadcom's driver during installation and extracts the firmware from it: installing on these MacBooks needs a network connection. Omarchy installs `broadcom-wl-dkms` for this chip instead; the port installs no DKMS module where an in-kernel driver works.
+
+#### Macs from 2013 to 2015: the BCM4360 Wi-Fi
+
+`install/hardware/fix-bcm43xx.sh`, on an Apple machine (DMI vendor `Apple`) with PCI ID `14e4:43a0`, installs Ubuntu's `broadcom-sta-dkms`, unless `mokutil --sb-state` prints `SecureBoot enabled`. The chip has no in-kernel driver; its only driver is Broadcom's out-of-tree `wl`, which DKMS builds on the machine for each installed kernel, with the kernel headers the installed system already holds. With Secure Boot on, the kernel would load such a module only when it is signed with a Machine Owner Key, which the installer never asks for, so on a machine with Secure Boot on the script installs nothing for this chip. These Macs predate the T2 chip, and their firmware has no UEFI Secure Boot (`mokutil --sb-state` prints `This system doesn't support Secure Boot` on a MacBookAir7,2). The package's `/etc/modprobe.d/broadcom-sta-dkms.conf` blacklists `b43`, `bcma` and `ssb`, which otherwise claim the chip, and `wl` loads through its PCI alias. `dkms` and `broadcom-sta-dkms` are in the medium's package pool, so the installation needs no network ([docs/6](6%20-%20omarchy-port.md), choice 113).
 
 #### Macs from 2015 on with Broadcom Wi-Fi: the WPA handshake
 
@@ -328,7 +332,6 @@ These models' keyboards connect over SPI (a chip-to-chip bus) instead of USB, th
 #### Not supported
 
 - **Macs with Apple's T2 chip** (most Macs from 2018 to 2020). Omarchy's `install/hardware/apple/fix-t2.sh` sets these Macs up with an out-of-tree kernel and that kernel's pacman repository; the port removed the script (`santisbon/omarchy`'s `PORT-REMOVALS.md`, "Apple T2").
-- **The Broadcom BCM4360 Wi-Fi** of 2013 to 2015 MacBooks. The chip's only driver is Broadcom's out-of-tree `wl`, packaged as `broadcom-sta-dkms`: DKMS builds the module on the machine, and with Secure Boot on the kernel loads such a module only when it is signed with a Machine Owner Key, which Oaxaca never asks the user to enroll (`PORT-REMOVALS.md`, "The BCM4360's Wi-Fi driver").
 - **Macs with Apple silicon** (M1 and later). Oaxaca is built only for 64-bit Intel and AMD processors (amd64).
 
 ### The Omarchy desktop
