@@ -123,6 +123,10 @@ install -m 0755 "$R/default/systemd/system-sleep/unmount-fuse" "$config/usr/lib/
 # and the user manager, which Ubuntu's systemd-oomd marks, is set back to auto.
 install -D -m 0644 "$R/default/systemd/user/app.slice.d/10-oomd.conf" "$config/usr/lib/systemd/user/app.slice.d/10-oomd.conf"
 install -D -m 0644 "$R/default/systemd/system/user@.service.d/20-$id-oomd.conf" "$config/usr/lib/systemd/system/user@.service.d/20-$id-oomd.conf"
+# Blueman's applet waits for the shell's notification server, so a device that connects at login
+# gives a notification instead of Blueman's fallback dialog, which has no buttons and never times
+# out (docs/6, choice 116).
+install -D -m 0644 "$R/default/systemd/user/app-blueman@autostart.service.d/10-wait-notifications.conf" "$config/usr/lib/systemd/user/app-blueman@autostart.service.d/10-wait-notifications.conf"
 # Application launchers: the resync copy only. Omarchy also seeds them through /etc/skel, but
 # dpkg's conffile list cannot hold names with spaces ("Google Maps.desktop"), and the first
 # login copies them into the home anyway (<id>-refresh-applications, run by <id>-provision-user).
