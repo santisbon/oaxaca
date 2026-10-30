@@ -1,5 +1,14 @@
 oaxaca-desktop (4.0.6+git20261030.174.c314684d-0oaxaca1) stonking; urgency=medium
 
+  * A Bluetooth device that connects at login no longer leaves a "Connected"
+    box in the middle of the screen.
+  * VS Code switches to the Flexoki Light, Matte Black and Hackerman themes
+    again.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 30 Oct 2026 13:54:26 -0500
+
+oaxaca-desktop (4.0.6+git20261030.174.c314684d-0oaxaca1) stonking; urgency=medium
+
   * With a VPN on, the network panel shows the Wi-Fi or Ethernet connection
     underneath, including Wi-Fi's QR code button.
   * The network panel shows the Wi-Fi band again: iw is preinstalled.
