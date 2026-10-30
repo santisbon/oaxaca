@@ -1,5 +1,13 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * The BCM4360 Wi-Fi of 2013 to 2015 Macs works after installation: the
+    installer adds Broadcom's driver from the USB stick, on Macs whose
+    firmware is not enforcing Secure Boot.
+
+ -- @MAINTAINER@  Thu, 29 Oct 2026 20:09:42 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261029.166.4c22ffdf-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Antigravity replaces Gemini CLI under Setup > Defaults > Agent, since
     Google no longer lets individual accounts sign in to Gemini CLI. A
     default agent of Gemini becomes Antigravity.
