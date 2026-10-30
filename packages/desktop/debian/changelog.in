@@ -1,5 +1,12 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * When a theme's VS Code extension fails to install, VS Code keeps its
+    current theme instead of naming one it doesn't have.
+
+ -- @MAINTAINER@  Thu, 29 Oct 2026 23:19:24 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261030.169.f6e4dec2-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Install > Editor > VSCode installs Microsoft's snap, whose extension
     installs work on Ubuntu 26.10. The update tells users of the old package
     how to switch; settings and extensions carry over.
