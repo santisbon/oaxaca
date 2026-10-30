@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261030.176.f0b99192-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261030.178.ef06a9ca-0oaxaca1) stonking; urgency=medium
 
   * VS Code switches to the Hackerman theme: the build no longer renames its
     extension's ID. The update fixes the current theme if it is Hackerman.
