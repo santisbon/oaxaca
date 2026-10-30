@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261030.172.355f202e-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261030.174.c314684d-0oaxaca1) stonking; urgency=medium
 
   * With a VPN on, the network panel shows the Wi-Fi or Ethernet connection
     underneath, including Wi-Fi's QR code button.
