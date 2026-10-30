@@ -1,5 +1,15 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Install > Editor > VSCode installs Microsoft's .deb again, with OpenSSL 3
+    for its extension signature check and its AppArmor profile loaded. The
+    update tells users of the snap how to switch back.
+  * gdb is preinstalled, so the crash diagnosis can turn a backtrace into
+    function names.
+
+ -- @MAINTAINER@  Fri, 30 Oct 2026 11:11:12 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261030.170.f590adbe-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * When a theme's VS Code extension fails to install, VS Code keeps its
     current theme instead of naming one it doesn't have.
 
