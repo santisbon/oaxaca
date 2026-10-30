@@ -11,7 +11,7 @@ Oaxaca is Ubuntu 26.10 with the desktop of [Omarchy](https://omarchy.org). What 
 
 ## Apple hardware
 
-Oaxaca has not been tried on a Mac yet. The Mac support below is Omarchy's, adapted to Ubuntu, and the installer applies each Mac fix only on the models it is for.
+The Mac support below is Omarchy's, adapted to Ubuntu, and the installer applies each Mac fix only on the models it is for.
 
 - **Apple Studio Display:** brightness works, from the keyboard's brightness keys and the desktop's controls. Linux has no standard way to set the Studio Display's brightness; Oaxaca includes a program that sets the brightness over the display's USB connection.
 - **MacBooks from 2012 and early 2013:** the installer sets up the Wi-Fi chip (Broadcom BCM4331), which needs a network connection during installation to download the chip's firmware. The firmware is not on the USB stick, and the Wi-Fi chip does not work until the firmware is installed, so connect the MacBook to a wired network (Ethernet, or a phone's USB tethering) before installing. An installation without a network on these MacBooks has not been tried.
