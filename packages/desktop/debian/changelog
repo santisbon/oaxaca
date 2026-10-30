@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261030.167.25006d64-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261030.169.f6e4dec2-0oaxaca1) stonking; urgency=medium
 
   * Install > Editor > VSCode installs Microsoft's snap, whose extension
     installs work on Ubuntu 26.10. The update tells users of the old package
