@@ -1,5 +1,15 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Install > Editor > VSCode installs Microsoft's snap, whose extension
+    installs work on Ubuntu 26.10. The update tells users of the old package
+    how to switch; settings and extensions carry over.
+  * The manual's Mac notes no longer say Oaxaca has not been tested on a
+    Mac.
+
+ -- @MAINTAINER@  Thu, 29 Oct 2026 22:19:06 -0500
+
+@DISTRO_ID@-desktop (4.0.6+git20261030.167.25006d64-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * The BCM4360 Wi-Fi of 2013 to 2015 Macs works after installation: the
     installer adds Broadcom's driver from the USB stick, on Macs whose
     firmware is not enforcing Secure Boot.
