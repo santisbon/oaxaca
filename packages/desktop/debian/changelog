@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261029.166.4c22ffdf-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261030.167.25006d64-0oaxaca1) stonking; urgency=medium
 
   * The BCM4360 Wi-Fi of 2013 to 2015 Macs works after installation: the
     installer adds Broadcom's driver from the USB stick, on Macs whose
