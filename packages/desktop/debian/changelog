@@ -1,5 +1,11 @@
 oaxaca-desktop (4.0.6+git20261030.178.ef06a9ca-0oaxaca1) stonking; urgency=medium
 
+  * Flatpak installs show their download progress instead of looking frozen.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sat, 31 Oct 2026 15:43:31 -0500
+
+oaxaca-desktop (4.0.6+git20261030.178.ef06a9ca-0oaxaca1) stonking; urgency=medium
+
   * VS Code switches to the Hackerman theme: the build no longer renames its
     extension's ID. The update fixes the current theme if it is Hackerman.
 
