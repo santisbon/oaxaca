@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261030.178.ef06a9ca-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261031.179.9ad3704c-0oaxaca1) stonking; urgency=medium
 
   * Flatpak installs show their download progress instead of looking frozen.
 
