@@ -1,5 +1,12 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * The update removes the AirPods plugin's OpenPods entry from the app
+    launcher: its window could not open.
+
+ -- @MAINTAINER@  Sun, 01 Nov 2026 14:23:38 -0600
+
+@DISTRO_ID@-desktop (4.0.6+git20261031.179.9ad3704c-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Flatpak installs show their download progress instead of looking frozen.
 
  -- @MAINTAINER@  Sat, 31 Oct 2026 15:43:31 -0500

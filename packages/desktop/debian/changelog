@@ -1,5 +1,12 @@
 oaxaca-desktop (4.0.6+git20261031.179.9ad3704c-0oaxaca1) stonking; urgency=medium
 
+  * The update removes the AirPods plugin's OpenPods entry from the app
+    launcher: its window could not open.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sun, 01 Nov 2026 14:23:38 -0600
+
+oaxaca-desktop (4.0.6+git20261031.179.9ad3704c-0oaxaca1) stonking; urgency=medium
+
   * Flatpak installs show their download progress instead of looking frozen.
 
  -- santisbon <santisbon@users.noreply.github.com>  Sat, 31 Oct 2026 15:43:31 -0500
