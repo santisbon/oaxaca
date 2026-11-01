@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261031.179.9ad3704c-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261101.180.7471a408-0oaxaca1) stonking; urgency=medium
 
   * The update removes the AirPods plugin's OpenPods entry from the app
     launcher: its window could not open.
