@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261101.180.7471a408-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261103.181.523b92f4-0oaxaca1) stonking; urgency=medium
 
   * Apps written for Omarchy that build against GTK 4, libadwaita or
     WebKitGTK 6.0 install as their instructions say: those names now bring
