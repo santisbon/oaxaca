@@ -1,5 +1,13 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * A theme written for Omarchy installs under the same name as on Omarchy:
+    omarchy-giants-theme is now giants, not omarchy-giants. A theme already
+    installed under the longer name keeps that name until it is reinstalled.
+
+ -- @MAINTAINER@  Wed, 04 Nov 2026 20:58:06 -0600
+
+@DISTRO_ID@-desktop (4.0.6+git20261103.181.523b92f4-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Apps written for Omarchy that build against GTK 4, libadwaita or
     WebKitGTK 6.0 install as their instructions say: those names now bring
     the headers too.
