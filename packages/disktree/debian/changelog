@@ -1,0 +1,7 @@
+disktree (0.11.0-0oaxaca1) stonking; urgency=medium
+
+  * Initial Oaxaca package of Disktree 0.11.0, the disk usage tool
+    Omarchy v4.5.0 preinstalls in place of dua-cli; Ubuntu's archive has no
+    package of it.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 05 Nov 2026 01:39:19 -0600

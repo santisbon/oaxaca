@@ -1,3 +1,17 @@
+oaxaca-desktop (4.5.0+git20261105.346.a6f6b307-0oaxaca1) stonking; urgency=medium
+
+  * Merge Omarchy v4.5.0: floating workspaces with titlebars and a dock, video
+    backgrounds and theme intros, languages and input methods, notification
+    stacks, agent accounts, captive portals, and the release's fixes.
+    santisbon/omarchy's PORT-REMOVALS.md lists what the merge leaves out.
+  * Setup > Typing > Keyboard Layouts replaces Setup > Keyboard; layouts move to
+    ~/.config/oaxaca/keyboard-layouts.
+  * Depend on oaxaca-hyprland-titlebars, owe, disktree, gliff, the fcitx5 input
+    methods, pipewire-libcamera, x11-xserver-utils and
+    network-manager-config-connectivity-ubuntu; no longer on dua-cli.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 05 Nov 2026 03:42:54 -0600
+
 oaxaca-desktop (4.0.6+git20261105.183.ab07ea56-0oaxaca1) stonking; urgency=medium
 
   * A theme written for Omarchy installs under the same name as on Omarchy:
@@ -727,7 +741,7 @@ oaxaca-desktop (4.0.4+git20261016.53.d0a9b09a-0oaxaca1) stonking; urgency=medium
 
  -- santisbon <santisbon@users.noreply.github.com>  Fri, 16 Oct 2026 18:00:00 -0500
 
-oaxaca-desktop (4.0.6+git20261016.45.f82dbf50-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261016.45.f82dbf50-0oaxaca1) stonking; urgency=medium
 
   * Setup > Security > TPM Unlock: opt-in unlock of the encrypted root disk
     by the TPM at boot through Clevis, bound to PCR 7 (Secure Boot state);
@@ -749,7 +763,7 @@ oaxaca-desktop (4.0.6+git20261016.45.f82dbf50-0oaxaca1) stonking; urgency=medium
 
  -- santisbon <santisbon@users.noreply.github.com>  Fri, 16 Oct 2026 12:00:00 -0500
 
-oaxaca-desktop (4.0.6+git20261015.39.7a4a96b4-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261015.39.7a4a96b4-0oaxaca1) stonking; urgency=medium
 
   * LibreOffice's launchers are named Writer, Calc, Impress, Draw, Base and
     Math: the snap names them "LibreOffice <version> Writer" and so on, which
@@ -762,7 +776,7 @@ oaxaca-desktop (4.0.6+git20261015.39.7a4a96b4-0oaxaca1) stonking; urgency=medium
 
  -- santisbon <santisbon@users.noreply.github.com>  Thu, 15 Oct 2026 15:00:00 -0500
 
-oaxaca-desktop (4.0.6+git20261015.38.846f58d7-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261015.38.846f58d7-0oaxaca1) stonking; urgency=medium
 
   * Install > Productivity > LibreOffice installs the Snap Store's
     libreoffice (Canonical) instead of Flathub's, whose build drew its
@@ -775,7 +789,7 @@ oaxaca-desktop (4.0.6+git20261015.38.846f58d7-0oaxaca1) stonking; urgency=medium
 
  -- santisbon <santisbon@users.noreply.github.com>  Thu, 15 Oct 2026 14:00:00 -0500
 
-oaxaca-desktop (4.0.6+git20261015.35.c94677d3-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261015.35.c94677d3-0oaxaca1) stonking; urgency=medium
 
   * Natural scrolling on touchpads (Hyprland's input.touchpad.natural_scroll);
     mouse wheels keep the classic direction.
@@ -795,7 +809,7 @@ oaxaca-desktop (4.0.6+git20261015.35.c94677d3-0oaxaca1) stonking; urgency=medium
 
  -- santisbon <santisbon@users.noreply.github.com>  Thu, 15 Oct 2026 12:00:00 -0500
 
-oaxaca-desktop (4.0.6+git20261014.30.bca7233b-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261014.30.bca7233b-0oaxaca1) stonking; urgency=medium
 
   * New Productivity category: Install > Productivity > LibreOffice
     installs LibreOffice from Flathub (org.libreoffice.LibreOffice,
@@ -810,7 +824,7 @@ oaxaca-desktop (4.0.6+git20261014.30.bca7233b-0oaxaca1) stonking; urgency=medium
 
  -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 22:00:00 -0500
 
-oaxaca-desktop (4.0.6+git20261014.28.963b196e-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261014.28.963b196e-0oaxaca1) stonking; urgency=medium
 
   * tmux preinstalled again, with Omarchy's configuration, theme sync,
     Super+Alt+Return (the Work session), Super+Alt+K (its keybindings) and
@@ -837,7 +851,7 @@ oaxaca-desktop (4.0.6+git20261014.28.963b196e-0oaxaca1) stonking; urgency=medium
 
  -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 19:00:00 -0500
 
-oaxaca-desktop (4.0.6+git20261014.26.87da7b10-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261014.26.87da7b10-0oaxaca1) stonking; urgency=medium
 
   * Depend on rfkill: the bar's Bluetooth switch lifts the radio's rfkill
     block with it, and Ubuntu ships the command in its own package, so the
@@ -851,7 +865,7 @@ oaxaca-desktop (4.0.6+git20261014.26.87da7b10-0oaxaca1) stonking; urgency=medium
 
  -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 18:00:00 -0500
 
-oaxaca-desktop (4.0.6+git20261014.25.92b6de53-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261014.25.92b6de53-0oaxaca1) stonking; urgency=medium
 
   * Install > Package and Remove > Package show Ubuntu's logo (Nerd Font
     linux-ubuntu) instead of Arch's (md-arch): the entries install from
@@ -863,7 +877,7 @@ oaxaca-desktop (4.0.6+git20261014.25.92b6de53-0oaxaca1) stonking; urgency=medium
 
  -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 13:00:00 -0500
 
-oaxaca-desktop (4.0.6+git20261014.23.d1c146fc-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261014.23.d1c146fc-0oaxaca1) stonking; urgency=medium
 
   * The menu answers its "is this package installed" tests from dpkg
     instead of pacman. With no pacman the menu took every package for
@@ -872,7 +886,7 @@ oaxaca-desktop (4.0.6+git20261014.23.d1c146fc-0oaxaca1) stonking; urgency=medium
 
  -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 12:00:00 -0500
 
-oaxaca-desktop (4.0.6+git20261014.22.8a7a6b3a-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261014.22.8a7a6b3a-0oaxaca1) stonking; urgency=medium
 
   * oaxaca-desktop depends on localsend, as Omarchy preinstalls it:
     the Share menu and Files' "Send via LocalSend" have it to call. The
@@ -888,7 +902,7 @@ oaxaca-desktop (4.0.6+git20261014.22.8a7a6b3a-0oaxaca1) stonking; urgency=medium
 
  -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 10:00:00 -0500
 
-oaxaca-desktop (4.0.6+git20261014.20.0559194c-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261014.20.0559194c-0oaxaca1) stonking; urgency=medium
 
   * Upstream version +git<date>.<count>.<commit> instead of +git<date>:
     the fork's commit count since the Omarchy tag orders several fork
@@ -901,7 +915,7 @@ oaxaca-desktop (4.0.6+git20261014.20.0559194c-0oaxaca1) stonking; urgency=medium
 
  -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 00:45:00 -0500
 
-oaxaca-desktop (4.0.6+git20261014-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261014-0oaxaca1) stonking; urgency=medium
 
   * Install > Development installs build-essential (and unzip for OCaml)
     before building a toolchain: the image has no compiler.
@@ -915,7 +929,7 @@ oaxaca-desktop (4.0.6+git20261014-0oaxaca1) stonking; urgency=medium
 
  -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 00:30:00 -0500
 
-oaxaca-desktop (4.0.6+git20261013-0oaxaca2) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261013-0oaxaca2) stonking; urgency=medium
 
   * oaxaca-desktop depends on ffmpegthumbnailer, so Files shows video
     thumbnails out of the box; it moved from the optional
@@ -925,7 +939,7 @@ oaxaca-desktop (4.0.6+git20261013-0oaxaca2) stonking; urgency=medium
 
  -- santisbon <santisbon@users.noreply.github.com>  Wed, 14 Oct 2026 00:00:00 -0500
 
-oaxaca-desktop (4.0.6+git20261013-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261013-0oaxaca1) stonking; urgency=medium
 
   * Version scheme: the upstream version is the Omarchy tag plus the date of
     the fork commit the packages are built from (+git<YYYYMMDD>), so every
@@ -951,7 +965,7 @@ oaxaca-desktop (4.0.6+git20261013-0oaxaca1) stonking; urgency=medium
 
  -- santisbon <santisbon@users.noreply.github.com>  Tue, 13 Oct 2026 18:00:00 -0500
 
-oaxaca-desktop (4.0.6-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0-0oaxaca1) stonking; urgency=medium
 
   * Initial release: Omarchy v4.0.4 ported from Arch Linux to Ubuntu
     (roadmap step 6). One source, five binary packages: oaxaca-desktop

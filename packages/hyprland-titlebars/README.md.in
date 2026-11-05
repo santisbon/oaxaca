@@ -1,0 +1,10 @@
+# @DISTRO_ID@-hyprland-titlebars
+
+The Hyprland plugin that draws titlebars on Omarchy v4.5.0's floating workspaces, packaged for @DISTRO_NAME@'s repository. Without the plugin, floating workspaces still work and have no titlebars.
+
+| Path | What |
+|---|---|
+| `upstream` | the tag tarball's URL and SHA-256 |
+| `debian/rules` | builds with CMake, installs `titlebars.so` under `/usr/lib/@DISTRO_ID@-hyprland-titlebars/`, the path the desktop's renamed `default/hypr/workspace-modes.lua` loads, and fills in the exact Hyprland version |
+
+A Hyprland plugin loads only into the Hyprland build it was compiled against. When Ubuntu updates `hyprland`, give this package a new changelog entry and rebuild it. A move to Hyprland 0.57 also needs the plugin's tag `v0.3.0`.

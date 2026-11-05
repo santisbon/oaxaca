@@ -1,0 +1,24 @@
+# Generated from packages/disktree/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: disktree
+Section: utils
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ libxcb1,
+ libxkbcommon0,
+ libxkbcommon-x11-0
+Standards-Version: 4.7.4
+Homepage: https://github.com/tobi/disktree
+Rules-Requires-Root: no
+
+Package: disktree
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ libwayland-client0,
+ libegl1,
+ libvulkan1
+Description: disk space treemap
+ Disktree draws a volume as a treemap, by kind of file, so that what fills the
+ disk is visible at a glance. Select what should go and remove it, to the trash
+ or for good.

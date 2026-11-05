@@ -83,6 +83,11 @@ mv "$config/etc/sddm.conf.d/10-theme.conf" "$config/etc/sddm.conf.d/10-$id-theme
 install -d "$config/usr/lib/tmpfiles.d"
 mv "$config"/etc/tmpfiles.d/*.conf "$config/usr/lib/tmpfiles.d/"
 rmdir "$config/etc/tmpfiles.d"
+# udev rules a package ships belong under /usr/lib (lintian: udev-rule-in-etc), so that a rule in
+# /etc stays the administrator's to override.
+install -d "$config/usr/lib/udev/rules.d"
+mv "$config"/etc/udev/rules.d/* "$config/usr/lib/udev/rules.d/"
+rm -r "$config/etc/udev"
 install -D -m 0644 debian/extra/apt-periodic.conf "$config/etc/apt/apt.conf.d/20$id-periodic"
 # Makes the Debian Chromium launcher read ~/.config/chromium-flags.conf (the file says why).
 install -D -m 0644 debian/extra/chromium-user-flags "$config/etc/chromium.d/zz-$id-user-flags"

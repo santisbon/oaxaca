@@ -1,0 +1,32 @@
+# Generated from packages/hyprland-titlebars/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: oaxaca-hyprland-titlebars
+Section: x11
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ cmake,
+ pkgconf,
+ hyprland-dev,
+ libdrm-dev,
+ libinput-dev,
+ libudev-dev,
+ libpixman-1-dev,
+ libwayland-dev,
+ libxkbcommon-dev
+Standards-Version: 4.7.4
+Homepage: https://github.com/omacom/omarchy-hyprland-titlebars
+Rules-Requires-Root: no
+
+Package: oaxaca-hyprland-titlebars
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ hyprland (= ${hyprland:Version})
+Description: titlebars for Oaxaca's floating workspaces
+ A Hyprland plugin that draws a titlebar in the theme's colours on each window
+ of a floating workspace. The desktop loads the plugin the first time a
+ workspace floats.
+ .
+ A Hyprland plugin loads only into the Hyprland build it was compiled against,
+ so this package depends on that exact Hyprland version and has to be rebuilt
+ whenever Hyprland changes.

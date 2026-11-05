@@ -1,0 +1,6 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format: the plugin's tag tarball and its
+# SHA-256, from sha256sum on the download on 2026-11-05. v0.2.2 is the tag that builds against
+# Hyprland 0.56, Ubuntu's version in stonking; v0.3.0 differs by one commit, "Build against
+# Hyprland 0.57".
+URL=https://github.com/omacom/omarchy-hyprland-titlebars/archive/refs/tags/v0.2.2.tar.gz
+SHA256=98a2c43024b7e72dbe97620e6560b5e59d5b02eb25c5fd806586a6efacc7e23e

@@ -1,0 +1,7 @@
+@DISTRO_ID@-hyprland-titlebars (0.2.2-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
+  * Initial @DISTRO_NAME@ package of omarchy-hyprland-titlebars 0.2.2.
+    Omarchy v4.5.0's floating workspaces draw their titlebars with this
+    plugin; Ubuntu's archive has no package of it.
+
+ -- @MAINTAINER@  Thu, 05 Nov 2026 01:39:19 -0600

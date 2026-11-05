@@ -22,7 +22,7 @@ N=$top/@
 echo "b subvolumes after reset: $(btrfs subvolume list "$top" | awk '{print $NF}' | LC_ALL=C sort | paste -sd' ')"
 install -d "$N$L"
 install -m 0755 "$L/gum" "$L/check.sh" "$N$L/"
-printf '0:English (UK)\n0:newowner\n0:ownerpass1\n0:ownerpass1\n0:New Owner\n0:\n0:resetbox\n0:America/Mexico_City\n0:\n' >"$N$L/owner-answers"
+printf '0:English (UK)\n0:newowner\n0:ownerpass1\n0:ownerpass1\n0:resetbox\n0:America/Mexico_City\n0:\n' >"$N$L/owner-answers"
 install -d "$N/etc/systemd/system/$id-provision-owner.service.d"
 cat >"$N/etc/systemd/system/$id-provision-owner.service.d/factory-test.conf" <<UNIT
 [Service]

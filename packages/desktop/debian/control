@@ -22,6 +22,10 @@ Depends: ${misc:Depends},
  localsend,
  ttfx,
  nwg-displays (>= 0.4.3),
+ oaxaca-hyprland-titlebars,
+ owe,
+ disktree,
+ gliff,
  ffmpegthumbnailer,
  ${port:Depends}
 Suggests: oaxaca-hw-legion, nvtop
@@ -61,7 +65,7 @@ Description: Oaxaca command-line tools
 Package: oaxaca-shell
 Architecture: all
 Depends: ${misc:Depends},
- quickshell (>= 0.3.2-0oaxaca2),
+ quickshell (>= 0.3.2+r7.g2b4501a-0oaxaca1),
  qml6-module-qtquick, qml6-module-qtquick-controls, qml6-module-qtquick-layouts,
  qml6-module-qtquick-shapes, qml6-module-qtquick-effects, qml6-module-qtquick-window,
  qml6-module-qtqml-models,

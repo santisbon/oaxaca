@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh $@ --buildsystem=meson
+
+# The test suite renders through a Wayland compositor, which the build chroot has none of.
+override_dh_auto_test:
+
+# Omarchy's recipe's layout, without its pacman hook that restarts the service after an upgrade.
+execute_after_dh_auto_install:
+	install -d debian/owe/usr/lib/systemd/user
+	sed 's|%h/.local/bin/owed|/usr/bin/owed|' systemd/owed.service > debian/owe/usr/lib/systemd/user/owed.service
+	install -D -m 0755 hooks/owe-idle debian/owe/usr/bin/owe-idle
+	install -D -m 0644 hooks/theme-set.d/10-owe-sync debian/owe/usr/share/owe/10-owe-sync
+	install -D -m 0644 config/config.toml debian/owe/usr/share/doc/owe/config.toml.example
+
+# The desktop's first-run enables owed.service once the user's compatibility links exist
+# (install/user/first-run/enable-user-units.sh). Enabled here for every user, owed starts at the first
+# login and creates ~/.local/state/omarchy/current as a real folder, and omarchy-compat-links
+# then leaves that path alone, so OWE never sees the background.
+override_dh_installsystemduser:
+	dh_installsystemduser --no-enable

@@ -25,6 +25,9 @@ end
 
 local dsp = proxy()
 rawset(dsp, "exec_cmd", function(command) return { command = command } end)
+-- A binding that reaches the shell through a global shortcut spawns nothing; this is the command
+-- that presses the same shortcut.
+rawset(dsp, "global", function(name) return { command = "hyprctl dispatch 'hl.dsp.global(\"" .. name .. "\")'" } end)
 
 local bindings = {}
 hl = setmetatable({

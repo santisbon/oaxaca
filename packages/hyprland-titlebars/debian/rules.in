@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh $@ --buildsystem=cmake
+
+# CMakeLists.txt installs to lib/omarchy-hyprland-titlebars; the desktop's rename makes the path
+# the desktop loads from /usr/lib/@DISTRO_ID@-hyprland-titlebars.
+override_dh_auto_install:
+	install -D -m 0644 obj-*/titlebars.so debian/@DISTRO_ID@-hyprland-titlebars/usr/lib/@DISTRO_ID@-hyprland-titlebars/titlebars.so
+
+# The plugin's exact Hyprland, read from the headers it was built against.
+override_dh_gencontrol:
+	dh_gencontrol -- -Vhyprland:Version="$$(dpkg-query -W -f='$${Version}' hyprland-dev)"

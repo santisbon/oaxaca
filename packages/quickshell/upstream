@@ -1,6 +1,6 @@
 # Read by scripts/build.sh for packages in "3.0 (quilt)" format: the upstream tarball to
-# download as build/<source>_<upstream version>.orig.tar.gz, and its SHA-256. The checksum
-# is the one Omarchy's own recipe records (omacom/omarchy-pkgs, pkgbuilds/quickshell/PKGBUILD,
-# 2026-10-09) and was verified against the download on the same day.
-URL=https://github.com/quickshell-mirror/quickshell/archive/refs/tags/v0.3.2.tar.gz
-SHA256=946a27e2a276917a03c1079e5c60971af84ece73088c3661dee455d92eb420f7
+# download as build/<source>_<upstream version>.orig.tar.gz, and its SHA-256, from sha256sum on the
+# download on 2026-11-05. The commit is the one Omarchy's recipe pins (omacom/omarchy-pkgs,
+# pkgbuilds/quickshell/PKGBUILD), 7 commits past tag v0.3.2.
+URL=https://github.com/quickshell-mirror/quickshell/archive/2b4501a282689792b62e94f3fb30d8f512324fe6.tar.gz
+SHA256=e09495c73f8bfbb8637a28e6d73bf84063631b49bb3cb6d3c9702c80dfa78f31

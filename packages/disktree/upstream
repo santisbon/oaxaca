@@ -1,0 +1,9 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format. Disktree's own release build, not
+# its source, as Omarchy's disktree-bin recipe does. The checksum is the one that recipe records
+# (omacom/omarchy-pkgs, pkgbuilds/disktree-bin/PKGBUILD), which matched sha256sum on the download on
+# 2026-11-05.
+URL=https://github.com/tobi/disktree/releases/download/v0.11.0/disktree-0.11.0-x86_64-linux.tar.gz
+SHA256=7e75afa2283c8b4f9290d52eadbfc00d9f14c13aed2d224ccdf0f7826fcc05b2
+
+# make upstream-check compares this repository's latest release with debian/changelog.
+RELEASES=tobi/disktree

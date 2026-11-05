@@ -1,0 +1,6 @@
+gliff (0.4.2-0oaxaca1) stonking; urgency=medium
+
+  * Initial Oaxaca package of Gliff 0.4.2, the remote desktop over SSH
+    that Omarchy v4.5.0 preinstalls; Ubuntu's archive has no package of it.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 05 Nov 2026 01:39:19 -0600

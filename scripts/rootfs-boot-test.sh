@@ -311,6 +311,9 @@ shell_before=\$(pgrep -u tester -f 'quickshell.*-p /usr/share/$id/shell' | head 
 printf 'Types: deb\nURIs: file:/var/lib/$id-upgrade-test\nSuites: ./\nTrusted: yes\n' > /etc/apt/sources.list.d/$id-upgrade-test.sources
 printf 'Defaults:tester verifypw=any\ntester ALL=(ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/90-$id-boot-test
 chmod 0440 /etc/sudoers.d/90-$id-boot-test
+# The published update asks before it removes orphaned packages, and dua-cli became one when the
+# desktop stopped depending on it. Nobody is here to answer, so dua-cli is kept for this run.
+apt-mark manual dua-cli >/dev/null 2>&1 || true
 # The user's update in the environment the user manager got at login, which a terminal opened
 # before the update also has.
 # A prompt nobody answers would hang it: after 8 minutes the test goes on with exit 124 and the log.
@@ -417,7 +420,7 @@ echo "dns sudoers rule: \$(ls /etc/sudoers.d | grep -c dns)"
 # Disk Usage for Omarchy's own apps, nwg-displays, which shadows the package's entry (choice 95),
 # and Omarchy 4.0.5's hidden link router, $id-browser.desktop (choice 101).
 # The tools restored by choices 43 and 47, each by the command its callers run.
-echo "restored tools missing: [\$(for c in btop eza inxi lazygit starship zoxide ttfx swappy unzip gnome-calculator gnome-disks whois mise dua; do command -v \$c >/dev/null || printf '%s ' \$c; done)]"
+echo "restored tools missing: [\$(for c in btop eza inxi lazygit starship zoxide ttfx swappy unzip gnome-calculator gnome-disks whois mise disktree; do command -v \$c >/dev/null || printf '%s ' \$c; done)]"
 # Both stores preconfigured (step 6, choice 17): snapd's socket enabled by its package, Flathub added
 # system-wide at install from the repository file Ubuntu's flatpak package ships.
 echo "stores: snapd=\$(systemctl is-enabled snapd.socket 2>/dev/null) flathub=\$(flatpak remotes --system --columns=name 2>/dev/null | grep -cx flathub)"
@@ -439,6 +442,9 @@ rm -f /tmp/sample.heic
 echo "apps split: removed=\$(dpkg-query -W -f='\${db:Status-Status}\n' libreoffice kdenlive obs-studio xournalpp docker.io 2>/dev/null | grep -cx installed) launchers=\$(ls /usr/share/$id/applications | wc -l)"
 echo "launcher hides nvidia-settings: \$(grep -cx nvidia-settings /usr/share/$id/default/$id/launcher.hides)"
 sleep 3
+# OWE reads the background through ~/.local/state/omarchy, the link omarchy-compat-links makes.
+echo "state link: \$(readlink /home/tester/.local/state/omarchy)"
+echo "owe source: \$(run_user owe status 2>/dev/null | jq -r '.source_path // empty' | grep -c .)"
 echo "theme after switch: \$(cat /home/tester/.local/state/$id/current/theme.name 2>/dev/null)"
 echo "shell ping after switch: \$(run_user $id-shell shell ping 2>&1 | paste -sd'|')"
 echo "shell layers after switch: [\$(run_user hyprctl -j layers 2>/dev/null | python3 -c '
@@ -481,7 +487,8 @@ surfaces() {
 import json, sys
 for m in json.load(sys.stdin).values():
     for lv in m["levels"].values():
-        for l in lv: print("L:" + l["namespace"])' 2>/dev/null
+        for l in lv:
+            if l["namespace"] != "owe-background": print("L:" + l["namespace"])' 2>/dev/null
       run_user hyprctl -j clients 2>/dev/null | python3 -c '
 import json, sys
 for c in json.load(sys.stdin): print("C:%s:%s" % (c.get("class", ""), c.get("pid", "")))' 2>/dev/null
@@ -496,7 +503,7 @@ run_binding() {
 }
 tab=\$(printf '\t')
 # Keys and command only: read treats a tab as whitespace, so an empty description would vanish.
-awk -F'\t' -v id=$id '\$3 ~ "^" id "-menu toggle" || \$3 ~ "^" id "-shell shell toggle " { print \$1 "\t" \$3 }' /tmp/bindings.tsv > /tmp/bindings-run.tsv
+awk -F'\t' -v id=$id '\$3 ~ "^" id "-menu toggle" || \$3 ~ "^" id "-shell shell toggle " || \$3 ~ id ":(menu|panel)[.]" { print \$1 "\t" \$3 }' /tmp/bindings.tsv > /tmp/bindings-run.tsv
 while IFS="\$tab" read -r keys cmd; do
     surfaces > /tmp/surfaces-before
     rc=\$(run_binding "\$cmd")
@@ -509,8 +516,13 @@ while IFS="\$tab" read -r keys cmd; do
     run_user $id-menu close >/dev/null 2>&1
     run_user $id-shell -q image-selector cancel "" >/dev/null 2>&1
     run_user $id-shell -q shell hide omarchy.reminders >/dev/null 2>&1
-    sleep 0.5
-    surfaces > /tmp/surfaces-now
+    # A menu that reads the hardware opens late, after the close above: close it again as it appears.
+    for i in \$(seq 10); do
+        sleep 0.5
+        surfaces > /tmp/surfaces-now
+        cmp -s /tmp/surfaces-before /tmp/surfaces-now && break
+        run_user $id-menu close >/dev/null 2>&1
+    done
     if ! cmp -s /tmp/surfaces-before /tmp/surfaces-now; then run_binding "\$cmd" >/dev/null; sleep 1; fi
     for c in \$(comm -13 /tmp/surfaces-before /tmp/surfaces-after | sed -n 's/^C:[^:]*:\([0-9][0-9]*\)\$/\1/p'); do kill \$c 2>/dev/null; done
     sleep 0.5
@@ -520,6 +532,9 @@ while IFS="\$tab" read -r keys cmd; do
     case "\$cmd" in
         "$id-shell shell toggle "*)
             panel=\${cmd##* }
+            case " \${bar#*: } " in *" \$panel "*) ;; *) [ -z "\$opened" ] && note=" skipped=not-in-bar" ;; esac ;;
+        *"$id:panel."*)
+            panel=\${cmd##*panel.}; panel=\${panel%%[!a-zA-Z0-9.-]*}
             case " \${bar#*: } " in *" \$panel "*) ;; *) [ -z "\$opened" ] && note=" skipped=not-in-bar" ;; esac ;;
     esac
     echo "binding run: \$keys: exit=\$rc opened=[\$opened] closed=\$closed\$note"
@@ -535,6 +550,17 @@ while IFS="\$tab" read -r keys cmd; do
     esac
 done < /tmp/bindings-run.tsv
 echo "shell ping after bindings: \$(run_user $id-shell shell ping 2>&1 | paste -sd'|')"
+# A floating workspace (Super + L): its titlebars come from a Hyprland plugin, which loads only into
+# the exact Hyprland build it was compiled against, and the dock shows on it.
+for i in 1 2 3; do
+    run_user $id-hyprland-workspace-layout-toggle >/dev/null 2>&1
+    sleep 2
+    run_user hyprctl plugin list -j 2>/dev/null | grep -q hyprbars && break
+done
+echo "floating plugin: \$(run_user hyprctl plugin list -j 2>/dev/null | jq -r '[.[].name] | join(" ")')"
+echo "floating config errors: [\$(run_user hyprctl configerrors 2>/dev/null | paste -sd'|')]"
+echo "floating layers: [\$(run_user hyprctl -j layers 2>/dev/null | jq -r '[.. | .namespace? // empty] | unique | join(" ")')]"
+for i in 1 2; do run_user $id-hyprland-workspace-layout-toggle >/dev/null 2>&1; sleep 1; done
 # The screensaver over an open bar panel (2026-10-19, the WiFi panel): an open panel holds the
 # keyboard as a layer surface, and Hyprland mapped the screensaver window without focus or its
 # fullscreen rule, a small window with the pointer hidden. The launcher closes panels first
@@ -546,7 +572,9 @@ echo "screensaver over a panel: \$(run_user hyprctl -j clients 2>/dev/null | jq 
 pkill -f '[o]rg.omarchy.screensaver'; sleep 1
 # The shell's journal: Quickshell's WARN lines are listed, its ERROR/CRIT lines and QML
 # failures (a type that failed to load, an undefined reference) are counted.
-log=\$(journalctl -b -t $id-shell --no-pager -o cat | sed 's/\x1b\[[0-9;]*m//g')
+# After an upgrade, only the shell that the update restarted: the shell running through the upgrade
+# has its files changed under it until the restart, and nobody sees what it logs in those seconds.
+log=\$(journalctl -b -t $id-shell --no-pager -o cat | sed 's/\x1b\[[0-9;]*m//g' | awk '/Launching config/ { n = 0 } { l[n++] = \$0 } END { for (i = 0; i < n; i++) print l[i] }')
 echo "shell log: \$(echo "\$log" | grep -c .) lines, \$(echo "\$log" | grep -cE 'ERROR|CRIT|FATAL|not a type|is not defined|failed to load') errors, \$(echo "\$log" | grep -c ' WARN') warnings"
 echo "\$log" | grep -E 'ERROR|CRIT|FATAL|not a type|is not defined|failed to load|WARN' | cut -c1-150 | sort | uniq -c | sort -rn | head -n 10 | sed 's/^/shell log: /'
 journalctl -b _UID=1001 --no-pager -o cat -p err | tail -n 12 | sed 's/^/journal tester (errors): /'
@@ -784,7 +812,7 @@ if [[ $profile == desktop ]]; then
   check "^mise source: https://mise.jdx.dev/deb$"
   check "^fingerprint profile: pam_exec.so quiet /usr/bin/$DISTRO_ID-hw-laptop-closed$"
   check "^pam key scope: gates=2 after-disable=0$"
-  check "^ubuntu defaults: bashrc=bash aliases=yes zram=no sysctl=2 auto-upgrades=1$"
+  check "^ubuntu defaults: bashrc=bash aliases=yes zram=no sysctl=3 auto-upgrades=1$"
   # OMARCHY_PATH keeps Omarchy's name, for plugins written for Omarchy (docs/6, choice 86).
   check "^session env: .*OMARCHY_PATH=/usr/share/$DISTRO_ID"
   check "^shell process: running$"
@@ -806,7 +834,7 @@ if [[ $profile == desktop ]]; then
   check "^dns provider: Cloudflare$"
   check "^dns reset: DHCP$"
   check "^dns sudoers rule: 0$"
-  check "^apps split: removed=0 launchers=6$"
+  check "^apps split: removed=0 launchers=5$"
   # The launcher hide list hides NVIDIA's settings launcher (docs/6, choice 89).
   check "^launcher hides nvidia-settings: 1$"
   check "^restored tools missing: \[\]$"
@@ -824,6 +852,9 @@ if [[ $profile == desktop ]]; then
   check "^apt install lua5.4: ok$"
   check "^bindings: [1-9][0-9][0-9] total, [1-9][0-9]* run a command$"
   check "^binding programs: [1-9][0-9]* checked, 0 missing$"
+  check "^floating plugin: .*hyprbars"
+  check "^state link: $DISTRO_ID$"
+  check "^owe source: 1$"
   runs=$(grep -c '^binding run: ' <<< "$report" || true)
   (( runs >= 10 )) || { echo "!! expected at least 10 menu and panel bindings run, got $runs" >&2; fail=1; }
   if grep -E '^binding run: ' <<< "$report" | grep -Ev ': exit=0 (opened=\[[^]]+\] closed=yes|opened=\[\] closed=yes skipped=not-in-bar)$' >&2; then

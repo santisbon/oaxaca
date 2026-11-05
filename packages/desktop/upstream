@@ -6,6 +6,6 @@ REF=oaxaca
 # The +git<date>.<count>.<commit> part of the upstream version; build.sh checks the fetched
 # commit against all three. TAG is what the count is counted from.
 DATE=20261105
-COUNT=183
-COMMIT=ab07ea56
-TAG=v4.0.6
+COUNT=346
+COMMIT=a6f6b307
+TAG=v4.5.0

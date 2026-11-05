@@ -1,0 +1,12 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format: Gliff's tag tarball and its SHA-256,
+# the one Omarchy's recipe records (omacom/omarchy-pkgs, pkgbuilds/gliff/PKGBUILD), which matched
+# sha256sum on the download on 2026-11-05.
+URL=https://github.com/omacom/gliff/archive/refs/tags/v0.4.2.tar.gz
+SHA256=731ce5db5830ab61c3ba9edda889e1949c7466b8a4fea0c58a4311f1b145665f
+
+# The crates from Cargo.lock, fetched on this host with "cargo vendor" and shipped as the
+# component "vendor", so that cargo builds offline in the chroot.
+CARGO_VENDOR=1
+
+# make upstream-check compares this repository's latest release with debian/changelog.
+RELEASES=omacom/gliff

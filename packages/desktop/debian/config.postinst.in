@@ -30,6 +30,27 @@ case "$1" in
     # Resume first: the files are already in place, and a failure below must not leave the
     # sessions paused.
     resume_reload
+    # An update running this upgrade created its stay-awake folder with the version of
+    # @DISTRO_ID@-update-stay-awake it started with: a plain mkdir, group-writable under Ubuntu's
+    # umask 002. The version just installed runs the update's stop step and refuses such a folder,
+    # so the folder and its files go private here, as the folder's owner: a root chmod could be
+    # pointed elsewhere through a symlink.
+    for dir in /run/user/*/@DISTRO_ID@-update-stay-awake /tmp/@DISTRO_ID@-*/@DISTRO_ID@-update-stay-awake; do
+      [ -d "$dir" ] && [ ! -L "$dir" ] || continue
+      owner=$(stat -c %U "$dir") || continue
+      [ "$owner" != root ] || continue
+      runuser -u "$owner" -- find "$dir" -maxdepth 0 -type d -exec chmod 700 {} + || true
+      case "$dir" in
+        /tmp/*) runuser -u "$owner" -- find "${dir%/*}" -maxdepth 0 -type d -exec chmod 700 {} + || true ;;
+      esac
+      runuser -u "$owner" -- find "$dir" -mindepth 1 -maxdepth 1 -type f -exec chmod 600 {} + || true
+    done
+    # Earlier versions of @DISTRO_ID@-sudo-passwordless wrote temporary sudo grants under names the
+    # current command does not manage. The repair needs root, and a migration runs as the user, so
+    # this is the place. The helper marks itself done and does nothing on later upgrades.
+    if command -v @DISTRO_ID@-sudo-passwordless >/dev/null; then
+      @DISTRO_ID@-sudo-passwordless __migrate || true
+    fi
     # The Wi-Fi 7 fix is for a Dell XPS on Panther Lake only (docs/6, choice 60). Installs made
     # earlier wrote it on every machine with an Intel BE200 or BE211; take it back off the
     # others. The file is not a package file, and a migration runs as the user, so this is the

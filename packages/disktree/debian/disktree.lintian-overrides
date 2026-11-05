@@ -1,0 +1,3 @@
+# Disktree's release is one statically linked binary, which carries FreeType through its GPU
+# interface library; the package ships that build unchanged.
+disktree: embedded-library freetype [usr/bin/disktree]

@@ -1,0 +1,38 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# cargo keeps its registry cache under CARGO_HOME; a directory under debian/ keeps the
+# chroot build from writing to $HOME. debian/clean removes the directory.
+export CARGO_HOME = $(CURDIR)/debian/cargo_home
+
+%:
+	dh $@
+
+# No debhelper build system matches a cargo tree, so the dh_auto_* steps are spelled out.
+# .cargo/config.toml is the text "cargo vendor" prints.
+override_dh_auto_build:
+	mkdir -p .cargo
+	printf '[source.crates-io]\nreplace-with = "vendored-sources"\n\n[source.vendored-sources]\ndirectory = "vendor"\n' > .cargo/config.toml
+	cargo build --frozen --release
+
+override_dh_auto_install:
+	install -D -m 0755 target/release/gliff debian/gliff/usr/bin/gliff
+	install -D -m 0755 target/release/gliff-server debian/gliff/usr/bin/gliff-server
+	install -D -m 0755 target/release/gliff-probe debian/gliff/usr/bin/gliff-probe
+	install -D -m 0644 pkgbuild/gliff.svg debian/gliff/usr/share/icons/hicolor/scalable/apps/gliff.svg
+	install -D -m 0644 pkgbuild/gliff.desktop debian/gliff/usr/share/applications/gliff.desktop
+	install -D -m 0644 README.md debian/gliff/usr/share/doc/gliff/README.md
+	install -D -m 0644 docs/hardware-quirks.md debian/gliff/usr/share/doc/gliff/hardware-quirks.md
+
+# The tests need a GPU and a Hyprland session.
+override_dh_auto_test:
+
+# dh_clean deletes every *.orig file in the tree, and every vendored crate carries a
+# Cargo.toml.orig that cargo checks against the crate's .cargo-checksum.json.
+override_dh_clean:
+	dh_clean -XCargo.toml.orig
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+override_dh_dwz:

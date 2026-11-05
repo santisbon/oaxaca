@@ -1,3 +1,10 @@
+quickshell (0.3.2+r7.g2b4501a-0oaxaca1) @BASE_SERIES@; urgency=medium
+
+  * Move to commit 2b4501a2, the one Omarchy v4.5.0's recipe builds.
+  * Drop session-lock-announce-unlock.patch: upstream's 18c95fae has the fix.
+
+ -- @MAINTAINER@  Thu, 05 Nov 2026 01:39:19 -0600
+
 quickshell (0.3.2-0oaxaca2) @BASE_SERIES@; urgency=medium
 
   * session-lock-announce-unlock.patch: WlSessionLock::unlock() checked

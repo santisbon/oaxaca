@@ -1,0 +1,31 @@
+# Generated from packages/gliff/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: gliff
+Section: net
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ cargo,
+ rustc,
+ pkgconf,
+ nasm,
+ libgtk-4-dev (>= 4.14),
+ libadwaita-1-dev (>= 1.5),
+ libdrm-dev,
+ libgbm-dev,
+ libva-dev (>= 2.20),
+ libxkbcommon-dev,
+ libwayland-dev,
+ libvulkan-dev,
+ libdbus-1-dev
+Standards-Version: 4.7.4
+Homepage: https://github.com/omacom/gliff
+Rules-Requires-Root: no
+
+Package: gliff
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ openssh-client
+Description: Hyprland remote desktop over SSH
+ Gliff shows the desktop of another Hyprland machine over an SSH connection,
+ encoded with the GPU as H.264.

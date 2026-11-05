@@ -1,5 +1,19 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Merge Omarchy v4.5.0: floating workspaces with titlebars and a dock, video
+    backgrounds and theme intros, languages and input methods, notification
+    stacks, agent accounts, captive portals, and the release's fixes.
+    santisbon/omarchy's PORT-REMOVALS.md lists what the merge leaves out.
+  * Setup > Typing > Keyboard Layouts replaces Setup > Keyboard; layouts move to
+    ~/.config/@DISTRO_ID@/keyboard-layouts.
+  * Depend on @DISTRO_ID@-hyprland-titlebars, owe, disktree, gliff, the fcitx5 input
+    methods, pipewire-libcamera, x11-xserver-utils and
+    network-manager-config-connectivity-ubuntu; no longer on dua-cli.
+
+ -- @MAINTAINER@  Thu, 05 Nov 2026 03:42:54 -0600
+
+@DISTRO_ID@-desktop (4.0.6+git20261105.183.ab07ea56-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * A theme written for Omarchy installs under the same name as on Omarchy:
     omarchy-giants-theme is now giants, not omarchy-giants. A theme already
     installed under the longer name keeps that name until it is reinstalled.

@@ -1,0 +1,7 @@
+owe (0.2.13-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
+  * Initial @DISTRO_NAME@ package of OWE 0.2.13. Omarchy v4.5.0's video
+    backgrounds and theme intros run on OWE; Ubuntu's archive has no
+    package of it.
+
+ -- @MAINTAINER@  Thu, 05 Nov 2026 01:39:19 -0600

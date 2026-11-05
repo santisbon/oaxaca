@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+
+# The tree is Disktree's release build, not source: nothing is compiled.
+%:
+	dh $@
+
+override_dh_auto_build:
+override_dh_auto_test:
+override_dh_auto_clean:
+
+override_dh_auto_install:
+	install -D -m 0755 disktree debian/disktree/usr/bin/disktree
+	install -d debian/disktree/usr/share/applications
+	sed -e 's|@BINDIR@/||' -e "s|@VERSION@|$$(cat VERSION)|" disktree.desktop.in > debian/disktree/usr/share/applications/disktree.desktop
+	install -D -m 0644 disktree.svg debian/disktree/usr/share/icons/hicolor/scalable/apps/disktree.svg
+	install -D -m 0644 README.md debian/disktree/usr/share/doc/disktree/README.md
+
+# The release has no debug information to put in a -dbgsym package.
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+override_dh_dwz:

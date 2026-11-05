@@ -1,0 +1,36 @@
+# Generated from packages/owe/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: owe
+Section: x11
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ meson,
+ ninja-build,
+ pkgconf,
+ wayland-protocols,
+ libwayland-dev,
+ libegl-dev,
+ libgles-dev,
+ libgl-dev,
+ libepoxy-dev,
+ libmpv-dev,
+ libavformat-dev,
+ libavcodec-dev,
+ libavutil-dev,
+ libswscale-dev,
+ libsystemd-dev
+Standards-Version: 4.7.4
+Homepage: https://github.com/omacom/owe
+Rules-Requires-Root: no
+
+Package: owe
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ ffmpeg,
+ socat
+Description: wallpaper engine for Hyprland desktops (video, GIF, stills)
+ OWE plays video files and GIFs as the Hyprland background. The Oaxaca
+ desktop uses it for video backgrounds and for the short intro a theme can
+ play. Still backgrounds are drawn by the desktop shell, and the OWE renderer
+ runs only while something moves.
