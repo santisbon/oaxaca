@@ -8,7 +8,7 @@ Each entry uses only terms defined above it, in the developer README's [Terms](R
 
 ### `santisbon/omarchy` and the port branch
 
-`santisbon/omarchy`, a fork of `omacom/omarchy`, with a branch `oaxaca` that follows the tag named as `OMARCHY_TAG` in `distro.conf` (`v4.0.6`) and holds every change the port makes as commits of its own; each new Omarchy tag is merged into the branch (policy section 3, choice 101). The branch keeps Omarchy's names in every file (`omarchy-*`, `OMARCHY_PATH`, `/usr/share/omarchy`), so that a merge of the next Omarchy tag meets the same names on both sides. A checkout of `santisbon/omarchy` adds `omacom/omarchy` as the remote `upstream`.
+`santisbon/omarchy`, a fork of `omacom/omarchy`, with a branch `oaxaca` that follows the tag named as `OMARCHY_TAG` in `distro.conf` (`v4.0.6`) and holds every change the port makes as commits of its own; each new Omarchy tag is merged on a temporary branch, `merge-<tag>`, and `oaxaca` is fast-forwarded to that branch once the merge passes its tests (policy section 3, choice 101). The branch keeps Omarchy's names in every file (`omarchy-*`, `OMARCHY_PATH`, `/usr/share/omarchy`), so that a merge of the next Omarchy tag meets the same names on both sides. A checkout of `santisbon/omarchy` adds `omacom/omarchy` as the remote `upstream`.
 
 ### The rename script
 
