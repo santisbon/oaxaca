@@ -1,4 +1,4 @@
-oaxaca-desktop (4.0.6+git20261103.181.523b92f4-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.0.6+git20261105.183.ab07ea56-0oaxaca1) stonking; urgency=medium
 
   * A theme written for Omarchy installs under the same name as on Omarchy:
     omarchy-giants-theme is now giants, not omarchy-giants. A theme already
