@@ -1,4 +1,4 @@
-oaxaca-desktop (4.5.0+git20261105.346.a6f6b307-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261105.347.4c74e928-0oaxaca1) stonking; urgency=medium
 
   * The network panel no longer says "Limited internet access" while a VPN
     device has full connectivity: a VPN that blocks traffic outside its tunnel
