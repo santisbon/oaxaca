@@ -26,6 +26,7 @@ Depends: ${misc:Depends},
  owe,
  disktree,
  gliff,
+ oaxaca-speedtest,
  ffmpegthumbnailer,
  ${port:Depends}
 Suggests: oaxaca-hw-legion, nvtop

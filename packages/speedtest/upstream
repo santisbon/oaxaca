@@ -1,0 +1,8 @@
+# Read by scripts/build.sh for packages in "3.0 (quilt)" format: the client's tag tarball and its
+# SHA-256, the one Omarchy's recipe records (omacom/omarchy-pkgs, pkgbuilds/omarchy-speedtest/PKGBUILD),
+# which matched sha256sum on the download on 2026-11-05.
+URL=https://github.com/omacom/omarchy-speedtest/archive/refs/tags/v0.2.1.tar.gz
+SHA256=ae939a2e7db8b2eba58c9d728808b0331508c8f848c5bbc309f5286b4da11bb3
+
+# make upstream-check compares this repository's latest release with debian/changelog.
+RELEASES=omacom/omarchy-speedtest

@@ -1,5 +1,13 @@
 oaxaca-desktop (4.5.0+git20261105.347.4c74e928-0oaxaca1) stonking; urgency=medium
 
+  * The speed test panel runs Omarchy's client, in the new package
+    oaxaca-speedtest, against speed.omarchy.org. Since the merge of Omarchy
+    v4.5.0, each test from the panel reported a failure after five seconds.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 05 Nov 2026 17:20:07 -0600
+
+oaxaca-desktop (4.5.0+git20261105.347.4c74e928-0oaxaca1) stonking; urgency=medium
+
   * The network panel no longer says "Limited internet access" while a VPN
     device has full connectivity: a VPN that blocks traffic outside its tunnel
     also blocks NetworkManager's check on the Wi-Fi or Ethernet device.

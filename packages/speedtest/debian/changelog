@@ -1,0 +1,7 @@
+oaxaca-speedtest (0.2.1-0oaxaca1) stonking; urgency=medium
+
+  * Initial Oaxaca package of omarchy-speedtest 0.2.1, the client Omarchy
+    v4.5.0's speed test panel runs. It counts only its own test traffic, and it
+    stops when the panel closes.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 05 Nov 2026 17:27:31 -0600

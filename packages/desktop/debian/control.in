@@ -25,6 +25,7 @@ Depends: ${misc:Depends},
  owe,
  disktree,
  gliff,
+ @DISTRO_ID@-speedtest,
  ffmpegthumbnailer,
  ${port:Depends}
 Suggests: @DISTRO_ID@-hw-legion, nvtop

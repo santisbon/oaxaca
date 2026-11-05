@@ -1,0 +1,25 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export GOCACHE = $(CURDIR)/debian/go_cache
+export GOFLAGS = -buildmode=pie -trimpath -mod=readonly -modcacherw
+export GOTOOLCHAIN = local
+
+%:
+	dh $@
+
+# No debhelper build system is used, because the module has no dependencies to vendor.
+override_dh_auto_build:
+	go build -ldflags "-X main.version=0.2.1" -o omarchy-speedtest
+
+override_dh_auto_test:
+	go test ./...
+
+# The path the desktop's renamed omarchy-network-speedtest runs.
+override_dh_auto_install:
+	install -D -m 0755 omarchy-speedtest debian/@DISTRO_ID@-speedtest/usr/lib/@DISTRO_ID@/speedtest
+
+# Go's linker output has no debug sections for dh_strip's -dbgsym package to use reliably.
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+override_dh_dwz:

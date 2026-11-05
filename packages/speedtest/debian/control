@@ -1,0 +1,19 @@
+# Generated from packages/speedtest/debian/control.in by scripts/render.py. Edit the .in file, not this one.
+Source: oaxaca-speedtest
+Section: net
+Priority: optional
+Maintainer: santisbon <santisbon@users.noreply.github.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ golang-go (>= 2:1.27~)
+Standards-Version: 4.7.4
+Homepage: https://github.com/omacom/omarchy-speedtest
+Rules-Requires-Root: no
+
+Package: oaxaca-speedtest
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Built-Using: ${misc:Built-Using}
+Description: network speed test client for the Oaxaca desktop
+ Measures download or upload speed against speed.omarchy.org, the service
+ Omarchy runs, and prints the running rate for the desktop's speed test panel.
