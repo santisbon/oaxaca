@@ -1,5 +1,13 @@
 oaxaca-desktop (4.5.0+git20261105.346.a6f6b307-0oaxaca1) stonking; urgency=medium
 
+  * The network panel no longer says "Limited internet access" while a VPN
+    device has full connectivity: a VPN that blocks traffic outside its tunnel
+    also blocks NetworkManager's check on the Wi-Fi or Ethernet device.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Thu, 05 Nov 2026 16:00:20 -0600
+
+oaxaca-desktop (4.5.0+git20261105.346.a6f6b307-0oaxaca1) stonking; urgency=medium
+
   * Merge Omarchy v4.5.0: floating workspaces with titlebars and a dock, video
     backgrounds and theme intros, languages and input methods, notification
     stacks, agent accounts, captive portals, and the release's fixes.

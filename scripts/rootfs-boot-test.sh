@@ -320,6 +320,8 @@ apt-mark manual dua-cli >/dev/null 2>&1 || true
 timeout 480 runuser -u tester -- env XDG_RUNTIME_DIR=/run/user/1001 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1001/bus systemd-run --user --pipe --wait --collect -q -u $id-boot-test-update $id-update -y > /tmp/update.log 2>&1
 echo "update exit: \$?"
 to=\$(dpkg-query -W -f='\${Version}' $id-desktop)
+# Nothing the update does may start the screen recorder's region picker or the recorder.
+echo "capture after update: slurp=\$(pgrep -cx slurp) recorder=\$(pgrep -cx gpu-screen-reco)"
 echo "upgrade: \$from -> \$to"
 echo "upgrade changed: \$([ "\$from" != "\$to" ] && echo yes || echo no)"
 errors=\$(sed 's/\x1b\[[0-9;]*m//g' /tmp/update.log | grep -E 'unbound variable|config not found|command not found|Something went wrong|No such file or directory|did not become ready')
@@ -868,6 +870,7 @@ if [[ $profile == desktop ]]; then
 fi
 if [[ $upgrade == 1 ]]; then
   check "^update exit: 0$"
+  check "^capture after update: slurp=0 recorder=0$"
   # The update must leave the desktop at build/'s version: a new one when the release rebuilt the
   # desktop, the published one when only other packages changed (2026-10-24: a release of the
   # installer alone stopped here on the earlier check, "upgrade changed: yes").
