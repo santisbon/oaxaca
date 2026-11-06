@@ -1,4 +1,4 @@
-oaxaca-desktop (4.5.0+git20261106.354.514686e7-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261106.355.3606a029-0oaxaca1) stonking; urgency=medium
 
   * The agents panel's usage updater no longer runs dpkg's temporary files as
     collectors. While oaxaca-tools was being replaced, the updater could
