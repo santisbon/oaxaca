@@ -3,6 +3,7 @@ oaxaca-desktop (4.5.0+git20261105.347.4c74e928-0oaxaca1) stonking; urgency=mediu
   * The speed test panel runs Omarchy's client, in the new package
     oaxaca-speedtest, against speed.omarchy.org. Since the merge of Omarchy
     v4.5.0, each test from the panel reported a failure after five seconds.
+  * The weather panel finds the location with geo.omarchy.org, as Omarchy does.
 
  -- santisbon <santisbon@users.noreply.github.com>  Thu, 05 Nov 2026 17:20:07 -0600
 
