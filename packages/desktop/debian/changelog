@@ -8,6 +8,8 @@ oaxaca-desktop (4.5.0+git20261105.347.4c74e928-0oaxaca1) stonking; urgency=mediu
     geo.omarchy.org, as Omarchy does.
   * The network panel's VPN check follows NetworkManager's events instead of
     starting nmcli every ten seconds per screen.
+  * The inotify instance limit is 1024 (90-oaxaca-file-watchers.conf), from
+    the next boot, because the shell alone holds dozens of instances.
 
  -- santisbon <santisbon@users.noreply.github.com>  Thu, 05 Nov 2026 17:20:07 -0600
 

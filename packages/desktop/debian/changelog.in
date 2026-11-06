@@ -8,6 +8,8 @@
     geo.omarchy.org, as Omarchy does.
   * The network panel's VPN check follows NetworkManager's events instead of
     starting nmcli every ten seconds per screen.
+  * The inotify instance limit is 1024 (90-@DISTRO_ID@-file-watchers.conf), from
+    the next boot, because the shell alone holds dozens of instances.
 
  -- @MAINTAINER@  Thu, 05 Nov 2026 17:20:07 -0600
 
