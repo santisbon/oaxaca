@@ -1,4 +1,4 @@
-oaxaca-desktop (4.5.0+git20261106.355.3606a029-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261106.357.f3cf0397-0oaxaca1) stonking; urgency=medium
 
   * Dictation is Superwhisper, as in Omarchy: Install > AI > Dictation downloads
     it from its vendor through the new package oaxaca-superwhisper, and it
