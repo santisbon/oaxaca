@@ -1,4 +1,4 @@
-oaxaca-desktop (4.5.0+git20261106.353.28af2984-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261106.354.514686e7-0oaxaca1) stonking; urgency=medium
 
   * Wi-Fi 7 is off on the Intel BE200 and BE211, as Omarchy has it. On a Legion
     Pro 7 with a BE200, the speed test read under 50 Mbps with Wi-Fi 7 on and
