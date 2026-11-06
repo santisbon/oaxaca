@@ -1,0 +1,18 @@
+#!/bin/sh
+# Generated from packages/desktop/debian/tools.preinst.in by scripts/render.py. Edit the .in file, not this one.
+# The agents panel starts oaxaca-agent-usage-update on a timer. Versions up to
+# 4.5.0+git20261106.354 of the updater run every executable named oaxaca-agent-usage-*, and
+# while dpkg replaces this package's files those names include dpkg's <name>.dpkg-new and
+# <name>.dpkg-tmp, among them the updater's own: it starts itself without end until memory runs out
+# (docs/6, choice 130). The fix in the updater arrives only with this package's files, so this
+# applies the same line to the installed updater before dpkg unpacks them.
+set -e
+updater=/usr/bin/oaxaca-agent-usage-update
+case "$1" in
+  upgrade)
+    if [ -f "$updater" ] && ! grep -qF '[[ $agent == *.* ]] && continue' "$updater"; then
+      sed -i '/^  \[\[ \$agent == "update" \]\] && continue$/a\  [[ $agent == *.* ]] \&\& continue' "$updater" || true
+    fi
+    ;;
+esac
+#DEBHELPER#

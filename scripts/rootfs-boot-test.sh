@@ -314,11 +314,46 @@ chmod 0440 /etc/sudoers.d/90-$id-boot-test
 # The published update asks before it removes orphaned packages, and dua-cli became one when the
 # desktop stopped depending on it. Nobody is here to answer, so dua-cli is kept for this run.
 apt-mark manual dua-cli >/dev/null 2>&1 || true
+# The agents panel starts the usage updater on a timer, and any run while dpkg replaces the tools
+# package sees dpkg's temporary files (docs/6, choice 130). That window lasts moments in a VM, so
+# when the first temporary file appears in the updater's folder this stops dpkg for 15 seconds and
+# runs the updater in that time, as the panel would. It records how many updater runs saw temporary
+# files, so a run that missed the window fails, and the most updater and collector processes at
+# once: the fault this looks for reaches thousands.
+(
+  until ls /usr/share/$id/bin/ | grep -q "^$id-agent-usage-.*\.dpkg-"; do sleep 0.01; done
+  pkill -STOP -x dpkg
+  seen=\$(ls /usr/share/$id/bin/ | grep -c '\.dpkg-')
+  echo "\$seen" > /tmp/updater-window-files
+  for i in 1 2 3 4 5; do
+    runuser -u tester -- env HOME=/home/tester XDG_RUNTIME_DIR=/run/user/1001 OMARCHY_PATH=/usr/share/$id $id-agent-usage-update >/dev/null 2>&1 &
+    echo "\$i" > /tmp/updater-window-runs
+    sleep 3
+  done
+  pkill -CONT -x dpkg
+) &
+updater_window=\$!
+(
+  peak=0
+  while :; do
+    now=\$(ps -eo comm= | grep -c "^$id-agent-us")
+    if [ "\$now" -gt "\$peak" ]; then peak=\$now; echo "\$peak" > /tmp/updater-peak; fi
+    sleep 0.2
+  done
+) &
+updater_watch=\$!
 # The user's update in the environment the user manager got at login, which a terminal opened
 # before the update also has.
 # A prompt nobody answers would hang it: after 8 minutes the test goes on with exit 124 and the log.
 timeout 480 runuser -u tester -- env XDG_RUNTIME_DIR=/run/user/1001 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1001/bus systemd-run --user --pipe --wait --collect -q -u $id-boot-test-update $id-update -y > /tmp/update.log 2>&1
-echo "update exit: \$?"
+update_status=\$?
+kill \$updater_window \$updater_watch 2>/dev/null
+pkill -CONT -x dpkg 2>/dev/null
+echo "update exit: \$update_status"
+echo "updater peak during update: \$(cat /tmp/updater-peak 2>/dev/null || echo none)"
+echo "updater runs in dpkg's window: \$(cat /tmp/updater-window-runs 2>/dev/null || echo 0) (\$(cat /tmp/updater-window-files 2>/dev/null || echo 0) temporary files)"
+echo "dpkg audit lines: \$(dpkg --audit | wc -l)"
+echo "dpkg temporary files left: \$(find /usr /etc -xdev \( -name '*.dpkg-new' -o -name '*.dpkg-tmp' \) 2>/dev/null | wc -l)"
 to=\$(dpkg-query -W -f='\${Version}' $id-desktop)
 # Nothing the update does may start the screen recorder's region picker or the recorder.
 echo "capture after update: slurp=\$(pgrep -cx slurp) recorder=\$(pgrep -cx gpu-screen-reco)"
@@ -870,6 +905,10 @@ if [[ $profile == desktop ]]; then
 fi
 if [[ $upgrade == 1 ]]; then
   check "^update exit: 0$"
+  check "^updater peak during update: [0-9]\{1,3\}$"
+  check "^updater runs in dpkg's window: 5 ([1-9]"
+  check "^dpkg audit lines: 0$"
+  check "^dpkg temporary files left: 0$"
   check "^capture after update: slurp=0 recorder=0$"
   # The update must leave the desktop at build/'s version: a new one when the release rebuilt the
   # desktop, the published one when only other packages changed (2026-10-24: a release of the

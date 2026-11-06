@@ -1,5 +1,17 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * The agents panel's usage updater no longer runs dpkg's temporary files as
+    collectors. While @DISTRO_ID@-tools was being replaced, the updater could
+    start itself without end until memory ran out, and could leave the desktop
+    unable to log in. This package's preinst fixes the installed updater before
+    the upgrade unpacks anything.
+  * A terminal opened during an upgrade no longer loads dpkg's temporary files
+    as bash functions.
+
+ -- @MAINTAINER@  Fri, 06 Nov 2026 11:36:00 -0600
+
+@DISTRO_ID@-desktop (4.5.0+git20261106.354.514686e7-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Wi-Fi 7 is off on the Intel BE200 and BE211, as Omarchy has it. On a Legion
     Pro 7 with a BE200, the speed test read under 50 Mbps with Wi-Fi 7 on and
     about 750 Mbps with it off. Upgraded systems get the setting once, and
