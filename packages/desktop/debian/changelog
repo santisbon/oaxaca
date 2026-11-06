@@ -1,4 +1,4 @@
-oaxaca-desktop (4.5.0+git20261105.347.4c74e928-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261106.353.28af2984-0oaxaca1) stonking; urgency=medium
 
   * The speed test panel runs Omarchy's client, in the new package
     oaxaca-speedtest, against speed.omarchy.org. Since the merge of Omarchy
