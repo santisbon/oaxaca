@@ -314,6 +314,9 @@ chmod 0440 /etc/sudoers.d/90-$id-boot-test
 # The published update asks before it removes orphaned packages, and dua-cli became one when the
 # desktop stopped depending on it. Nobody is here to answer, so dua-cli is kept for this run.
 apt-mark manual dua-cli >/dev/null 2>&1 || true
+# A system with Voxtype: the update's migration removes it, once the published repository still has
+# it to install.
+if apt-get install -y -q voxtype >/dev/null 2>&1; then voxtype_before=yes; else voxtype_before=no; fi
 # The agents panel starts the usage updater on a timer, and any run while dpkg replaces the tools
 # package sees dpkg's temporary files (docs/6, choice 130). That window lasts moments in a VM, so
 # when the first temporary file appears in the updater's folder this stops dpkg for 15 seconds and
@@ -630,6 +633,38 @@ journalctl -b -u sddm --no-pager -o cat -n 12 | sed 's/^/journal sddm: /'
 journalctl -b _UID=1001 --no-pager -o cat -p warning | tail -n 12 | sed 's/^/journal tester (warnings): /'
 EOF
 fi
+if [ "$upgrade" = 1 ]; then
+cat >> "$root/usr/local/sbin/$id-boot-test" <<EOF
+echo "--- dictation"
+echo "voxtype after update: before=\$voxtype_before installed=\$(dpkg-query -W -f='\${Status}' voxtype 2>/dev/null | grep -c 'ok installed')"
+# Install > AI > Dictation, with its one question answered by a stand-in gum. This downloads the
+# vendor's archive. The guest has no microphone, so recording itself is not tested here.
+mkdir -p /tmp/gum-yes
+printf '#!/bin/sh\nexit 0\n' > /tmp/gum-yes/gum
+chmod 755 /tmp/gum-yes/gum
+sw_env="PATH=/tmp/gum-yes:/usr/local/bin:/usr/bin:/bin OMARCHY_PATH=/usr/share/$id"
+timeout 300 runuser -u tester -- env XDG_RUNTIME_DIR=/run/user/1001 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1001/bus systemd-run --user --pipe --wait --collect -q env \$sw_env $id-install-dictation-superwhisper > /tmp/superwhisper-install.log 2>&1
+echo "superwhisper install exit: \$?"
+sed 's/\x1b\[[0-9;]*m//g' /tmp/superwhisper-install.log | tail -n 6 | cut -c1-150 | sed 's/^/superwhisper install log: /'
+echo "superwhisper package: \$(dpkg-query -W -f='\${Status}' $id-superwhisper 2>/dev/null)"
+echo "superwhisper version file: \$(cat /opt/superwhisper/VERSION 2>/dev/null || echo none)"
+echo "superwhisper service: \$(run_user systemctl --user is-active superwhisper.service 2>&1)"
+echo "dictation default: \$(run_user $id-default-dictation 2>&1)"
+echo "superwhisper status: \$(run_user superwhisper status 2>&1 | tr -d '\n' | cut -c1-300)"
+echo "superwhisper mode: \$(run_user superwhisper models show 2>/dev/null | jq -r .processing)"
+echo "superwhisper shortcuts: \$(run_user superwhisper shortcuts show 2>&1 | tr -d '\n ' | cut -c1-200)"
+echo "superwhisper license: \$(run_user superwhisper license status 2>&1 | tr -d '\n' | cut -c1-200)"
+run_user $id-restart-hyprctl >/dev/null 2>&1
+sleep 2
+as_user env HOME=/home/tester OMARCHY_PATH=/usr/share/$id lua5.4 /usr/local/share/$id-boot-test/bindings.lua /home/tester/.config/hypr/hyprland.lua > /tmp/bindings-dictation.tsv 2>/tmp/bindings.err
+echo "dictation binds: alt_space=\$(grep -c '^ALT + SPACE' /tmp/bindings-dictation.tsv) right_alt=\$(grep -c 'Alt_R' /tmp/bindings-dictation.tsv)"
+echo "bar widgets with superwhisper: \$(bar_widgets | grep -c superwhisper.panel)"
+echo "shell ping with superwhisper: \$(run_user $id-shell shell ping 2>&1 | head -1)"
+timeout 120 runuser -u tester -- env XDG_RUNTIME_DIR=/run/user/1001 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1001/bus systemd-run --user --pipe --wait --collect -q env \$sw_env $id-remove-dictation-superwhisper > /tmp/superwhisper-remove.log 2>&1
+echo "superwhisper remove exit: \$?"
+echo "superwhisper after removal: package=\$(dpkg-query -W -f='\${Status}' $id-superwhisper 2>/dev/null | grep -c 'ok installed') opt=\$(ls -d /opt/superwhisper 2>/dev/null | wc -l) default=\$(run_user $id-default-dictation 2>/dev/null | wc -l)"
+EOF
+fi
 cat >> "$root/usr/local/sbin/$id-boot-test" <<EOF
 echo "=== BOOT-TEST END"
 systemctl poweroff
@@ -905,6 +940,15 @@ if [[ $profile == desktop ]]; then
 fi
 if [[ $upgrade == 1 ]]; then
   check "^update exit: 0$"
+  check "^voxtype after update: before=\(no\|yes\) installed=0$"
+  check "^superwhisper install exit: 0$"
+  check "^superwhisper service: active$"
+  check "^dictation default: superwhisper$"
+  check "^superwhisper mode: cloud$"
+  check "^dictation binds: alt_space=[1-9][0-9]* right_alt=0$"
+  check "^shell ping with superwhisper: "
+  check "^superwhisper remove exit: 0$"
+  check "^superwhisper after removal: package=0 opt=0 default=0$"
   check "^updater peak during update: [0-9]\{1,3\}$"
   check "^updater runs in dpkg's window: 5 ([1-9]"
   check "^dpkg audit lines: 0$"

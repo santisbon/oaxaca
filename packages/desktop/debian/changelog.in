@@ -1,5 +1,15 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Dictation is Superwhisper, as in Omarchy: Install > AI > Dictation downloads
+    it from its vendor through the new package @DISTRO_ID@-superwhisper, and it
+    starts on the Cloud mode. Holding Right Alt stays unbound.
+  * Voxtype and the bar's Dictate button are gone, and an update removes the
+    voxtype package. Its settings and models stay in the user's home folder.
+
+ -- @MAINTAINER@  Fri, 06 Nov 2026 13:55:19 -0600
+
+@DISTRO_ID@-desktop (4.5.0+git20261106.355.3606a029-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * The agents panel's usage updater no longer runs dpkg's temporary files as
     collectors. While @DISTRO_ID@-tools was being replaced, the updater could
     start itself without end until memory ran out, and could leave the desktop

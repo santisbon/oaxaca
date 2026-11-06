@@ -1,0 +1,42 @@
+#!/bin/sh
+set -e
+
+# The vendor's release, with the SHA-256 Omarchy's recipe pins (omacom/omarchy-pkgs,
+# pkgbuilds/superwhisper-bin/PKGBUILD). The vendor grants no license to redistribute it, so the
+# archive comes from the vendor on the user's machine and not from this distro's repository.
+version=1.2.0
+sha256=28bc5758ed6cf42468b97ef940ec2a96b114e6b6ea03bcb2c04bc678857d02f0
+url=https://tux.superwhisper.com/x86_64/v$version/superwhisper-omarchy-x86_64-$version.tar.zst
+bundle=superwhisper-omarchy-x86_64-$version
+
+if [ "$1" = configure ] && [ "$(cat /opt/superwhisper/VERSION 2>/dev/null)" != "$version" ]; then
+  work=$(mktemp -d /var/tmp/@DISTRO_ID@-superwhisper.XXXXXX)
+  trap 'rm -rf "$work"' EXIT
+  echo "Downloading Superwhisper $version from its vendor"
+  curl -fsSL --retry 3 -o "$work/archive.tar.zst" "$url"
+  curl -fsSL --retry 3 -o "$work/archive.tar.zst.minisig" "$url.minisig"
+  echo "$sha256  $work/archive.tar.zst" | sha256sum -c --quiet -
+  minisign -q -V -m "$work/archive.tar.zst" -x "$work/archive.tar.zst.minisig" -p /usr/share/superwhisper/linux-release.pub
+  tar --zstd -xf "$work/archive.tar.zst" -C "$work" --no-same-owner
+  [ "$(cat "$work/$bundle/VERSION")" = "$version" ]
+  # The desktop owns its Dictation menu; omit the portable installer's menu writer.
+  rm -f "$work/$bundle/app/scripts/omarchy-menu-rows.py"
+  mkdir -p "$work/$bundle/app/licenses"
+  cp "$work/$bundle"/licenses/* "$work/$bundle/app/licenses/"
+  rm -rf /opt/superwhisper.new
+  mkdir -p /opt
+  cp -a "$work/$bundle/app" /opt/superwhisper.new
+  rm -rf /opt/superwhisper
+  mv /opt/superwhisper.new /opt/superwhisper
+
+  install -D -m 0644 /opt/superwhisper/assets/linux-status/SuperwhisperTUI.ttf /usr/share/fonts/superwhisper/SuperwhisperTUI.ttf
+  for size in 16 32 64 128 256 512 1024; do
+    install -D -m 0644 "/opt/superwhisper/assets/app-icon/$size.png" "/usr/share/icons/hicolor/${size}x${size}/apps/superwhisper.png"
+  done
+  mkdir -p /usr/share/fcitx5/addon
+  sed 's|@LIBRARY''@|/opt/superwhisper/lib/fcitx5/libsuperwhisper-fcitx5|' \
+    /opt/superwhisper/assets/fcitx5/superwhisper.conf.in > /usr/share/fcitx5/addon/superwhisper.conf
+  gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
+fi
+
+#DEBHELPER#

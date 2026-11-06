@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+DEST = debian/@DISTRO_ID@-superwhisper
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	install -D -m 0755 files/superwhisper $(DEST)/usr/bin/superwhisper
+	install -D -m 0644 files/superwhisper.service $(DEST)/usr/lib/systemd/user/superwhisper.service
+	install -D -m 0644 files/superwhisper.desktop $(DEST)/usr/share/applications/superwhisper.desktop
+	install -D -m 0644 files/superwhisper-url.desktop $(DEST)/usr/share/applications/superwhisper-url.desktop
+	install -D -m 0755 files/setup-user $(DEST)/usr/share/superwhisper/setup-user
+	install -D -m 0644 files/linux-release.pub $(DEST)/usr/share/superwhisper/linux-release.pub
+
+# setup-user turns the user service on for the user who asks for dictation.
+override_dh_installsystemduser:
+	dh_installsystemduser --no-enable

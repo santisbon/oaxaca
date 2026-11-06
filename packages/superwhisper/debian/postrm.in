@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+# What postinst unpacked, which dpkg does not know about. An upgrade keeps it.
+if [ "$1" = remove ] || [ "$1" = purge ]; then
+  rm -rf /opt/superwhisper /opt/superwhisper.new /usr/share/fonts/superwhisper /usr/share/fcitx5/addon/superwhisper.conf
+  for size in 16 32 64 128 256 512 1024; do
+    rm -f "/usr/share/icons/hicolor/${size}x${size}/apps/superwhisper.png"
+  done
+fi
+
+#DEBHELPER#

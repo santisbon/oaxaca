@@ -1,0 +1,4 @@
+<!-- Generated from packages/superwhisper/README.md.in by scripts/render.py. Edit the .in file, not this one. -->
+# oaxaca-superwhisper
+
+The package behind Install > AI > Dictation. `debian/postinst.in` downloads Superwhisper, a proprietary dictation program, from its vendor, checks the archive's SHA-256 and Minisign signature, and unpacks the archive under `/opt/superwhisper`. The package itself holds the launcher `/usr/bin/superwhisper`, the user service, the desktop entries and `/usr/share/superwhisper/setup-user`, adapted from Omarchy's recipe (`omacom/omarchy-pkgs`, `pkgbuilds/superwhisper-bin`), and no file of the vendor's. The package's Depends are the vendor's list for apt (`dependencies.sh` in the archive) plus what `postinst` and Omarchy's recipe use.

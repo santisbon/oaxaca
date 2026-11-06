@@ -152,7 +152,9 @@ for pkg in "${pkgs[@]}"; do
   dsc="$out/${src}_${ver#*:}.dsc"
   echo "== building $name ($src $ver)"
   tree="$pkg"
-  if [[ -f $pkg/upstream ]]; then
+  # An upstream file with only RELEASES= is for make upstream-check: the package holds its own
+  # source, and fetches nothing at build time (packages/superwhisper).
+  if grep -qE '^(URL|GIT|FILES|DSC)=' "$pkg/upstream" 2>/dev/null; then
     TAR_OPTS=(--sort=name --owner=0 --group=0 --numeric-owner)
     uver=${ver#*:}; uver=${uver%-*}
     URL= SHA256= GIT= REF= DATE= COUNT= COMMIT= TAG= FILES= DSC= CARGO_VENDOR= NO_TOP_DIR= RELEASES=

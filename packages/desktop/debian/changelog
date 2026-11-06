@@ -1,5 +1,15 @@
 oaxaca-desktop (4.5.0+git20261106.355.3606a029-0oaxaca1) stonking; urgency=medium
 
+  * Dictation is Superwhisper, as in Omarchy: Install > AI > Dictation downloads
+    it from its vendor through the new package oaxaca-superwhisper, and it
+    starts on the Cloud mode. Holding Right Alt stays unbound.
+  * Voxtype and the bar's Dictate button are gone, and an update removes the
+    voxtype package. Its settings and models stay in the user's home folder.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 06 Nov 2026 13:55:19 -0600
+
+oaxaca-desktop (4.5.0+git20261106.355.3606a029-0oaxaca1) stonking; urgency=medium
+
   * The agents panel's usage updater no longer runs dpkg's temporary files as
     collectors. While oaxaca-tools was being replaced, the updater could
     start itself without end until memory ran out, and could leave the desktop

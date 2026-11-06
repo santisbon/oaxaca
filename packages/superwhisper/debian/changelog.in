@@ -1,0 +1,7 @@
+@DISTRO_ID@-superwhisper (1.2.0) @BASE_SERIES@; urgency=medium
+
+  * Install Superwhisper 1.2.0, downloaded from its vendor when this package
+    is configured, with its SHA-256 and Minisign signature checked. This
+    package holds none of the vendor's files.
+
+ -- @MAINTAINER@  Fri, 06 Nov 2026 01:46:32 -0600

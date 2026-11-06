@@ -1,0 +1,3 @@
+# Read by scripts/upstream-check.sh. This package holds no upstream files: debian/postinst.in pins
+# the vendor's version and SHA-256, and a new release means changing them and debian/changelog.in.
+RELEASES=superultrainc/superwhisper-linux-releases
