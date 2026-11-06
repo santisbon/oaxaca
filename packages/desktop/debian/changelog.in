@@ -1,5 +1,14 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Wi-Fi 7 is off on the Intel BE200 and BE211, as Omarchy has it. On a Legion
+    Pro 7 with a BE200, the speed test read under 50 Mbps with Wi-Fi 7 on and
+    about 750 Mbps with it off. Upgraded systems get the setting once, and
+    oaxaca-update offers the reboot it needs.
+
+ -- @MAINTAINER@  Thu, 05 Nov 2026 23:25:15 -0600
+
+@DISTRO_ID@-desktop (4.5.0+git20261106.353.28af2984-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * The speed test panel runs Omarchy's client, in the new package
     @DISTRO_ID@-speedtest, against speed.omarchy.org. Since the merge of Omarchy
     v4.5.0, each test from the panel reported a failure after five seconds.

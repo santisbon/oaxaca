@@ -51,17 +51,23 @@ case "$1" in
     if command -v @DISTRO_ID@-sudo-passwordless >/dev/null; then
       @DISTRO_ID@-sudo-passwordless __migrate || true
     fi
-    # The Wi-Fi 7 fix is for a Dell XPS on Panther Lake only (docs/6, choice 60). Installs made
-    # earlier wrote it on every machine with an Intel BE200 or BE211; take it back off the
-    # others. The file is not a package file, and a migration runs as the user, so this is the
-    # place; the initramfs rebuilt below then carries the change too.
+    # Wi-Fi 7 is off on an Intel BE200 or BE211 (docs/6, choice 60). install/hardware runs this
+    # script at install; systems installed without the file get it here, once, so a user's later
+    # removal of the file stays in force. The file is not a package file, and a migration runs as
+    # the user, so this is the place; the initramfs rebuilt below then carries the change too.
     eht=/etc/modprobe.d/iwlwifi-disable-eht.conf
-    if [ -f "$eht" ] && grep -q 'Temporary fix Dell XPS' "$eht" &&
-      ! { grep -qi XPS /sys/class/dmi/id/product_name /sys/class/dmi/id/product_family 2>/dev/null &&
-          lspci 2>/dev/null | grep -iE 'vga|3d|display' | grep -qi 'panther lake'; }; then
-      rm -f "$eht"
-      # iwlwifi keeps the option until it loads again.
-      request_reboot
+    eht_fix=/usr/share/@DISTRO_ID@/install/hardware/intel/fix-wifi7-eht.sh
+    eht_marker=/var/lib/@DISTRO_ID@/wifi7-off
+    if [ -n "$2" ] && [ ! -e "$eht_marker" ] && [ -f "$eht_fix" ]; then
+      if [ ! -e "$eht" ]; then
+        sh "$eht_fix" || true
+        # iwlwifi reads the option when it loads.
+        if [ -e "$eht" ]; then
+          request_reboot
+        fi
+      fi
+      mkdir -p /var/lib/@DISTRO_ID@
+      touch "$eht_marker"
     fi
     # The firewall (docs/6, choice 40): install/config/firewall.sh turns ufw on at install since
     # desktop 4.0.4+git20261016.47; systems installed earlier have it off, and migrations run as
