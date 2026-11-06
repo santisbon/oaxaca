@@ -1,5 +1,13 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Super + Shift + S takes a screenshot, and Google Maps moves to
+    Super + Shift + Alt + S. On a Lenovo Legion Pro 7 with Fn Lock on, the PrtSc
+    key sends Super + Shift + S, so it opened Google Maps.
+
+ -- @MAINTAINER@  Fri, 06 Nov 2026 17:38:38 -0600
+
+@DISTRO_ID@-desktop (4.5.0+git20261106.357.f3cf0397-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Dictation is Superwhisper, as in Omarchy: Install > AI > Dictation downloads
     it from its vendor through the new package @DISTRO_ID@-superwhisper, and it
     starts on the Cloud mode. Holding Right Alt stays unbound.

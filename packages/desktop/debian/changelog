@@ -1,5 +1,13 @@
 oaxaca-desktop (4.5.0+git20261106.357.f3cf0397-0oaxaca1) stonking; urgency=medium
 
+  * Super + Shift + S takes a screenshot, and Google Maps moves to
+    Super + Shift + Alt + S. On a Lenovo Legion Pro 7 with Fn Lock on, the PrtSc
+    key sends Super + Shift + S, so it opened Google Maps.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 06 Nov 2026 17:38:38 -0600
+
+oaxaca-desktop (4.5.0+git20261106.357.f3cf0397-0oaxaca1) stonking; urgency=medium
+
   * Dictation is Superwhisper, as in Omarchy: Install > AI > Dictation downloads
     it from its vendor through the new package oaxaca-superwhisper, and it
     starts on the Cloud mode. Holding Right Alt stays unbound.
