@@ -192,10 +192,6 @@ All on the Legion laptop, then running Kubuntu 26.04.1 (24 CPUs, KVM), with the 
   `system: starting` rather than `running` is expected and explained in the script: systemd counts startup as finished only once its job queue first drains, and the test unit's own job is in that queue, so the test waits for every other job instead and reports no failed units. 162 AppArmor profiles loaded means the `apparmor` service found the profiles shipped by the installed packages. `apt update: ok` covers both the Ubuntu archive and the Oaxaca repository on GitHub Pages, verified with the installed keyring. The whole test, image creation included, takes 41 s on this workstation (the `mke2fs` copy of the 1.8 GB tree is most of that).
 - Four problems found and fixed on the way, each now a comment in the script that hit it: a make variable named `PKG` in `debian/rules` was overridden by the `make build PKG=...` command line through `MAKEFLAGS`, leaving the package empty; the host shell's `LOCPATH` made the `locales` package fail its own check inside the chroot; a hook's redirect into the home directory was denied in unshare mode, so the manifest is fetched with mmdebstrap's `download` hook; and `systemctl is-system-running --wait` inside the test unit waited for itself.
 
-## Open work
-
-What is left from this step is in the developer README's [To do](README.md#to-do), the one list of open work.
-
 ## Facts checked on 2026-10-07
 
 | Fact | Value | Source |

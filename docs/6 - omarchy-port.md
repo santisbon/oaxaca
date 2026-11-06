@@ -489,10 +489,6 @@ All on the Legion laptop, then running Kubuntu 26.04.1 (24 CPUs, KVM, Intel iGPU
 - **Stores and the catalogue additions** (choice 17, later the same day): with `snapd` and `flatpak` in the package list, `install/config/flatpak.sh` adding Flathub, the six store helpers, VS Code restored next to VSCodium from Flathub, and Wave and Thunderbird as snaps, the desktop packages pass lintian, the root filesystem is 3.5 GB with 1091 packages, and the boot test reports `snapd candidate: 2.77.1+ubuntu26.10.1`, `apply-system completed scripts: 19`, `stores: snapd=enabled flathub=1`, `apps split: removed=0 launchers=3 apps-pkg=0`, `shell log: 17 lines, 0 errors, 8 warnings` and `== boot test passed`. The store entries install from the network on request and are not exercised by the test.
 - **Chrome restored and Mullvad VPN added** (later the same day): the browser installer, remover, theme scripts and the three menu groups carry Chrome next to Chromium again, and the service group gained Mullvad VPN from Mullvad's apt repository (key and `InRelease` answered HTTP 200; `mullvad-vpn 2026.5`); the desktop packages pass lintian, the root filesystem rebuilds and the boot test reports `menu layer: yes`, `stores: snapd=enabled flathub=1`, `shell log: 17 lines, 0 errors, 8 warnings` and `== boot test passed`.
 
-## Open work
-
-What is left from this step is in the developer README's [To do](README.md#to-do), the one list of open work.
-
 ## Facts checked on 2026-10-10
 
 | Fact | Value | Source |

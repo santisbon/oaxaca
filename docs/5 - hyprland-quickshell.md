@@ -120,10 +120,6 @@ All on the Legion laptop, then running Kubuntu 26.04.1 (24 CPUs, KVM, Intel iGPU
   So on Ubuntu's Hyprland 0.56.2 with virgl, our Quickshell loads Omarchy v4.0.4's shell, the shell's `IpcHandler` answers `ping` with `ok` twelve seconds after launch, and its bar is on screen as the layer surface `omarchy-bar`. The shell wrote seven lines to its journal in those twelve seconds and none of them matches an error pattern, with no `omarchy-*` script, no theme and no Nerd Font installed: the shell's startup tolerates all of that, as choice 7 expected. The other layer surfaces (`omarchy-background`, `omarchy-menu`, …) appear on demand, when a theme sets a background or a key opens the menu, so their absence here says nothing.
 - The empty `revision` in `quickshell --version` is expected: Quickshell fills it from `git` at build time, and the orig tarball has no `.git`; Debian's build prints the same.
 
-## Open work
-
-What is left from this step is in the developer README's [To do](README.md#to-do), the one list of open work.
-
 ## Facts checked on 2026-10-09
 
 | Fact | Value | Source |

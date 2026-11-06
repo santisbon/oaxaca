@@ -106,10 +106,6 @@ All on the Legion laptop, then running Kubuntu 26.04 (stonking chroots and image
 - **The `#clear` semantics**: `apt-config dump Unattended-Upgrade::Allowed-Origins` over a directory with Ubuntu's `50unattended-upgrades` alone prints the four `${distro_id}` entries; with `51oaxaca-unattended-upgrades` beside it, the four literal `Ubuntu:` entries only.
 - **Packages built**: `oaxaca-base 0.1.1` (lintian clean), `oaxaca-desktop 4.0.4-0oaxaca1` from the branch's working tree with `migrations/` (the README only) in `oaxaca-tools` and the runner fix, lintian clean (the third desktop build of the day; `build/` holds it).
 
-## Open work
-
-What is left from this step is in the developer README's [To do](README.md#to-do), the one list of open work.
-
 ## Facts checked on 2026-10-11
 
 | Fact | Value | Source |

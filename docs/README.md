@@ -25,7 +25,6 @@ Nothing is ever installed and then stripped out: the root filesystem is assemble
   - [Vendored crates](#vendored-crates)
   - [Codec](#codec)
   - [VA-API driver](#va-api-driver)
-- [To do](#to-do)
 - [The installed system in detail](#the-installed-system-in-detail)
   - [Installing software: Recommends are on, with exceptions](#installing-software-recommends-are-on-with-exceptions)
   - [Secure Boot](#secure-boot)
@@ -224,10 +223,6 @@ The packages that ship the x264 plugin (`libgstx264.so`), DVD reading (`libgstdv
 ### VA-API driver
 
 The library through which a program hands [codec](#codec) work to the graphics card instead of the processor (hardware decoding). VA-API is the interface; each GPU vendor has its own driver: Mesa's for AMD, Intel's `intel-media-va-driver` for Intel, and `nvidia-vaapi-driver` for NVIDIA.
-
-## To do
-
-The one list of open work for Oaxaca, this repository and `santisbon/omarchy`, is the GitHub project [Oaxaca](https://github.com/users/santisbon/projects/4): one draft issue per item, each with its Area (such as "To design" or "When something changes upstream") and its Status. Each item says what is known and where its background is. When an item is done, it is marked Done there, and the work is recorded where the work happened: a changelog entry, a numbered choice in one of the step documents, or `santisbon/omarchy`'s [PORT-REMOVALS.md](https://github.com/santisbon/omarchy/blob/oaxaca/PORT-REMOVALS.md), "Restored".
 
 ## The installed system in detail
 

@@ -202,10 +202,6 @@ All on the Legion laptop, then running Kubuntu 26.04.1 (24 CPUs, KVM, Intel iGPU
   So `ubuntu-drivers` works with `ID=oaxaca` (the policy's open question from step 3): its "from the distro" test reads apt's `Origin: Ubuntu` field, not `/etc/os-release`. The detector recommends `nvidia-driver-580-open`, the LTSB branch, over `615-open`, the NFB branch; `oaxaca-drivers-install` chooses `615-open` (choice 13), and the list the command hands apt resolves to `linux-modules-nvidia-615-open-generic` with no DKMS package. The plan's table (2026-09-24) expected `595-open`; in `stonking` today `nvidia-driver-595-open` is a transitional package depending on `nvidia-driver-615-open`, with no `Support:` field, so the detector never lists it and `615-open` is what a user asking for 595 gets. The plan's rule "don't hardcode the branch number" stands; the table is corrected there. In the QEMU guest, with no NVIDIA GPU, the same `--show` prints `driver: ubuntu-drivers default (no NVIDIA open branch with prebuilt modules fits)` and an empty package list, and exits 0.
 - Problems found and fixed on the way: `loginctl list-sessions` has no `--plain` option (the first run never found the test session); `systemctl --user -M tester@` opened a new logind session per call (replaced by `runuser`); a plain `mount --bind /sys` into the chroot is refused in a user namespace because `/sys` carries locked submounts (`--rbind`); `scripts/render.py` wrote its generated-file note as a `#` comment into a Lua file and a man page (it now knows `--` and `.\"`); and `apt-get --simulate install nvidia-driver-580-open` alone resolves to DKMS, because only `ubuntu-drivers` adds the `linux-modules-nvidia` package to the list, which is why the check uses its library call.
 
-## Open work
-
-What is left from this step is in the developer README's [To do](README.md#to-do), the one list of open work.
-
 ## Facts checked on 2026-10-08
 
 | Fact | Value | Source |
