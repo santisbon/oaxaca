@@ -1,4 +1,4 @@
-oaxaca-desktop (4.5.0+git20261106.359.f77716ef-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261107.360.2255473a-0oaxaca1) stonking; urgency=medium
 
   * Superwhisper shows one icon on the bar, not two: its panel takes the place
     of its tray item, as in Omarchy.
