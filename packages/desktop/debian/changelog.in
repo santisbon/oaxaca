@@ -1,5 +1,12 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Superwhisper shows one icon on the bar, not two: its panel takes the place
+    of its tray item, as in Omarchy.
+
+ -- @MAINTAINER@  Fri, 06 Nov 2026 18:44:24 -0600
+
+@DISTRO_ID@-desktop (4.5.0+git20261106.359.f77716ef-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Super + Shift + S takes a screenshot, and Google Maps moves to
     Super + Shift + Alt + S. On a Lenovo Legion Pro 7 with Fn Lock on, the PrtSc
     key sends Super + Shift + S, so it opened Google Maps.

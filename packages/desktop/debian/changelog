@@ -1,5 +1,12 @@
 oaxaca-desktop (4.5.0+git20261106.359.f77716ef-0oaxaca1) stonking; urgency=medium
 
+  * Superwhisper shows one icon on the bar, not two: its panel takes the place
+    of its tray item, as in Omarchy.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 06 Nov 2026 18:44:24 -0600
+
+oaxaca-desktop (4.5.0+git20261106.359.f77716ef-0oaxaca1) stonking; urgency=medium
+
   * Super + Shift + S takes a screenshot, and Google Maps moves to
     Super + Shift + Alt + S. On a Lenovo Legion Pro 7 with Fn Lock on, the PrtSc
     key sends Super + Shift + S, so it opened Google Maps.
