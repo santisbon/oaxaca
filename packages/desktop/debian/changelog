@@ -1,4 +1,4 @@
-oaxaca-desktop (4.5.0+git20261106.357.f3cf0397-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261106.359.f77716ef-0oaxaca1) stonking; urgency=medium
 
   * Super + Shift + S takes a screenshot, and Google Maps moves to
     Super + Shift + Alt + S. On a Lenovo Legion Pro 7 with Fn Lock on, the PrtSc
