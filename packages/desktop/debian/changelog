@@ -1,4 +1,4 @@
-oaxaca-desktop (4.5.0+git20261107.360.2255473a-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261107.361.79f2b040-0oaxaca1) stonking; urgency=medium
 
   * Mullvad set to launch at login waits for the bar's tray, so its icon appears
     at login.
