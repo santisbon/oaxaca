@@ -1,5 +1,12 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Mullvad set to launch at login waits for the bar's tray, so its icon appears
+    at login.
+
+ -- @MAINTAINER@  Fri, 06 Nov 2026 20:09:14 -0600
+
+@DISTRO_ID@-desktop (4.5.0+git20261107.360.2255473a-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Superwhisper shows one icon on the bar, not two: its panel takes the place
     of its tray item, as in Omarchy.
 

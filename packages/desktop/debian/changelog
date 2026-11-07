@@ -1,5 +1,12 @@
 oaxaca-desktop (4.5.0+git20261107.360.2255473a-0oaxaca1) stonking; urgency=medium
 
+  * Mullvad set to launch at login waits for the bar's tray, so its icon appears
+    at login.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Fri, 06 Nov 2026 20:09:14 -0600
+
+oaxaca-desktop (4.5.0+git20261107.360.2255473a-0oaxaca1) stonking; urgency=medium
+
   * Superwhisper shows one icon on the bar, not two: its panel takes the place
     of its tray item, as in Omarchy.
 

@@ -131,6 +131,9 @@ install -D -m 0644 "$R/default/systemd/system/user@.service.d/20-$id-oomd.conf" 
 # gives a notification instead of Blueman's fallback dialog, which has no buttons and never times
 # out (docs/6, choice 116).
 install -D -m 0644 "$R/default/systemd/user/app-blueman@autostart.service.d/10-wait-notifications.conf" "$config/usr/lib/systemd/user/app-blueman@autostart.service.d/10-wait-notifications.conf"
+# Mullvad's window program waits for the shell's tray, so it does not miss adding its icon at login
+# (docs/6, choice 132). The source file has no backslash in its name; only the unit's name needs it.
+install -D -m 0644 "$R/default/systemd/user/mullvad-wait-tray.conf" "$config/usr/lib/systemd/user/app-mullvad\\x2dvpn@autostart.service.d/10-wait-tray.conf"
 # Application launchers: the resync copy only. Omarchy also seeds them through /etc/skel, but
 # dpkg's conffile list cannot hold names with spaces ("Google Maps.desktop"), and the first
 # login copies them into the home anyway (<id>-refresh-applications, run by <id>-provision-user).
