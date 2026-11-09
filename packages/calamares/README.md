@@ -9,7 +9,7 @@ The second patch, `debian/patches/revert-device-on-gui-thread.patch`, fixes the 
 
 The third patch, `debian/patches/keep-python-results-alive.patch`, fixes a progress message shown with a box in place of a letter ("Removing 5 p□ckages.", 2026-10-17). Calamares reads a Python step's status message with Boost.Python's `extract<std::string>`, built on the object the step's function returned, a temporary. `extract` keeps only a raw pointer to that object (`PyObject* m_source` in `boost/python/extract.hpp`) and converts it when its result is read, after the temporary was released. A message the step formats afresh has no other owner, so it was freed before Calamares read it. The patch holds the object in a named variable until the text is read, in `pyboost/PythonJob.cpp`'s `pythonStringMethod()` and `emitProgress()`.
 
-The package keeps Ubuntu's source and binary names and the version `3.3.14-0ubuntu30oaxaca2` (the policy's row for third-party software rebuilt from an Ubuntu source package). The live profile takes `calamares`, `calamares-data`, `libcalamares3.3` and `libcalamaresui3.3`, which depend on each other at the exact version; the installer's package removal takes them off the installed system.
+The package keeps Ubuntu's source and binary names and the version `3.3.14-0ubuntu30oaxaca3` (the policy's row for third-party software rebuilt from an Ubuntu source package). The live profile takes `calamares`, `calamares-data`, `libcalamares3.3` and `libcalamaresui3.3`, which depend on each other at the exact version; they are in the ISO's live layer only, which the installer never copies to the disk (docs/7, choice 55).
 
 | Path | What |
 |---|---|

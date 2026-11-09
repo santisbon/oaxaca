@@ -22,5 +22,5 @@ Description: Calamares settings and branding for installing @DISTRO_NAME@
  installer: the module sequence (partitioning with optional LUKS, users, the
  SDDM session, GRUB with Ubuntu's signed shim, the desktop's own install-time
  setup), the branding, and a launcher that autostarts in the live session.
- Installed only in the installation ISO's squashfs; it removes itself from the
- installed system.
+ Installed only in the installation ISO's live squashfs layer, which the
+ installer never copies to the disk, so the installed system never has it.

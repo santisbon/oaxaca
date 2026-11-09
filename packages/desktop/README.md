@@ -5,11 +5,11 @@ The Omarchy port: roadmap step 6. One source package built from the `oaxaca` bra
 
 | Binary package | What it carries | Omarchy's own package it mirrors |
 |---|---|---|
-| `oaxaca-desktop` | the metapackage: the four below, `oaxaca-session`, `oaxaca-fonts`, `asdcontrol`, `hyprland-preview-share-picker`, `nwg-displays`, and every Ubuntu package named in the port's `install/oaxaca-base.packages` (read at build time into the dependency list) | the ISO's package list |
+| `oaxaca-desktop` | the metapackage: the four below, `oaxaca-session`, `oaxaca-fonts`, `asdcontrol`, `hyprland-preview-share-picker`, `localsend`, `ttfx`, `nwg-displays`, `oaxaca-hyprland-titlebars`, `owe`, `disktree`, `gliff`, `oaxaca-speedtest`, `ffmpegthumbnailer`, and every Ubuntu package named in the port's `install/oaxaca-base.packages` (read at build time into the dependency list) | the ISO's package list |
 | `oaxaca-tools` | `/usr/bin/oaxaca-*` (Omarchy's `bin/`, ported to apt), their symlinks under `/usr/share/oaxaca/bin/`, the install tree `/usr/share/oaxaca/install/`, the `version` file, and the `fd` and `bat` names for Ubuntu's `fdfind` and `batcat` | `omarchy` |
-| `oaxaca-shell` | `/usr/share/oaxaca/shell/` (the Quickshell shell) and the icon font `/usr/share/fonts/truetype/oaxaca/oaxaca.ttf`, its family renamed to `oaxaca` | `omarchy` |
+| `oaxaca-shell` | `/usr/share/oaxaca/shell/` (the Quickshell shell) and the icon font `/usr/share/fonts/truetype/oaxaca/oaxaca.ttf`, its family kept as `omarchy`, the name menu entries and plugins give in `iconFont` and `fontFamily` | `omarchy` |
 | `oaxaca-themes` | `/usr/share/oaxaca/themes/` and `/usr/share/oaxaca/default/themed/` | `omarchy` |
-| `oaxaca-config` | `/usr/share/oaxaca/default/` and `/usr/share/oaxaca/config/`, `/etc/skel/` seeds (`.config`, `.bashrc`, launchers, toggles), `/etc/` drop-ins (sudoers, sysctl, logind, oomd, resolved, docker, NetworkManager, sddm theme, fastfetch, kitty, apt periodic), the uwsm `env.d` file, `environment.d`, fontconfig, the systemd user units, zram and plocate drop-ins, the sleep hook, launchers and icons, the SDDM theme, the Wayland session file, the Plymouth theme files, branding | `omarchy-settings` |
+| `oaxaca-config` | `/usr/share/oaxaca/default/` and `/usr/share/oaxaca/config/`, `/etc/skel/` seeds (`.config`, `.bashrc`, launchers, toggles), `/etc/` drop-ins from the port's `etc/` (sudoers, sysctl, logind and the systemd manager, binfmt, NetworkManager, ssh, mise, `profile.d`, fastfetch, kitty, the SDDM theme setting) plus apt periodic and Chromium's flags, its tmpfiles and udev rules under `/usr/lib/`, the uwsm `env.d` file, `environment.d`, fontconfig, the systemd user units and their drop-ins (oomd, blueman, Mullvad), the sleep hook, the PAM profiles, the polkit rule, launchers and icons, the SDDM theme, the Wayland session file, the Plymouth theme files, branding | `omarchy-settings` |
 
 ## How the build works
 
@@ -17,7 +17,7 @@ The Omarchy port: roadmap step 6. One source package built from the `oaxaca` bra
 
 ## Branding
 
-Omarchy's name is a trademark and its logos are Omarchy's. The build replaces them: `logo.txt`, `icon.txt` and `logo.svg` come from `debian/extra/` (the distro's name in a box) and `icon.png`, the SDDM logo and the Plymouth logo are the name rendered with ImageMagick. The theme wallpapers that carried Omarchy's mark are not installed. These are placeholders until the distro has artwork; the icon font keeps Omarchy's mark at `U+E900` (the menu shows it next to "Oaxaca" entries) until a glyph replaces it.
+Omarchy's name is a trademark and its logos are Omarchy's. The build replaces them with the distro's artwork, which `scripts/branding.py` (`make branding`) draws into `debian/extra/`: `logo.svg` and `logo.txt` (the name), `icon.png` and `icon.txt` (the mark), and `splash-logo.png`, which `debian/rules` copies in as the SDDM theme's and the Plymouth theme's logo. The theme wallpapers that carried Omarchy's mark are not installed. The icon font's glyph at `U+E900` (the menu shows it next to "Oaxaca" entries) is the distro's mark, from the `build/branding/mark.svg` that `scripts/branding.py` writes for `santisbon/omarchy`'s `omarchy-dev-font` (docs/6, choices 104 and 105).
 
 ## What is not here
 

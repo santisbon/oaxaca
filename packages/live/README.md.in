@@ -1,7 +1,8 @@
 # @DISTRO_ID@-live
 
 The live session of the installation ISO (roadmap step 7). Installed only in the ISO's
-squashfs; the installer removes it from the installed system.
+live layer (`casper/filesystem.live.squashfs`), which the installer never copies to the disk,
+so the installed system never has it (docs/7, choice 55).
 
 Files:
 

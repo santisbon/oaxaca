@@ -4,7 +4,7 @@ Quickshell at commit 2b4501a2 (7 commits past tag v0.3.2, the commit Omarchy v4.
 
 Omarchy's recipe also carries `load_qtquick_611.patch`, its work-around for Qt 6.12. Ubuntu's Qt is 6.11, so this package leaves the patch out. The first line of `shell/shell.qml`, `//@ pragma OmarchyLoadPatch`, then only makes Quickshell log `Unrecognized pragma`.
 
-The package keeps the upstream name, as the policy says for third-party software we rebuild, and the version `0.3.2+r7.g2b4501a-0oaxaca1`: a new upstream release on Debian's packaging, so the `-0oaxaca1` revision marks "not in Debian yet" and sorts below a future Debian `0.3.2-1`.
+The package keeps the upstream name, as the policy says for third-party software we rebuild, and the version `0.3.2+r7.g2b4501a-0oaxaca1`: a new upstream release on Debian's packaging, so the `-0oaxaca1` revision marks "not in Debian yet". The `+r7.g2b4501a` part ranks the version above a Debian `0.3.2-1` and below a Debian `0.3.3-1` (`dpkg --compare-versions`), so apt replaces this package once the archive carries Quickshell 0.3.3 or newer.
 
 | Path | What |
 |---|---|

@@ -37,9 +37,10 @@ Description: @DISTRO_NAME@ desktop (metapackage)
  from install/@DISTRO_ID@-base.packages in the ported Omarchy tree, so the
  dependency list and the tree stay in step.
  .
- No web browser is included: Ubuntu's browser packages are snap
- placeholders, and the distro keeps snapd out. "@DISTRO_ID@-install-browser"
- installs Chrome, Firefox, Brave or Edge from the vendor's own apt source.
+ The web browser is not a dependency: Chromium, from the xtradeb PPA, is
+ installed into the image by name, so removing it from the menu leaves this
+ metapackage installed. "@DISTRO_ID@-install-browser" installs Chromium,
+ Chrome, Firefox or Brave.
 
 Package: @DISTRO_ID@-tools
 Architecture: all
@@ -85,7 +86,7 @@ Package: @DISTRO_ID@-themes
 Architecture: all
 Depends: ${misc:Depends}
 Description: @DISTRO_NAME@ theme bundles and templates
- The 22 theme bundles (colour palettes, backgrounds, previews) under
+ The 23 theme bundles (colour palettes, backgrounds, previews) under
  /usr/share/@DISTRO_ID@/themes and the templates under
  /usr/share/@DISTRO_ID@/default/themed that "@DISTRO_ID@-theme-set" renders
  into the terminal, editor, browser and shell colour files of the active

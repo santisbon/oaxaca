@@ -14,7 +14,7 @@ source "$here/distro.conf"
 
 if [[ -n ${APT_KEY_FPR:-} ]]; then
   echo "distro.conf already has APT_KEY_FPR=$APT_KEY_FPR." >&2
-  echo "To rotate the key, clear that value first, then run this again (see docs/build-infra.md)." >&2
+  echo "To rotate the key, clear that value first, then run this again (see "docs/2 - build-infra.md")." >&2
   exit 1
 fi
 

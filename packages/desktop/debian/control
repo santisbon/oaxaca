@@ -38,9 +38,10 @@ Description: Oaxaca desktop (metapackage)
  from install/oaxaca-base.packages in the ported Omarchy tree, so the
  dependency list and the tree stay in step.
  .
- No web browser is included: Ubuntu's browser packages are snap
- placeholders, and the distro keeps snapd out. "oaxaca-install-browser"
- installs Chrome, Firefox, Brave or Edge from the vendor's own apt source.
+ The web browser is not a dependency: Chromium, from the xtradeb PPA, is
+ installed into the image by name, so removing it from the menu leaves this
+ metapackage installed. "oaxaca-install-browser" installs Chromium,
+ Chrome, Firefox or Brave.
 
 Package: oaxaca-tools
 Architecture: all
@@ -86,7 +87,7 @@ Package: oaxaca-themes
 Architecture: all
 Depends: ${misc:Depends}
 Description: Oaxaca theme bundles and templates
- The 22 theme bundles (colour palettes, backgrounds, previews) under
+ The 23 theme bundles (colour palettes, backgrounds, previews) under
  /usr/share/oaxaca/themes and the templates under
  /usr/share/oaxaca/default/themed that "oaxaca-theme-set" renders
  into the terminal, editor, browser and shell colour files of the active

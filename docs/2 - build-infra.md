@@ -69,7 +69,7 @@ You type `make <target>`. Each make target runs one script, and each script runs
 | `make render` | `scripts/render.py` | none | every [template](#template-and-rendered-file) rendered from `distro.conf` (see [policy.md](1%20-%20policy.md), section 1) |
 | `make chroot` | `scripts/chroot-create.sh` | `mmdebstrap` | `~/.cache/sbuild/stonking-amd64.tar`, a 432 MB buildd chroot from the Ubuntu archive (the `main` and `universe` [components](README.md#component), the `-updates` and `-security` [pockets](README.md#suite-and-pocket), [Recommends](README.md#recommends) off). The script skips the work if the tarball is under 7 days old; `--force` rebuilds the tarball |
 | `make build [PKG=packages/<dir>]` | `scripts/build.sh` | `sbuild` in [unshare mode](#unshare-mode), then [lintian](#lintian) | source and binary packages in `build/`. sbuild reads `sbuild.conf` from the root of the `oaxaca` git repository (a Perl-syntax settings file) through the `SBUILD_CONFIG` environment variable, so your `~/.sbuildrc` is untouched |
-| `make publish [PUBLISH_FLAGS=--push]` | `scripts/repo-publish.sh` | `aptly`, then `rsync` and `git` | the packages in `build/` added to the [aptly repository](#aptly-repository-snapshot-and-publish) under `~/.local/state/oaxaca/aptly`, a snapshot published and signed with the signing key, the published tree synced into the checkout of the `oaxaca-apt` git repository at `~/Projects/oaxaca-apt`. Only `--push` commits and pushes that checkout |
+| `make publish [PUBLISH_FLAGS=--push]` | `scripts/repo-publish.sh` | `aptly`, then the aws-cli's `aws s3 sync` | the packages in `build/` added to the [aptly repository](#aptly-repository-snapshot-and-publish) under `~/.local/state/oaxaca/aptly`, a snapshot published and signed with the signing key into aptly's published tree, and a list of what an upload would change. Only `--push` uploads that tree to the [S3 bucket](#s3-bucket) `oaxaca-apt`: `pool/` first, then `dists/` with `--delete`, then `pool/` again with `--delete` |
 | `scripts/keygen.sh` (once) | | `gpg` | the signing key in your GnuPG home, the key's public half in `packages/archive-keyring/` as the [archive keyring](#archive-keyring), the key's fingerprint in `distro.conf` |
 
 The clean build in more detail: `scripts/build.sh` runs `dpkg-source -b` from inside `build/` so the source package (`.dsc` and `.tar.xz`) lands there and not in `packages/`, then sbuild takes that `.dsc`, unpacks the chroot tarball inside an unprivileged user namespace (no root privileges, no `sbuild` group), installs the package's declared [build dependencies](README.md#build-dependencies) into that unpacked copy, runs `dpkg-buildpackage` there, and writes the results to `build/`. lintian then checks every `.changes` file on the host and fails the build on errors.
@@ -114,15 +114,15 @@ These steps are yours to run: the signing key needs its apt signing key passphra
    gpgv: Good signature from "Oaxaca Archive Signing Key"
    ```
    Any other result (`BAD signature`, `Can't check signature: No public key`, or an HTTP error from `curl`) means the publish or the keyring is wrong; do not go on to step 6.
-6. **Verify apt on a test machine.** The test machine is any Ubuntu install you are willing to add our apt repository to, this workstation included. Both packages are architecture `all` with no dependencies, so the test machine's Ubuntu release does not matter. Copy the two packages over and install them, from the source tree:
+6. **Verify apt on a test machine.** The test machine is any Ubuntu install you are willing to add our apt repository to, this workstation included. Both packages are architecture `all`, and their only dependency is each other (`oaxaca-apt-source` depends on `oaxaca-archive-keyring`), so the test machine's Ubuntu release does not matter. `<version>` below is each package's newest version in `build/`, the first line of `packages/archive-keyring/debian/changelog`. Copy the two packages over and install them, from the source tree:
    ```
-   scp build/oaxaca-archive-keyring_0.1.0_all.deb build/oaxaca-apt-source_0.1.0_all.deb <test-machine>:
+   scp build/oaxaca-archive-keyring_<version>_all.deb build/oaxaca-apt-source_<version>_all.deb <test-machine>:
    ssh <test-machine>
-   sudo apt install ./oaxaca-archive-keyring_0.1.0_all.deb ./oaxaca-apt-source_0.1.0_all.deb
+   sudo apt install ./oaxaca-archive-keyring_<version>_all.deb ./oaxaca-apt-source_<version>_all.deb
    ```
    On the workstation itself, skip `scp` and `ssh` and run the `apt install` line with the `build/` paths. 
    ```sh
-   sudo apt install ./build/oaxaca-archive-keyring_0.1.0_all.deb ./build/oaxaca-apt-source_0.1.0_all.deb
+   sudo apt install ./build/oaxaca-archive-keyring_<version>_all.deb ./build/oaxaca-apt-source_<version>_all.deb
    ```
 
    Confirm the two files the packages install:
@@ -153,7 +153,7 @@ These steps are yours to run: the signing key needs its apt signing key passphra
    ```
    cd "$(mktemp -d)" && apt download oaxaca-archive-keyring && ls
    ```
-   `ls` must list `oaxaca-archive-keyring_0.1.0_all.deb`. An error `Hash Sum mismatch` or `403` here means `make publish` staged `dists/` without the matching `pool/`, which a rerun of `make publish` fixes.
+   `ls` must list `oaxaca-archive-keyring_<version>_all.deb`, with the version the published repository offers. An error `Hash Sum mismatch` or `403` here means `make publish` staged `dists/` without the matching `pool/`, which a rerun of `make publish` fixes.
 
 ## Backing up the signing key
 

@@ -6,9 +6,8 @@
 # /var/lib/sddm/state.conf, section [Last], key User. The first boot on the Legion laptop on
 # 2026-10-12 rejected every password because the theme sent an empty user name.
 # Runs from the live system with the target's root as $1 (Calamares's shellprocess with
-# dontChroot): inside the target this script would not exist, because the installer's packages
-# step removes @DISTRO_ID@-installer from the target before the shellprocess steps run, which
-# failed the install with "sddm-last-user: not found" (2026-10-12).
+# dontChroot): inside the target this script does not exist, because @DISTRO_ID@-installer is in
+# the ISO's live layer only, which the installer never copies to the target (docs/7, choice 55).
 # Usage: sddm-last-user <target root> <user>
 set -e
 root=${1:?target root}

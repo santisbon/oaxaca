@@ -1,3 +1,11 @@
+oaxaca-live (0.1.11) stonking; urgency=medium
+
+  * The package description and README say where the package lives: the
+    ISO's live layer, which the installer never copies to the disk
+    (docs/7, choice 55).
+
+ -- santisbon <santisbon@users.noreply.github.com>  Sun, 08 Nov 2026 19:49:06 -0600
+
 oaxaca-live (0.1.10) stonking; urgency=medium
 
   * live-boot-test's check of the installer steps that run in the target

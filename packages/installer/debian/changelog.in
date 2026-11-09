@@ -1,3 +1,13 @@
+@DISTRO_ID@-installer (0.1.17) @BASE_SERIES@; urgency=medium
+
+  * The package description, the comments of sddm-last-user and of the
+    hardware step, and the bootloader settings' comment on the fallback
+    loader describe the installer as it works: its files are in the ISO's
+    live layer only (docs/7, choice 55), and Ubuntu's grub-install writes
+    EFI/BOOT unless given --no-extra-removable (docs/7, choice 56).
+
+ -- @MAINTAINER@  Sun, 08 Nov 2026 19:49:06 -0600
+
 @DISTRO_ID@-installer (0.1.16) @BASE_SERIES@; urgency=medium
 
   * An install without a network completes on machines whose hardware

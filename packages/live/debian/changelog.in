@@ -1,3 +1,11 @@
+@DISTRO_ID@-live (0.1.11) @BASE_SERIES@; urgency=medium
+
+  * The package description and README say where the package lives: the
+    ISO's live layer, which the installer never copies to the disk
+    (docs/7, choice 55).
+
+ -- @MAINTAINER@  Sun, 08 Nov 2026 19:49:06 -0600
+
 @DISTRO_ID@-live (0.1.10) @BASE_SERIES@; urgency=medium
 
   * live-boot-test's check of the installer steps that run in the target

@@ -3,7 +3,7 @@
 # the version this repository builds.
 #
 # Anatomy: this script runs curl, python3 (to read the JSON answer), sed and dpkg. For every package directory whose upstream
-# file sets RELEASES=<owner>/<repo> (today packages/localsend and packages/iphonebridge), it asks GitHub's REST API for that
+# file sets RELEASES=<owner>/<repo> (today packages/asusctl, packages/disktree, packages/gliff, packages/iphonebridge, packages/localsend, packages/owe, packages/speedtest, packages/superwhisper and packages/ttfx), it asks GitHub's REST API for that
 # repository's latest release (GET /repos/<owner>/<repo>/releases/latest, which skips drafts and
 # pre-releases), drops a leading "v" from the release's tag, and compares the result with the
 # upstream part of the first version in the package's rendered debian/changelog, or for a

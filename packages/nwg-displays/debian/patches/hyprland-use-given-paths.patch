@@ -12,6 +12,8 @@ Description: Hyprland: use the -m and -w paths for every file
  -m and -w paths once the options are parsed, and passes those paths to the
  mirror check and the workspaces window. Started with no options, the paths
  are the defaults, so nothing changes.
+Author: santisbon <santisbon@users.noreply.github.com>
+Origin: vendor
 Forwarded: no
 Last-Update: 2026-10-22
 ---
