@@ -1,5 +1,12 @@
 oaxaca-desktop (4.5.0+git20261107.361.79f2b040-0oaxaca1) stonking; urgency=medium
 
+  * Migration 1792196970 is deleted: it copied the Disk Usage launcher, which
+    Disktree replaced, and found nothing to copy.
+
+ -- santisbon <santisbon@users.noreply.github.com>  Mon, 09 Nov 2026 14:07:06 -0600
+
+oaxaca-desktop (4.5.0+git20261107.361.79f2b040-0oaxaca1) stonking; urgency=medium
+
   * Mullvad set to launch at login waits for the bar's tray, so its icon appears
     at login.
 
