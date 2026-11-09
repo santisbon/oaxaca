@@ -27,8 +27,13 @@ TOKEN = re.compile(r"@@([A-Z][A-Z0-9_]*)@@|@([A-Z][A-Z0-9_]*)@")
 def load_conf():
     conf_path = ROOT / "distro.conf"
     keys = re.findall(r"^([A-Z][A-Z0-9_]*)=", conf_path.read_text(), flags=re.M)
-    script = f"set -a; source '{conf_path}'; " + "; ".join(f'printf "%s\\0" "${k}"' for k in keys)
-    values = subprocess.check_output(["bash", "-c", script]).decode().split("\0")
+    # "set -u" stops at a reference to an unset variable, and "|| exit 1" at a syntax error,
+    # which bash reports on stderr and then carries on from with the keys after it left empty.
+    script = f"set -a -u; source '{conf_path}' || exit 1; " + "; ".join(f'printf "%s\\0" "${k}"' for k in keys)
+    result = subprocess.run(["bash", "-c", script], stdout=subprocess.PIPE)
+    if result.returncode != 0:
+        sys.exit(f"distro.conf: bash stopped reading it (exit status {result.returncode}); fix the line it names above")
+    values = result.stdout.decode().split("\0")
     conf = dict(zip(keys, values))
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]+", conf["DISTRO_ID"]):
         sys.exit(f"DISTRO_ID={conf['DISTRO_ID']!r} must be lowercase letters, digits and hyphens")
