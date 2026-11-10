@@ -1,4 +1,4 @@
-oaxaca-desktop (4.5.0+git20261107.361.79f2b040-0oaxaca1) stonking; urgency=medium
+oaxaca-desktop (4.5.0+git20261109.363.a402094e-0oaxaca1) stonking; urgency=medium
 
   * Migration 1792196970 is deleted: it copied the Disk Usage launcher, which
     Disktree replaced, and found nothing to copy.
