@@ -42,6 +42,12 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
 # shellcheck source=/dev/null
 source "$here/distro.conf"
+# mmdebstrap builds its chroot in $TMPDIR, or in /tmp when TMPDIR is unset (mmdebstrap(1),
+# "tar"). Where /tmp is a tmpfs, that chroot is held in RAM: on 2026-11-09 a desktop root
+# filesystem build had 7.4 GiB in /tmp when this workstation ran out of memory, with Steam and a
+# web browser holding most of it, and systemd-oomd killed the terminal the release ran in. /var/tmp is on disk, outside the home
+# directory (whose mode 0750 the user namespace cannot enter).
+export TMPDIR=/var/tmp
 # The hook commands below run under sh with mmdebstrap's environment, so what they need is exported.
 export DISTRO_ID
 # A LOCPATH in the host's environment reaches the maintainer scripts inside the chroot, and glibc
@@ -107,7 +113,7 @@ apt_cache="$here/build/apt-cache"
 # that file into the chroot so dpkg inside can read it. In unshare mode apt runs as a
 # subordinate uid that must be able to read the .deb, and a home directory with mode 0750
 # (Ubuntu's default) blocks that, so the files are staged in a world-readable directory
-# under /tmp for the duration of the run.
+# under $TMPDIR for the duration of the run.
 # The newest of the given .deb files by dpkg's version order (dpkg --compare-versions), not by
 # file name: sort -V ranks "4.0.4+git20261013-0oaxaca1" below "4.0.4-0oaxaca2" because "+"
 # sorts before "-", where dpkg ranks it above, and the root filesystem got the older desktop.
@@ -120,7 +126,7 @@ newest_deb() {
   done
   printf '%s' "$best"
 }
-stage=$(mktemp -d /tmp/"$DISTRO_ID"-rootfs-debs.XXXXXX)
+stage=$(mktemp -d "$TMPDIR/$DISTRO_ID-rootfs-debs.XXXXXX")
 chmod 0755 "$stage"
 trap 'rm -rf "$stage"' EXIT
 includes=()

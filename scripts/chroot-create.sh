@@ -12,6 +12,12 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
 # shellcheck source=/dev/null
 source "$here/distro.conf"
+# mmdebstrap builds its chroot in $TMPDIR, or in /tmp when TMPDIR is unset (mmdebstrap(1),
+# "tar"). Where /tmp is a tmpfs, that chroot is held in RAM: on 2026-11-09 a desktop root
+# filesystem build had 7.4 GiB in /tmp when this workstation ran out of memory, with Steam and a
+# web browser holding most of it, and systemd-oomd killed the terminal the release ran in. /var/tmp is on disk, outside the home
+# directory (whose mode 0750 the user namespace cannot enter).
+export TMPDIR=/var/tmp
 
 arch=amd64
 mirror=${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu}

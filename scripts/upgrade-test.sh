@@ -31,6 +31,12 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
 # shellcheck source=/dev/null
 source "$here/distro.conf"
+# mmdebstrap builds its chroot in $TMPDIR, or in /tmp when TMPDIR is unset (mmdebstrap(1),
+# "tar"). Where /tmp is a tmpfs, that chroot is held in RAM: on 2026-11-09 a desktop root
+# filesystem build had 7.4 GiB in /tmp when this workstation ran out of memory, with Steam and a
+# web browser holding most of it, and systemd-oomd killed the terminal the release ran in. /var/tmp is on disk, outside the home
+# directory (whose mode 0750 the user namespace cannot enter).
+export TMPDIR=/var/tmp
 # See rootfs-create.sh: a LOCPATH from the host breaks the locales package inside the chroot.
 unset LOCPATH
 
@@ -46,10 +52,10 @@ keyring=/usr/share/keyrings/ubuntu-archive-keyring.gpg
 # not in the chroot (a key copied into the chroot's trusted.gpg.d or named by an in-chroot
 # path is never read), and its download methods run as the unprivileged _apt user, which under a
 # home directory of mode 0750 cannot read packages/archive-keyring/, so the key is staged in a
-# world-readable directory under /tmp, as rootfs-create.sh stages the .deb files. Inside the
+# world-readable directory under $TMPDIR, as rootfs-create.sh stages the .deb files. Inside the
 # chroot the installed keyring package and the apt-source package's Signed-By take over, and the
 # script inside removes mmdebstrap's sources.list, which carries the staging path.
-keystage=$(mktemp -d /tmp/"$DISTRO_ID"-upgrade-test-key.XXXXXX)
+keystage=$(mktemp -d "$TMPDIR/$DISTRO_ID-upgrade-test-key.XXXXXX")
 chmod 0755 "$keystage"
 trap 'rm -rf "$keystage"' EXIT
 install -m 0644 "$here/packages/archive-keyring/archive-keyring.gpg" "$keystage/"

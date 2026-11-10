@@ -163,7 +163,16 @@ for pkg in "${pkgs[@]}"; do
     source "$pkg/upstream"
     orig="$out/${src}_${uver}.orig.tar.gz"
     prefix="${src}-${uver}"
-    TAR_OPTS+=("--mtime=@$(dpkg-parsechangelog -l "$pkg/debian/changelog" -S Timestamp)")
+    # The files' dates in the orig tarballs this script packs: the date of the changelog's oldest
+    # entry for this upstream version, not of its newest entry. A new Debian revision (0oaxaca2)
+    # keeps the upstream version, so its orig tarballs keep their names, and the archive already
+    # holds tarballs of those names: with the newest entry's date, the tarballs' bytes changed
+    # with every revision (gliff 0.4.2-0oaxaca2's vendor tarball, 2026-11-09), and the archive
+    # cannot hold two files of one name.
+    first_ts=$(paste -d' ' <(dpkg-parsechangelog -l "$pkg/debian/changelog" --format rfc822 --all -S Version | grep .) \
+                          <(dpkg-parsechangelog -l "$pkg/debian/changelog" --format rfc822 --all -S Timestamp | grep .) |
+               while read -r v t; do v=${v#*:}; [[ ${v%-*} == "$uver" ]] && echo "$t"; done | tail -n 1)
+    TAR_OPTS+=("--mtime=@$first_ts")
     if [[ -n $DSC ]]; then
       dscdir="$out/dsc/$src"
       mkdir -p "$dscdir"
@@ -265,7 +274,11 @@ for pkg in "${pkgs[@]}"; do
     if [[ ${CARGO_VENDOR:-} == 1 ]]; then
       echo "-- cargo vendor (network) in $tree"
       (cd "$tree" && cargo vendor --locked vendor >/dev/null)
-      tar "${TAR_OPTS[@]}" -cf - -C "$tree" vendor | gzip -n > "$out/${src}_${uver}.orig-vendor.tar.gz"
+      # Written to a new file, then renamed: build/'s tarballs are hard links into aptly's pool
+      # (make publish), so writing into the existing file would change the published copy too.
+      vtar="$out/${src}_${uver}.orig-vendor.tar.gz"
+      tar "${TAR_OPTS[@]}" -cf - -C "$tree" vendor | gzip -n > "$vtar.part"
+      mv "$vtar.part" "$vtar"
     fi
     rm -rf "$tree/debian"
     cp -a "$pkg/debian" "$tree/debian"
