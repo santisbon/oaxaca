@@ -171,7 +171,7 @@ for pkg in "${pkgs[@]}"; do
     # cannot hold two files of one name.
     first_ts=$(paste -d' ' <(dpkg-parsechangelog -l "$pkg/debian/changelog" --format rfc822 --all -S Version | grep .) \
                           <(dpkg-parsechangelog -l "$pkg/debian/changelog" --format rfc822 --all -S Timestamp | grep .) |
-               while read -r v t; do v=${v#*:}; [[ ${v%-*} == "$uver" ]] && echo "$t"; done | tail -n 1)
+               while read -r v t; do v=${v#*:}; if [[ ${v%-*} == "$uver" ]]; then echo "$t"; fi; done | tail -n 1)
     TAR_OPTS+=("--mtime=@$first_ts")
     if [[ -n $DSC ]]; then
       dscdir="$out/dsc/$src"
