@@ -65,8 +65,13 @@ case $profile in
   # plymouth, libplymouth5 and plymouth-label are our rebuild of Ubuntu's Plymouth with one
   # upstream patch (packages/plymouth: the script plugin no longer crashes without a console
   # viewer); the three depend on each other at the exact version, so they travel together.
+  # plymouth-theme-ubuntu-text, from the same rebuild, goes in with them: plymouth recommends
+  # "plymouth-theme-ubuntu-text | plymouth-theme", and Ubuntu's plymouth-theme-ubuntu-text
+  # depends on Ubuntu's plymouth at its exact version, so without our .deb apt took the next
+  # package providing plymouth-theme, plymouth-theme-hamara, and the DejaVu fonts it depends on
+  # (the image from the published repository has plymouth-theme-ubuntu-text).
   desktop) parts="archive-keyring apt-source base hybrid-backlight nvidia session fonts desktop tools shell themes config"
-           debs="quickshell asdcontrol hyprland-preview-share-picker nwg-displays localsend ttfx $DISTRO_ID-hyprland-titlebars owe disktree gliff $DISTRO_ID-speedtest plymouth libplymouth5 plymouth-label"
+           debs="quickshell asdcontrol hyprland-preview-share-picker nwg-displays localsend ttfx $DISTRO_ID-hyprland-titlebars owe disktree gliff $DISTRO_ID-speedtest plymouth libplymouth5 plymouth-label plymouth-theme-ubuntu-text"
            browser=1 ;;
   # live: the desktop plus casper's live session and the installer, the tree the ISO's squashfs
   # is made from (scripts/iso-create.sh). The initramfs is rebuilt at the end so that casper's
@@ -75,7 +80,7 @@ case $profile in
   # Calamares with one patch (packages/calamares: Replace mode no longer crashes when encryption
   # is confirmed after a partition was chosen); they depend on each other at the exact version.
   live) parts="archive-keyring apt-source base hybrid-backlight nvidia session fonts desktop tools shell themes config live installer"
-        debs="quickshell asdcontrol hyprland-preview-share-picker nwg-displays localsend ttfx $DISTRO_ID-hyprland-titlebars owe disktree gliff $DISTRO_ID-speedtest plymouth libplymouth5 plymouth-label calamares calamares-data libcalamares3.3 libcalamaresui3.3"
+        debs="quickshell asdcontrol hyprland-preview-share-picker nwg-displays localsend ttfx $DISTRO_ID-hyprland-titlebars owe disktree gliff $DISTRO_ID-speedtest plymouth libplymouth5 plymouth-label plymouth-theme-ubuntu-text calamares calamares-data libcalamares3.3 libcalamaresui3.3"
         browser=1
         extra_hooks=(--customize-hook='chroot "$1" update-initramfs -u -k all') ;;
   *) echo "unknown PROFILE '$profile' (base, session, desktop or live)" >&2; exit 1 ;;

@@ -55,8 +55,7 @@ desktop_manifest="${desktop%.tar}.manifest"
 # The two tarballs must come from the same packages: every package both have at the same version.
 # A desktop tarball left over from an older build would otherwise become the installed system
 # under a live session built from newer packages. A package only one of them has is no drift:
-# with the live packages in the same install, apt satisfies plymouth's theme dependency with
-# plymouth-theme-hamara instead of the desktop's plymouth-theme-ubuntu-text.
+# the live tarball adds casper, the installer and the packages they depend on.
 # join needs its inputs in the order its own comparison uses; under a language locale such as
 # en_US.UTF-8, sort orders "cpp-15<tab>..." before "cpp<tab>...", and join stopped with "input is
 # not in sorted order" (2026-10-22). Both run in the C locale, sorting on the package name alone.

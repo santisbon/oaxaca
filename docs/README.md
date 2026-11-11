@@ -629,7 +629,7 @@ build/ ──aptly (snapshot, publish, sign with the gpg key)──▶ ~/.local/
 
 ~/Projects/omarchy (santisbon/omarchy, branch oaxaca) ──git archive, rename at build──▶ build/oaxaca-{desktop,tools,shell,themes,config}*.deb   (make build PKG=packages/desktop)
 
-Ubuntu archive + build/{archive-keyring,apt-source,base[,nvidia,session,quickshell[,fonts,desktop,tools,shell,themes,config,asdcontrol,hyprland-preview-share-picker,nwg-displays,plymouth,libplymouth5,plymouth-label[,live,installer]]]}.deb ──mmdebstrap (minbase)──▶ build/rootfs/oaxaca-26.10-amd64-<profile>.tar
+Ubuntu archive + build/{archive-keyring,apt-source,base[,nvidia,session,quickshell[,fonts,desktop,tools,shell,themes,config,asdcontrol,hyprland-preview-share-picker,nwg-displays,plymouth,libplymouth5,plymouth-label,plymouth-theme-ubuntu-text[,live,installer]]]}.deb ──mmdebstrap (minbase)──▶ build/rootfs/oaxaca-26.10-amd64-<profile>.tar
                                                                                         │        (make rootfs PROFILE=base|session|desktop|live)
                                                 tar + mke2fs (+ Omarchy's shell/ for the session profile; /etc/skel and apply-system for desktop) ──▶ ext4 image ──qemu──▶ boot checks   (make rootfs-test)
                                                 tar + unshare/chroot ──▶ ubuntu-drivers devices, oaxaca-drivers-install --show, apt --simulate   (make drivers-check)
