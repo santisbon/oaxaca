@@ -29,12 +29,13 @@ case ${1:-} in
 esac
 
 # Build tools (git, curl and cargo for build.sh's downloads; sbuild, mmdebstrap and uidmap for the
-# chroot), the boot tests' QEMU, OVMF and fakeroot (rootfs-boot-test.sh's ext4 image), the ISO's squashfs, FAT and xorriso tools, the test
+# chroot), the boot tests' QEMU, OVMF and fakeroot (rootfs-boot-test.sh's ext4 image), fdisk (sfdisk, which partitions
+# iso-boot-test.sh's target disk for DRIVE tests), the ISO's squashfs, FAT and xorriso tools, the test
 # tools of santisbon/omarchy (lua5.5, ripgrep, and nodejs for the tests that run JavaScript under node), Qt's QML tools
 # (qt6-declarative-dev-tools, for checking the QML of santisbon/omarchy's Quickshell desktop shell with /usr/lib/qt6/bin/qmllint), and
 # aptly for publishing; all from Ubuntu's archive (aptly is in universe).
 sudo apt install git curl cargo python3 sbuild mmdebstrap uidmap devscripts debhelper lintian \
-  qemu-system-x86 e2fsprogs ovmf fakeroot squashfs-tools xorriso dosfstools mtools lua5.5 ripgrep nodejs \
+  qemu-system-x86 e2fsprogs ovmf fakeroot fdisk squashfs-tools xorriso dosfstools mtools lua5.5 ripgrep nodejs \
   qt6-declarative-dev-tools aptly
 # The aws-cli for the upload, from Amazon's snap.
 command -v aws >/dev/null || sudo snap install aws-cli --classic
