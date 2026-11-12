@@ -1,5 +1,13 @@
 @DISTRO_ID@-desktop (@OMARCHY_PORT_VERSION@-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
 
+  * Users created before the distro's artwork get the current logos in fastfetch,
+    About and the screensaver, in place of the old placeholders. A logo the user
+    set is kept.
+
+ -- @MAINTAINER@  Wed, 11 Nov 2026 19:37:08 -0600
+
+@DISTRO_ID@-desktop (4.5.0+git20261109.363.a402094e-0@DISTRO_ID@1) @BASE_SERIES@; urgency=medium
+
   * Migration 1792196970 is deleted: it copied the Disk Usage launcher, which
     Disktree replaced, and found nothing to copy.
 
